@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='0.2.1',SAVE_KEY='cnation-td-save-v2',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='0.2.2',SAVE_KEY='cnation-td-save-v2',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -92,6 +92,12 @@ function buildTerrain(){disposeGroup(terrainGroup);animated=[];const map=S.map,s
   const beam=new THREE.Mesh(new THREE.CylinderGeometry(.3,.42,4.2,16,1,true),basic(0x9ffbe0,.22));beam.position.y=2.3;g.add(beam);
   const halo=new THREE.Mesh(new THREE.RingGeometry(.8,.98,32),basic(0x7ff0d2,.6));halo.rotation.x=-Math.PI/2;halo.position.y=.035;g.add(halo);
   g.position.set(x,inside?-.07:0,z);terrainGroup.add(g);animated.push(t=>{gem.rotation.y=t*.9;gem.position.y=1.15+Math.sin(t*2)*.08;beam.material.opacity=.16+.08*Math.sin(t*2.4);const s=1+.12*Math.sin(t*2.4);halo.scale.set(s,s,1);});}
+ // Road curbs: a raised dark stone edge wherever the road meets other ground, so the route reads at a glance.
+ {const isRoad=new Set(cells.filter(t=>t.road).map(t=>t.c+','+t.r)),edge=new THREE.Color(sc.road).multiplyScalar(.4).getHex(),lip=new THREE.Color(sc.road).multiplyScalar(.66).getHex(),T=.2;
+  for(const t of cells){if(!t.road||t.terrain==='bridge')continue;const x=wx(t.c),z=wz(t.r),y=t.h;
+   for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){if(isRoad.has((t.c+dx)+','+(t.r+dz)))continue;const n=map.tile(t.c+dx,t.r+dz);if(n&&n.terrain==='water')continue;
+    const ex=x+dx*(.5-T/2),ez=z+dz*(.5-T/2),size=dx?[T,.15,1.0]:[1.0,.15,T];parts.push(['box',[ex,y+.055,ez],size,edge]);
+    parts.push(['box',[x+dx*(.5-T-.025),y+.005,z+dz*(.5-T-.025)],dx?[.07,.02,.98]:[.98,.02,.07],lip]);}}}
  const deco=new THREE.Mesh(M.bake(parts),M.sharedMat);deco.castShadow=true;deco.receiveShadow=true;terrainGroup.add(deco);
  water=M.makeWaterSurface(waterPlaces);if(water)terrainGroup.add(water);}
 
