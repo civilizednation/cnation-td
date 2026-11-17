@@ -1,0 +1,17 @@
+{
+  "name": "cnation TD · 아르카 방어전",
+  "short_name": "cnation TD",
+  "description": "아르카 연대기의 동료를 전장에 세워 몬스터를 막는 디펜스 게임",
+  "lang": "ko",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0e2328",
+  "theme_color": "#16282d",
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

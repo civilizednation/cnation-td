@@ -7,7 +7,10 @@ Mobile-first portrait tower defence (Korean) built on the characters, monsters a
 Always write every message to the user in Korean (한국어).
 
 ## Files
-- `index.html` — shell, all CSS, script tags with `?v=` cache-busting (bump with `GAME_VERSION` in `js/game.js`).
+- `index.html` — shell, all CSS, script tags with `?v=` cache-busting. On every release bump `GAME_VERSION` (js/game.js), the `?v=` tags and `VERSION` in `sw.js` together.
+- `manifest.webmanifest`, `sw.js`, `icons/` — home screen install (PWA). The service worker is network-first (music cache-first). `icons/*.png` are a
+  placeholder drawn from the game models by `tools/icon.html` + `node tools/make-icons.js`; the owner will supply the final icon — then just replace the PNGs.
+- `helpTips()` in js/game.js builds the detailed tips under 「게임 방법」 from the data tables; update its hand-written parts when rules change.
 - `js/data.js` — data tables (`SKILLS`, `UNITS`, `MONSTERS`, `MAPS`, `CHAPTERS`, `BOSSES`, `BLESSINGS`). Numbers come from TACTICS where one exists.
 - `js/sim.js` — the rules. No DOM; deterministic per seed. Commands: `deploy`, `rankUp`, `withdraw`, `ult`, `startBattle`,
   `chooseBlessing`; it reports through `drain()` events. Shared by the screen and the bot — keep rendering out of it.

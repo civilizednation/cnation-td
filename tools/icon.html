@@ -1,0 +1,30 @@
+<!doctype html>
+<!-- Draws the placeholder app icon from the game's own models. Open via a local server, then run tools/make-icons.js.
+     Replace icons/*.png with the final artwork when it is ready; nothing else needs to change. -->
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:transparent}canvas{display:block}</style></head><body>
+<canvas id="c" width="1024" height="1024"></canvas>
+<script src="../vendor/three-r170.js"></script><script src="../js/models.js"></script>
+<script>
+const THREE=CNATION3D,M=TDModels,S=1024,c=document.getElementById('c');
+const r=new THREE.WebGLRenderer({canvas:c,antialias:true,alpha:true,preserveDrawingBuffer:true});r.setSize(S,S,false);r.outputColorSpace=THREE.SRGBColorSpace;
+const scene=new THREE.Scene(),cam=new THREE.OrthographicCamera(-1.55,1.55,1.55,-1.55,.1,50);
+scene.add(new THREE.HemisphereLight(0xe4f0ce,0x203844,2.2));const sun=new THREE.DirectionalLight(0xffedc7,3);sun.position.set(-3,6,5);scene.add(sun);
+// Background: night-teal sky with a glow behind the crystal
+const bg=document.createElement('canvas');bg.width=bg.height=512;const g=bg.getContext('2d');const lin=g.createLinearGradient(0,0,0,512);lin.addColorStop(0,'#1d4a52');lin.addColorStop(1,'#0e2328');g.fillStyle=lin;g.fillRect(0,0,512,512);
+const rad=g.createRadialGradient(256,200,10,256,200,260);rad.addColorStop(0,'rgba(140,255,215,.75)');rad.addColorStop(.45,'rgba(90,220,190,.25)');rad.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=rad;g.fillRect(0,0,512,512);
+scene.background=new THREE.CanvasTexture(bg);scene.background.colorSpace=THREE.SRGBColorSpace;
+// Ground disc (road + grass) and the Arca crystal
+const parts=[['cyl',[0,-.06,0],[1.45,.12,1.45],0x6f9e78],['box',[0,.005,.1],[.62,.012,2.6],0xcbb998],['cyl',[0,.06,-.55],[.5,.12,.5],0xdfe6dc],['cyl',[0,.16,-.55],[.36,.1,.36],0xeef4ea]];
+for(const [x,z] of [[-1.05,-.5],[1.05,-.45],[-1.1,.45],[1.08,.55]]){parts.push(['cyl',[x,.18,z],[.05,.36,.05],0x756c4d],['cone',[x,.55,z],[.26,.6,.26],0x3a6f5d],['cone',[x,.78,z],[.19,.42,.19],0x5d9270]);}
+scene.add(new THREE.Mesh(M.bake(parts),M.sharedMat));
+const gem=new THREE.Mesh(M.bake([['rock',[0,0,0],[.22,.4,.22],0x7ff0d2],['rock',[0,0,0],[.15,.3,.15],0xe8fff6]]),M.sharedMat);gem.position.set(.1,1.62,-.55);gem.rotation.y=.5;scene.add(gem);
+const beam=new THREE.Mesh(new THREE.CylinderGeometry(.24,.34,3,16,1,true),new THREE.MeshBasicMaterial({color:0x9ffbe0,transparent:true,opacity:.22,depthWrite:false,side:THREE.DoubleSide}));beam.position.set(0,1.9,-.55);scene.add(beam);
+// Kyle in front on the road, Ria beside him
+const kyle=M.figure({heroId:'kyle',hair:0x855537,team:'ally'});kyle.children.slice(1).forEach(o=>o.visible=false);kyle.scale.setScalar(1.35);kyle.position.set(-.3,0,.45);kyle.rotation.y=.35;scene.add(kyle);
+const ria=M.figure({heroId:'ria',hair:0xe4e4ee,team:'ally'});ria.children.slice(1).forEach(o=>o.visible=false);ria.scale.setScalar(1.18);ria.position.set(.5,0,.2);ria.rotation.y=-.4;scene.add(ria);
+cam.position.set(0,2.6,5.2);cam.lookAt(0,.62,0);r.render(scene,cam);
+// Title band
+const out=document.createElement('canvas');out.width=out.height=S;const o=out.getContext('2d');o.drawImage(c,0,0);
+o.fillStyle='rgba(14,30,34,.78)';o.fillRect(0,S*.8,S,S*.2);o.font='800 150px system-ui,sans-serif';o.textAlign='center';o.textBaseline='middle';o.fillStyle='#f2cf72';o.fillText('TD',S/2,S*.9+6);
+window.ICON=out.toDataURL('image/png');
+</script></body></html>
