@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='0.5.0',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='0.5.1',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -431,7 +431,8 @@ function drawOverlay(dt,time,realDt=dt){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.cl
   for(const t of spacedTiles){tileQuad(t.c,t.r,tileTop(t));ctx.fillStyle='rgba(225,60,45,.42)';ctx.fill();const m=proj(t.c,t.r,tileTop(t)),q=pxU*.16;ctx.strokeStyle='rgba(255,235,230,.85)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(m.x-q,m.y-q*SIN);ctx.lineTo(m.x+q,m.y+q*SIN);ctx.moveTo(m.x+q,m.y-q*SIN);ctx.lineTo(m.x-q,m.y+q*SIN);ctx.stroke();}
   if(spacedTiles.length){const u=S.units.find(v=>S.defOf(v).melee&&S.map.tile(v.c,v.r).road);if(u){const g=proj(u.x,u.y,2.1);pill(g.x,g.y,`근접 배치 금지 ${D.MELEE_GAP}칸`,'rgba(170,40,30,.9)','#fff');}}}
  const su=selUnit&&S.units.find(u=>u.id===selUnit);
- if(su){ellipse(su.x,su.y,su.range+.35);ctx.fillStyle='rgba(255,255,255,.12)';ctx.fill();ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=2;ctx.stroke();if(S.defOf(su).melee&&S.map.tile(su.c,su.r).road){ellipse(su.x,su.y,D.MELEE_GAP-.05);ctx.setLineDash([4,6]);ctx.strokeStyle='rgba(255,110,90,.7)';ctx.lineWidth=1.5;ctx.stroke();ctx.setLineDash([]);}for(const au of su.auras){ellipse(su.x,su.y,au.radius+.4);ctx.setLineDash([6,5]);ctx.strokeStyle='#f2cf72';ctx.stroke();ctx.setLineDash([]);}}
+ // While aiming a 필살기 (meteor), no range circles: it can land anywhere, and a circle would suggest otherwise.
+ if(su&&aiming!==su.id){ellipse(su.x,su.y,su.range+.35);ctx.fillStyle='rgba(255,255,255,.12)';ctx.fill();ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=2;ctx.stroke();if(S.defOf(su).melee&&S.map.tile(su.c,su.r).road){ellipse(su.x,su.y,D.MELEE_GAP-.05);ctx.setLineDash([4,6]);ctx.strokeStyle='rgba(255,110,90,.7)';ctx.lineWidth=1.5;ctx.stroke();ctx.setLineDash([]);}for(const au of su.auras){ellipse(su.x,su.y,au.radius+.4);ctx.setLineDash([6,5]);ctx.strokeStyle='#f2cf72';ctx.stroke();ctx.setLineDash([]);}}
  // Monster bars and status pips
  for(const e of S.enemies){const sc=e.scale||1,p=proj(e.x,e.y,(e.flying?1.95:1.25)*Math.max(1,sc*.92)),w=pxU*.62*(e.boss?1.9:sc>1.2?1.3:1);
   if(e.hp<e.maxHp||e.boss||e.elite){ctx.fillStyle='rgba(12,22,26,.75)';ctx.fillRect(p.x-w/2-1,p.y-1,w+2,e.boss?8:6);ctx.fillStyle=e.boss?'#ff7361':e.elite?'#f2cf72':'#ee6f5c';ctx.fillRect(p.x-w/2,p.y,w*Math.max(0,e.hp/e.maxHp),e.boss?6:4);}
