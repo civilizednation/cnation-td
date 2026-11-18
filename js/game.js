@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='0.4.15',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='0.4.16',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -142,23 +142,42 @@ function sfx(kind,opt={}){if(!settings.sfx)return;const c=audioCtx();if(!c)retur
   const P=SFX_SYNTH[kind];if(!P)return;const o=c.createOscillator(),g=c.createGain();o.type=P[4];o.frequency.setValueAtTime(P[0]*rate,at);o.frequency.exponentialRampToValueAtTime(P[1]*rate,at+P[2]);g.gain.setValueAtTime(Math.min(.6,P[3]*2*vol),at);g.gain.exponentialRampToValueAtTime(.001,at+P[2]);o.connect(g).connect(c.destination);o.start(at);o.stop(at+P[2]+.02);}catch(e){}}
 const BGM_FILES={1:'01. Title Theme',4:'04. Blades of the Young',5:'05. March of the Broken Banner',6:'06. When Kingdoms Fall',7:'07. Awakened Colossus',10:'10. Raise the Banner',12:'12. Where Our Journey Ends'};
 const BGM_FADE=1;   // seconds of crossfade between tracks
-const bgm={els:{},gains:{},cur:null,want:null,unlocked:false,duck:1,stops:{},
- el(id){return this.els[id]||(this.els[id]=Object.assign(new Audio(`bgm/${encodeURIComponent(BGM_FILES[id])}_64k.webm`),{preload:'auto'}));},
+// Music is decoded into memory and played through Web Audio (as in cnation TACTICS), so the volume setting works on every phone —
+// iPhone Safari ignores <audio>.volume and does not always route <audio> through Web Audio. Tracks are kept as mono 22 kHz buffers
+// (about 5 MB a minute), at most BGM_KEEP at once. WebM/Opus is tried first, then the AAC copy (.m4a). If neither decodes, that track
+// falls back to an <audio> element routed through a gain node.
+const BGM_RATE=22050,BGM_KEEP=3;
+const bgm={buf:new Map(),loading:{},cur:null,want:null,unlocked:false,duck:1,node:null,pos:{},token:0,
+ url(id,ext){return `bgm/${encodeURIComponent(BGM_FILES[id])}_64k.${ext}`;},
+ decode(ab){return new Promise((ok,no)=>{let oc;try{oc=new (window.OfflineAudioContext||window.webkitOfflineAudioContext)(1,1,BGM_RATE);}catch(e){no(e);return;}
+  try{const p=oc.decodeAudioData(ab,ok,no);if(p&&p.catch)p.catch(no);}catch(e){no(e);}});},
+ mono(b){if(b.numberOfChannels===1)return b;const m=audioCtx().createBuffer(1,b.length,b.sampleRate),o=m.getChannelData(0),l=b.getChannelData(0),r=b.getChannelData(1);for(let i=0;i<o.length;i++)o[i]=(l[i]+r[i])*.5;return m;},
+ // Resolves with the decoded track, or null when it cannot be decoded (then the <audio> fallback plays it).
+ load(id){if(this.buf.has(id))return Promise.resolve(this.buf.get(id));if(this.loading[id])return this.loading[id];
+  const get=ext=>fetch(this.url(id,ext)).then(r=>r.ok?r.arrayBuffer():Promise.reject(new Error(r.status))).then(ab=>this.decode(ab));
+  return this.loading[id]=get('webm').catch(()=>get('m4a')).then(b=>this.mono(b),()=>null).then(b=>{delete this.loading[id];this.buf.set(id,b);this.trim(id);return b;});},
+ trim(keep){for(const k of [...this.buf.keys()]){if(this.buf.size<=BGM_KEEP)break;if(k!==keep&&k!==this.cur&&this.buf.get(k))this.buf.delete(k);}},
+ preload(id){if(this.unlocked&&BGM_FILES[id])this.load(id);},
  level(){return settings.bgm*.25*this.duck;},
- // Each track is routed through its own gain node (null = no Web Audio: fall back to <audio>.volume).
- gain(id){if(id in this.gains)return this.gains[id];const c=audioCtx();let g=null;if(c&&c.createMediaElementSource){try{const src=c.createMediaElementSource(this.el(id));g=c.createGain();g.gain.value=0;src.connect(g).connect(c.destination);}catch(e){g=null;}}this.gains[id]=g;return g;},
- ramp(id,v,t){const g=this.gain(id);if(g&&ac){const now=ac.currentTime;g.gain.cancelScheduledValues(now);g.gain.setValueAtTime(g.gain.value,now);if(t>0)g.gain.linearRampToValueAtTime(v,now+t);else g.gain.setValueAtTime(v,now);}else this.el(id).volume=Math.max(0,Math.min(1,v));},
- fadeOut(id,t=BGM_FADE){if(!id||!this.els[id])return;this.ramp(id,0,t);clearTimeout(this.stops[id]);this.stops[id]=setTimeout(()=>{if(this.cur!==id)this.els[id].pause();},t*1000+60);},
+ ramp(n,v,t){if(!n||!ac)return;const g=n.g.gain,now=ac.currentTime;g.cancelScheduledValues(now);g.setValueAtTime(g.value,now);if(t>0)g.linearRampToValueAtTime(v,now+t);else g.setValueAtTime(v,now);if(n.raw)n.el.volume=Math.max(0,Math.min(1,v*4));},
+ // Starts a decoded track (or the <audio> fallback) at zero volume and fades it in.
+ start(id,b,loop){const c=audioCtx();if(!c)return;const g=c.createGain();g.gain.value=0;g.connect(c.destination);const n={id,g,loop};
+  if(b){const s=c.createBufferSource(),off=id===1?(this.pos[1]||0)%b.duration:0;s.buffer=b;s.loop=loop;s.connect(g);n.src=s;n.dur=b.duration;n.t0=c.currentTime-off;s.start(0,off);
+   if(!loop)s.onended=()=>{if(this.node===n)this.play(1);};}
+  else{const el=new Audio(this.url(id,new Audio().canPlayType('audio/webm; codecs="opus"')?'webm':'m4a'));el.loop=loop;n.el=el;try{c.createMediaElementSource(el).connect(g);}catch(e){n.raw=true;}
+   if(id===1&&this.pos[1])el.currentTime=this.pos[1];if(!loop)el.onended=()=>{if(this.node===n)this.play(1);};el.play().catch(()=>{});}
+  this.node=n;this.ramp(n,this.level(),BGM_FADE);},
+ fadeOut(n,t=BGM_FADE){if(!n||!ac)return;if(n.id===1)this.pos[1]=n.src?(ac.currentTime-n.t0)%n.dur:n.el.currentTime;this.ramp(n,0,t);
+  setTimeout(()=>{try{if(n.src)n.src.stop();if(n.el)n.el.pause();n.g.disconnect();}catch(e){}},t*1000+80);},
  // Title music resumes where it stopped; battle and victory tracks start from the top.
- play(id,loop=true){this.want={id,loop};if(!this.unlocked||this.cur===id)return;const old=this.cur;this.cur=id;this.fadeOut(old);clearTimeout(this.stops[id]);
-  const a=this.el(id);a.loop=loop;if(id!==1)a.currentTime=0;a.onended=loop?null:()=>{if(this.cur===id)this.play(1);};
-  this.ramp(id,0,0);if(settings.bgm>0){const p=a.play();if(p)p.catch(()=>{if(this.cur===id)this.cur=null;});}this.ramp(id,this.level(),BGM_FADE);},
- stop(t=1.5){this.want=null;const old=this.cur;this.cur=null;this.fadeOut(old,t);},
- setDuck(d){if(this.duck===d)return;this.duck=d;if(this.cur)this.ramp(this.cur,this.level(),.4);},
+ play(id,loop=true){this.want={id,loop};if(!this.unlocked||this.cur===id)return;this.cur=id;this.fadeOut(this.node);this.node=null;const token=++this.token;
+  this.load(id).then(b=>{if(this.token===token&&this.cur===id)this.start(id,b,loop);});},
+ stop(t=1.5){this.want=null;this.cur=null;this.token++;this.fadeOut(this.node,t);this.node=null;},
+ setDuck(d){if(this.duck===d)return;this.duck=d;this.ramp(this.node,this.level(),.4);},
  unlock(){if(this.unlocked)return;this.unlocked=true;audioCtx();loadSfx();if(this.want)this.play(this.want.id,this.want.loop);},
- volume(){if(!this.cur)return;const a=this.els[this.cur];if(settings.bgm<=0){a.pause();return;}if(a.paused)a.play().catch(()=>{});this.ramp(this.cur,this.level(),.2);}};
+ volume(){this.ramp(this.node,this.level(),.2);}};
 window.addEventListener('pointerdown',()=>{bgm.unlock();audioCtx();},{capture:true});
-document.addEventListener('visibilitychange',()=>{const a=bgm.cur&&bgm.els[bgm.cur];if(document.hidden){if(a)a.pause();}else{audioCtx();if(a&&settings.bgm>0)a.play().catch(()=>{});}if(document.hidden&&S&&S.phase==='battle'){paused=true;hudKey='';}});
+document.addEventListener('visibilitychange',()=>{const el=bgm.node&&bgm.node.el;if(document.hidden){if(ac)ac.suspend().catch(()=>{});if(el)el.pause();}else{audioCtx();if(el)el.play().catch(()=>{});}if(document.hidden&&S&&S.phase==='battle'){paused=true;hudKey='';}});
 const battleTrack=()=>S.chapter.battles[S.battle]?.boss?7:[4,5,6][(S.chapterIndex+Math.floor(S.battle/3))%3];
 
 // ── HUD, strip, dock, panel ──
@@ -382,7 +401,7 @@ function handleEvents(){deaths=[];for(const e of S.drain()){
  else if(e.t==='beamWarn'){warns.set(e.unit,{t:e.delay,boss:e.id});toast(`${e.name}: 조준당한 동료를 지키거나 철수하세요`);sfx('boss_attack');}
  else if(e.t==='beam'){warns.delete(e.unit);if(e.to)addFx({k:'beam',from:e.from,to:e.to,dur:.35});}
  else if(e.t==='bonus')toast(`${e.why} 보너스 +${e.gold}💰`);
- else if(e.t==='battleStart'){saveGame();const b=S.chapter.battles[e.battle];banner(`전투 ${e.battle+1}`,b.name);clearCard();bgm.play(battleTrack());sfx(b.boss?'boss_appear':'battle_start');if(b.boss){paused=true;dialogue(S.chapter.bossIntro,()=>{paused=false;hudKey='';});}}
+ else if(e.t==='battleStart'){saveGame();const b=S.chapter.battles[e.battle];if(S.chapter.battles[e.battle+1]?.boss)bgm.preload(7);if(b.boss)bgm.preload(D.CHAPTERS[S.chapterIndex+1]?10:12);banner(`전투 ${e.battle+1}`,b.name);clearCard();bgm.play(battleTrack());sfx(b.boss?'boss_appear':'battle_start');if(b.boss){paused=true;dialogue(S.chapter.bossIntro,()=>{paused=false;hudKey='';});}}
  else if(e.t==='cleared'){if(S.phase!=='won')sfx('wave_clear');toast(`전투 ${e.battle+1} 승리 +${e.gold}💰${e.clean?' (무누수 보너스)':''}`);}
  else if(e.t==='prep'){saveGame();showPreview();}
  else if(e.t==='bless')blessingModal();

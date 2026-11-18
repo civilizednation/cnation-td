@@ -30,7 +30,9 @@ Always write every message to the user in Korean (한국어).
 - Basic attacks: ranged `RANGED_INTERVAL` 1.2 / `RANGED_POWER` 0.3, melee `MELEE_INTERVAL` 0.7 / `MELEE_POWER` 0.7 of the base numbers;
   skills, 필살기 and heals are not affected. No melee on the road within `GATE_GAP` (3) tiles of a monster gate (`map.gates`).
 - Waves use half as many monsters with twice the HP and twice the gold each (`buildChapter`, `spawn`).
-- Sound: one Web Audio context (`audioCtx`). Music `<audio>` tracks are routed through gain nodes (volume works on iPhone), crossfade 1 s,
+- Sound: one Web Audio context (`audioCtx`). Music is fetched and decoded into mono 22 kHz AudioBuffers (`bgm.load`, at most 3 kept) and played
+  through gain nodes — <audio>.volume does not work on iPhone. `bgm/*.webm` (Opus) first, `bgm/*.m4a` (AAC copy) when WebM cannot be decoded,
+  an <audio> element only if neither decodes. Crossfade 1 s,
   duck to 40% while a battle is paused or a window is open, victory track at the clear, fade to silence on defeat. Music volume = setting × 0.25.
   Effects: 35 names, each with a recorded file `sfx/<name>.mp3` listed in `SFX_FILES` (final takes chosen by the owner); `SFX_SYNTH` blips are only a
   fallback. Deaths pick by monster body (`DIE_SOUND`); deaths in one frame are batched (`playDeaths`). `docs/SFX.md` has every name, prompt and length.
