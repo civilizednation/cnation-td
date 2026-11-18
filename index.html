@@ -13,8 +13,8 @@
 <meta name="apple-mobile-web-app-title" content="cnation TD">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
-@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=6") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:118%}
-@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=6") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:104%}
+@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=7") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:118%}
+@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=7") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:104%}
 :root{--font-display:"Stylish",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--font-body:"Gowun Dodum",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--bg:#16282d;--panel:#1f373d;--panel2:#284850;--line:#3c636b;--ink:#eef4ea;--dim:#a9c0bb;--gold:#f2cf72;--good:#8fe5b4;--bad:#f08f7c;--accent:#8be1bf}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:#0d1a1e;color:var(--ink);font-family:var(--font-display);overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -80,7 +80,7 @@ html,body{margin:0;height:100%;background:#0d1a1e;color:var(--ink);font-family:v
 .sheet .sub{color:var(--accent);letter-spacing:.25em;font-size:12px}
 .sheet button{display:block;width:100%;margin-top:10px;min-height:46px;border:1px solid var(--line);border-radius:11px;background:var(--panel2);color:var(--ink);font:inherit;font-size:15px;font-weight:400;padding:8px 10px}
 .sheet button.primary{background:var(--gold);border-color:var(--gold);color:#2b2410}
-.sheet button small{display:block;font-family:var(--font-body);font-weight:400;font-size:12.5px;color:var(--dim);margin-top:2px}.sheet button.primary small{color:#5b4c1f}.sheet button:disabled{opacity:.4}.sheet button.dev{border-style:dashed;color:var(--bad);min-height:38px;font-size:13px}.sheet .seg{display:flex;gap:6px}.sheet .seg button{margin-top:0;min-height:40px}.sheet ul.foes{list-style:none;padding:0}.sheet ul.foes li{margin-bottom:8px}.sheet ul.foes b{color:var(--ink);font-family:var(--font-display);font-weight:400}.sheet ul.foes i{font-style:normal;color:var(--accent)}
+.sheet button small{display:block;font-family:var(--font-body);font-weight:400;font-size:12.5px;color:var(--dim);margin-top:2px}.sheet button.primary small{color:#5b4c1f}.sheet button:disabled{opacity:.4}.sheet button.dev{border-style:dashed;color:var(--bad);min-height:38px;font-size:13px}.sheet .seg{display:flex;gap:6px}.sheet .pick{display:flex;align-items:center;gap:6px;margin-top:6px}.sheet .pick span{flex:1;text-align:left;font-size:14px}.sheet .pick button{flex:none;width:auto;min-width:48px;min-height:38px;margin-top:0;padding:4px 10px;font-size:14px}.sheet .seg button{margin-top:0;min-height:40px}.sheet ul.foes{list-style:none;padding:0}.sheet ul.foes li{margin-bottom:8px}.sheet ul.foes b{color:var(--ink);font-family:var(--font-display);font-weight:400}.sheet ul.foes i{font-style:normal;color:var(--accent)}
 .sheet .stars{font-size:34px;color:var(--gold);letter-spacing:6px}
 .sheet .who{color:var(--gold);font-weight:400;font-size:15px}
 .sheet .line{font-size:16px;color:var(--ink);min-height:4.5em}
@@ -129,10 +129,10 @@ html,body{margin:0;height:100%;background:#0d1a1e;color:var(--ink);font-family:v
  <div id="modal" hidden></div>
 </div>
 <script src="vendor/three-r170.js"></script>
-<script src="js/data.js?v=0.4.6"></script>
-<script src="js/sim.js?v=0.4.6"></script>
-<script src="js/models.js?v=0.4.6"></script>
-<script src="js/game.js?v=0.4.6"></script>
+<script src="js/data.js?v=0.4.7"></script>
+<script src="js/sim.js?v=0.4.7"></script>
+<script src="js/models.js?v=0.4.7"></script>
+<script src="js/game.js?v=0.4.7"></script>
 <script>if('serviceWorker' in navigator&&location.protocol!=='file:')window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 </body>
 </html>

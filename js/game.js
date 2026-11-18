@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='0.4.6',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='0.4.7',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -117,8 +117,11 @@ function makePortraits(){const size=160,pr=new THREE.WebGLRenderer({antialias:tr
 // Everything goes through one Web Audio context so volumes also work on iPhone, where <audio>.volume is ignored.
 let ac=null;
 function audioCtx(){if(!ac){try{ac=new (window.AudioContext||window.webkitAudioContext)();}catch(e){ac=null;}}if(ac&&ac.state==='suspended')ac.resume().catch(()=>{});return ac;}
-// Names whose sfx/<name>.mp3 file exists. Add a name here when its file is added; the rest use the synth fallback below.
-const SFX_READY=[];
+// Effect files that exist: name → number of candidates (sfx/<name>_1.mp3 …). The player picks a candidate in 소리 설정
+// (settings.sfxPick) while we compare takes; every other name uses the synth fallback below.
+const SFX_FILES={hit_melee:2,hit_arrow:2,hit_magic:2,monster_die:2};
+const SFX_LABEL={hit_melee:'근접 공격',hit_arrow:'활 공격',hit_magic:'마법 공격',monster_die:'몬스터 처치'};
+const sfxPick=n=>Math.min(SFX_FILES[n],Math.max(1,(settings.sfxPick||{})[n]||1));
 // Fallback blips: [start Hz, end Hz, seconds, gain, wave].
 const SFX_SYNTH={ui_tap:[600,500,.04,.05,'sine'],ui_confirm:[520,780,.12,.08,'triangle'],ui_error:[160,120,.12,.1,'square'],place_unit:[330,520,.12,.12,'sine'],rank_up:[440,880,.22,.12,'triangle'],coin:[880,1320,.08,.04,'sine'],
  hit_melee:[190,90,.05,.05,'triangle'],hit_arrow:[420,260,.05,.035,'triangle'],hit_magic:[700,380,.07,.035,'sine'],monster_die:[300,120,.12,.05,'triangle'],
@@ -128,10 +131,11 @@ const SFX_SYNTH={ui_tap:[600,500,.04,.05,'sine'],ui_confirm:[520,780,.12,.08,'tr
 // Minimum seconds between two plays of the same sound (busy battles would otherwise stack dozens).
 const SFX_GAP={hit_melee:.07,hit_arrow:.07,hit_magic:.07,coin:.05,monster_die:.05,skill_fire:.15,skill_ice:.15,skill_wind:.15,skill_thunder:.15,skill_light:.15,skill_dark:.15};
 const sfxBuf={},sfxLast={};
-function loadSfx(){const c=audioCtx();if(!c)return;for(const n of SFX_READY){if(sfxBuf[n])continue;sfxBuf[n]='loading';
- fetch(`sfx/${n}.mp3?v=${GAME_VERSION}`).then(r=>r.ok?r.arrayBuffer():Promise.reject()).then(b=>new Promise((ok,no)=>c.decodeAudioData(b,ok,no))).then(buf=>{sfxBuf[n]=buf;}).catch(()=>{delete sfxBuf[n];});}}
+// Loads the chosen candidate of every effect file (again after the choice changes).
+function loadSfx(){const c=audioCtx();if(!c)return;for(const n in SFX_FILES){const file=`${n}_${sfxPick(n)}`;if(sfxBuf[n]&&sfxBuf[n].file===file)continue;const slot={file};sfxBuf[n]=slot;
+ fetch(`sfx/${file}.mp3?v=${GAME_VERSION}`).then(r=>r.ok?r.arrayBuffer():Promise.reject()).then(b=>new Promise((ok,no)=>c.decodeAudioData(b,ok,no))).then(buf=>{if(sfxBuf[n]===slot)slot.buf=buf;}).catch(()=>{});}}
 function sfx(kind){if(!settings.sfx)return;const c=audioCtx();if(!c)return;const now=c.currentTime;if(now-(sfxLast[kind]??-9)<(SFX_GAP[kind]??.03))return;sfxLast[kind]=now;
- try{const buf=sfxBuf[kind];if(buf&&buf!=='loading'){const src=c.createBufferSource(),g=c.createGain();src.buffer=buf;g.gain.value=.9;src.connect(g).connect(c.destination);src.start();return;}
+ try{const buf=sfxBuf[kind]?.buf;if(buf){const src=c.createBufferSource(),g=c.createGain();src.buffer=buf;g.gain.value=.9;src.connect(g).connect(c.destination);src.start();return;}
   const P=SFX_SYNTH[kind];if(!P)return;const o=c.createOscillator(),g=c.createGain();o.type=P[4];o.frequency.setValueAtTime(P[0],now);o.frequency.exponentialRampToValueAtTime(P[1],now+P[2]);g.gain.setValueAtTime(Math.min(.5,P[3]*2),now);g.gain.exponentialRampToValueAtTime(.001,now+P[2]);o.connect(g).connect(c.destination);o.start(now);o.stop(now+P[2]+.02);}catch(e){}}
 const BGM_FILES={1:'01. Title Theme',4:'04. Blades of the Young',5:'05. March of the Broken Banner',6:'06. When Kingdoms Fall',7:'07. Awakened Colossus',10:'10. Raise the Banner',12:'12. Where Our Journey Ends'};
 const BGM_FADE=1;   // seconds of crossfade between tracks
@@ -301,7 +305,10 @@ ${sec('🐉 장별 보스',D.CHAPTERS.map(c=>{const b=c.boss;return `<p><b>${c.l
 ${sec('💰 골드와 진행',`<ul><li>처치 골드는 몬스터 체력에 비례합니다. 정예는 4배, 보스는 큰 보너스를 줍니다.</li><li>전투 승리 보너스: 30 + 전투 번호 × 8. 한 마리도 놓치지 않으면 1.5배.</li><li><b>조기 출발</b>: 준비 시간이 남았을 때 「전투 시작」을 누르면 남은 초만큼 골드를 받습니다.</li><li>네로가 마무리하면 골드 +30%. 네로를 적이 많이 지나가는 길목 뒤쪽에 세우세요.</li><li>몇 전투마다 <b>에테르 축복</b> 3개 중 하나를 고릅니다. <b>이번 장에서만</b> 효력이 있고 장이 끝나면 사라집니다: ${D.BLESSINGS.map(b=>`${b.name}(${b.desc})`).join(', ')}.</li><li>장을 클리어하면 <b>아르카의 유산</b> 3개 중 하나를 고릅니다. 유산은 <b>영구 효과</b>로 다음 장부터 계속 쌓입니다(아래 「아르카의 유산」 참고).</li><li>별 평가: 클리어 ★ · 생명 75% 이상 ★★ · 한 마리도 놓치지 않으면 ★★★.</li></ul>`)}
 ${sec('♾ 아르카의 유산 (영구 효과)',`<ul><li>장을 클리어할 때마다 3개 중 하나를 고르고, 그 효과는 <b>이후 모든 장에 계속 적용</b>됩니다. 에테르 축복(이번 장에서만)과 다릅니다.</li><li>장마다 유산 칸이 하나 있어 최대 10개까지 모입니다. 같은 장을 다시 클리어하면 그 장의 유산을 다른 것으로 바꿀 수 있습니다.</li><li>같은 유산을 여러 장에서 고르면 효과가 겹칩니다(유산마다 최대 횟수가 있습니다).</li><li>타이틀의 「아르카의 유산」에서 모은 유산을 볼 수 있습니다.</li></ul><table><tr><th>유산</th><th>효과 · 최대</th></tr>`+D.LEGACIES.map(l=>`<tr><td>${l.icon} ${l.name}</td><td>${l.desc} · 최대 ${l.max}번${l.hero?` <small>(${D.UNITS[l.hero].name} 합류 후)</small>`:''}</td></tr>`).join('')+`</table><p><small>장 난이도는 앞 장들에서 유산을 모아 온 것을 기준으로 맞춰져 있습니다.</small></p>`)}
 ${sec('🎯 배치 공략',`<ul><li><b>굽이 안쪽이 명당</b>: 길이 꺾이는 안쪽 칸은 길 두세 구간을 동시에 사거리에 넣습니다. 리아·세라를 세우세요.</li><li><b>늦추고 → 모으고 → 터뜨린다</b>: 브란이 붙잡아 적이 뭉치면 리아의 범위 마법이 여러 마리를 한꺼번에 맞힙니다.</li><li><b>늪·모래 끝에 근접 캐릭터</b>: 느려진 구간과 붙잡기가 겹치면 적이 머무는 시간이 크게 늘어납니다.</li><li><b>네로는 벽 뒤에</b>: 브란을 지나친 적은 네로에게 등을 보여 암습 피해를 받고, 흘린 적도 마무리합니다.</li><li><b>세라는 길에서 한 칸 떨어진 고지대</b>: 바로 옆 칸을 쏘지 못하니 한 칸 띄우고, 고지대에서 사거리와 피해를 모두 챙기세요.</li><li><b>루나는 전선과 화력 사이</b>: 회복 사거리에 근접 캐릭터, 오라 범위에 화력 캐릭터가 함께 들어오는 칸이 좋습니다.</li><li><b>입구가 두 개인 장</b>(4장·8장): 두 길이 합쳐지는 곳에 화력을 모으면 한 번에 막을 수 있습니다.</li><li>배치나 캐릭터 메뉴를 여는 동안에는 시간이 1/4로 느려집니다. 급할 때는 일시정지(⏸)를 쓰세요.</li></ul>`)}`;}
-function settingsModal(back){const vols=[0,.25,.5,.75,1],m=modal(`<h2>소리 설정</h2><p>배경 음악</p><div class="seg">${vols.map(v=>`<button data-v="${v}" class="${settings.bgm===v?'primary':''}">${v?Math.round(v*100):'끔'}</button>`).join('')}</div><p>효과음</p><div class="seg"><button data-s="1" class="${settings.sfx?'primary':''}">켬</button><button data-s="0" class="${settings.sfx?'':'primary'}">끔</button></div><button class="primary" data-a="back">확인</button>`);
+function settingsModal(back){const vols=[0,.25,.5,.75,1],m=modal(`<h2>소리 설정</h2><p>배경 음악</p><div class="seg">${vols.map(v=>`<button data-v="${v}" class="${settings.bgm===v?'primary':''}">${v?Math.round(v*100):'끔'}</button>`).join('')}</div><p>효과음</p><div class="seg"><button data-s="1" class="${settings.sfx?'primary':''}">켬</button><button data-s="0" class="${settings.sfx?'':'primary'}">끔</button></div>
+ <p class="sub" style="margin-top:14px">효과음 후보 비교 (베타)</p>${Object.keys(SFX_FILES).map(n=>`<div class="pick"><span>${SFX_LABEL[n]||n}</span>${Array.from({length:SFX_FILES[n]},(_,i)=>`<button data-pick="${n}" data-n="${i+1}" class="${sfxPick(n)===i+1?'primary':''}">${i+1}</button>`).join('')}<button data-hear="${n}">▶ 듣기</button></div>`).join('')}<button class="primary" data-a="back">확인</button>`);
+ m.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{settings.sfxPick={...(settings.sfxPick||{}),[b.dataset.pick]:+b.dataset.n};saveJSON(SET_KEY,settings);loadSfx();settingsModal(back);});
+ m.querySelectorAll('[data-hear]').forEach(b=>b.onclick=()=>{loadSfx();const n=b.dataset.hear;sfxLast[n]=-9;sfx(n);});
  m.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{settings.bgm=+b.dataset.v;saveJSON(SET_KEY,settings);bgm.volume();settingsModal(back);});m.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{settings.sfx=b.dataset.s==='1';saveJSON(SET_KEY,settings);sfx('ui_tap');settingsModal(back);});m.querySelector('[data-a=back]').onclick=back;}
 // Save slots: each keeps the state at the start of a battle, like the automatic save.
 const slots=()=>{const a=loadJSON(SLOT_KEY,[]);return Array.from({length:SLOTS},(_,i)=>a[i]||null);};

@@ -32,8 +32,9 @@ Always write every message to the user in Korean (한국어).
 - Waves use half as many monsters with twice the HP and twice the gold each (`buildChapter`, `spawn`).
 - Sound: one Web Audio context (`audioCtx`). Music `<audio>` tracks are routed through gain nodes (volume works on iPhone), crossfade 1 s,
   duck to 40% while a battle is paused or a window is open, victory track at the clear, fade to silence on defeat. Music volume = setting × 0.25.
-  Effects are named (`SFX_SYNTH`); a name listed in `SFX_READY` plays `sfx/<name>.mp3`, others use the synth blip. `docs/SFX.md` lists all 28
-  names with Suno prompts — when the owner sends the files, trim/normalise them with ffmpeg into mono mp3 and add the names to `SFX_READY`. Developer mode applies `D.typicalLegacy(chapter)` instead of the player's legacies.
+  Effects are named (`SFX_SYNTH`); `SFX_FILES` maps a name to its number of candidate files `sfx/<name>_<n>.mp3` (picked in 소리 설정,
+  `settings.sfxPick`); other names use the synth blip. `docs/SFX.md` lists all 28 names with Suno prompts. When the owner sends files, cut each one
+  from just before its first clear sound to the target length (0.45–0.6 s for hits), fade the tail, level RMS (−17…−19 dBFS, peak ≤ −1 dBFS), save mono 96k mp3. Developer mode applies `D.typicalLegacy(chapter)` instead of the player's legacies.
 - `bgm/` and `fonts/` come from cnation TACTICS. After adding or changing in-game text run `python3 tools/subset-fonts.py`
   and bump the `?v=` on the font URLs in index.html, or new characters fall back to the system font.
 - Saves: auto save `cnation-td-save-v2` (taken at each battle start), slots `cnation-td-slots-v1` (3), clears `cnation-td-clear-v1`,
