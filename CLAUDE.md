@@ -33,7 +33,7 @@ Always write every message to the user in Korean (한국어).
 - Sound: one Web Audio context (`audioCtx`). Music is fetched and decoded into mono 22 kHz AudioBuffers (`bgm.load`, at most 3 kept) and played
   through gain nodes — <audio>.volume does not work on iPhone. `bgm/*.webm` (Opus) first, `bgm/*.m4a` (AAC copy) when WebM cannot be decoded,
   an <audio> element only if neither decodes. Crossfade 1 s,
-  duck to 40% while a battle is paused or a window is open, victory track at the clear, fade to silence on defeat. Music volume = setting × 0.25.
+  duck to 40% while a battle is paused or a window is open, victory track at the clear, fade to silence on defeat. Music gain = setting × `BGM_SCALE` (0.6); effects × `settings.sfxVol` (0–1, default 1).
   Effects: 35 names, each with a recorded file `sfx/<name>.mp3` listed in `SFX_FILES` (final takes chosen by the owner); `SFX_SYNTH` blips are only a
   fallback. Deaths pick by monster body (`DIE_SOUND`); deaths in one frame are batched (`playDeaths`). `docs/SFX.md` has every name, prompt and length.
   To replace a sound: cut from just before its first clear sound to the target length, fade the tail, level RMS (−16…−20 dBFS, peak ≤ −1 dBFS),

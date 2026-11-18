@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='0.4.16',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='0.4.17',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -14,7 +14,8 @@ let shakeT=0,spacedTiles=[],ultSeen=new Set(),S=null,speed=1,paused=false,selCar
 let vw=1,vh=1,pxU=40,tz=.25,dpr=1;
 const objs=new Map(),dying=[],fx=[],warns=new Map();
 const loadJSON=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k)||'null');return v??d;}catch(e){return d;}},saveJSON=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
-const settings=Object.assign({bgm:.5,sfx:true},loadJSON(SET_KEY,{}));
+const settings=Object.assign({bgm:.5,sfxVol:1},loadJSON(SET_KEY,{}));
+if('sfx' in settings){if(!('sfxVol' in loadJSON(SET_KEY,{})))settings.sfxVol=settings.sfx===false?0:1;delete settings.sfx;saveJSON(SET_KEY,settings);}   // was an on/off switch
 if('sfxPick' in settings||'sfxPickReset' in settings){delete settings.sfxPick;delete settings.sfxPickReset;saveJSON(SET_KEY,settings);}   // left over from the beta candidate picker
 
 // ── Renderer ──
@@ -137,7 +138,7 @@ const sfxBuf={},sfxLast={};
 function loadSfx(){const c=audioCtx();if(!c)return;for(const n of SFX_FILES){if(sfxBuf[n])continue;const slot={};sfxBuf[n]=slot;
  fetch(`sfx/${n}.mp3?v=${GAME_VERSION}`).then(r=>r.ok?r.arrayBuffer():Promise.reject()).then(b=>new Promise((ok,no)=>c.decodeAudioData(b,ok,no))).then(buf=>{slot.buf=buf;}).catch(()=>{delete sfxBuf[n];});}}
 // opt: {gain: volume multiplier, delay: seconds from now, force: ignore the repeat gap}. Hits and deaths vary their pitch slightly.
-function sfx(kind,opt={}){if(!settings.sfx)return;const c=audioCtx();if(!c)return;const now=c.currentTime,at=now+(opt.delay||0),vol=opt.gain||1,rate=/^(hit_|die_|monster_die)/.test(kind)?.94+Math.random()*.12:1;if(!opt.force&&now-(sfxLast[kind]??-9)<(SFX_GAP[kind]??.03))return;sfxLast[kind]=now;
+function sfx(kind,opt={}){if(!(settings.sfxVol>0))return;const c=audioCtx();if(!c)return;const now=c.currentTime,at=now+(opt.delay||0),vol=(opt.gain||1)*settings.sfxVol,rate=/^(hit_|die_|monster_die)/.test(kind)?.94+Math.random()*.12:1;if(!opt.force&&now-(sfxLast[kind]??-9)<(SFX_GAP[kind]??.03))return;sfxLast[kind]=now;
  try{const buf=sfxBuf[kind]?.buf;if(buf){const src=c.createBufferSource(),g=c.createGain();src.buffer=buf;src.playbackRate.value=rate;g.gain.value=.9*vol;src.connect(g).connect(c.destination);src.start(at);return;}
   const P=SFX_SYNTH[kind];if(!P)return;const o=c.createOscillator(),g=c.createGain();o.type=P[4];o.frequency.setValueAtTime(P[0]*rate,at);o.frequency.exponentialRampToValueAtTime(P[1]*rate,at+P[2]);g.gain.setValueAtTime(Math.min(.6,P[3]*2*vol),at);g.gain.exponentialRampToValueAtTime(.001,at+P[2]);o.connect(g).connect(c.destination);o.start(at);o.stop(at+P[2]+.02);}catch(e){}}
 const BGM_FILES={1:'01. Title Theme',4:'04. Blades of the Young',5:'05. March of the Broken Banner',6:'06. When Kingdoms Fall',7:'07. Awakened Colossus',10:'10. Raise the Banner',12:'12. Where Our Journey Ends'};
@@ -146,7 +147,7 @@ const BGM_FADE=1;   // seconds of crossfade between tracks
 // iPhone Safari ignores <audio>.volume and does not always route <audio> through Web Audio. Tracks are kept as mono 22 kHz buffers
 // (about 5 MB a minute), at most BGM_KEEP at once. WebM/Opus is tried first, then the AAC copy (.m4a). If neither decodes, that track
 // falls back to an <audio> element routed through a gain node.
-const BGM_RATE=22050,BGM_KEEP=3;
+const BGM_RATE=22050,BGM_KEEP=3,BGM_SCALE=.6;   // music gain = setting × BGM_SCALE; at 50 the music sits ~7 dB under the effects
 const bgm={buf:new Map(),loading:{},cur:null,want:null,unlocked:false,duck:1,node:null,pos:{},token:0,
  url(id,ext){return `bgm/${encodeURIComponent(BGM_FILES[id])}_64k.${ext}`;},
  decode(ab){return new Promise((ok,no)=>{let oc;try{oc=new (window.OfflineAudioContext||window.webkitOfflineAudioContext)(1,1,BGM_RATE);}catch(e){no(e);return;}
@@ -158,7 +159,7 @@ const bgm={buf:new Map(),loading:{},cur:null,want:null,unlocked:false,duck:1,nod
   return this.loading[id]=get('webm').catch(()=>get('m4a')).then(b=>this.mono(b),()=>null).then(b=>{delete this.loading[id];this.buf.set(id,b);this.trim(id);return b;});},
  trim(keep){for(const k of [...this.buf.keys()]){if(this.buf.size<=BGM_KEEP)break;if(k!==keep&&k!==this.cur&&this.buf.get(k))this.buf.delete(k);}},
  preload(id){if(this.unlocked&&BGM_FILES[id])this.load(id);},
- level(){return settings.bgm*.25*this.duck;},
+ level(){return settings.bgm*BGM_SCALE*this.duck;},
  ramp(n,v,t){if(!n||!ac)return;const g=n.g.gain,now=ac.currentTime;g.cancelScheduledValues(now);g.setValueAtTime(g.value,now);if(t>0)g.linearRampToValueAtTime(v,now+t);else g.setValueAtTime(v,now);if(n.raw)n.el.volume=Math.max(0,Math.min(1,v*4));},
  // Starts a decoded track (or the <audio> fallback) at zero volume and fades it in.
  start(id,b,loop){const c=audioCtx();if(!c)return;const g=c.createGain();g.gain.value=0;g.connect(c.destination);const n={id,g,loop};
@@ -327,8 +328,8 @@ ${sec('🐉 장별 보스',D.CHAPTERS.map(c=>{const b=c.boss;return `<p><b>${c.l
 ${sec('💰 골드와 진행',`<ul><li>처치 골드는 몬스터 체력에 비례합니다. 정예는 4배, 보스는 큰 보너스를 줍니다.</li><li>전투 승리 보너스: 30 + 전투 번호 × 8. 한 마리도 놓치지 않으면 1.5배.</li><li><b>조기 출발</b>: 준비 시간이 남았을 때 「전투 시작」을 누르면 남은 초만큼 골드를 받습니다.</li><li>네로가 마무리하면 골드 +30%. 네로를 적이 많이 지나가는 길목 뒤쪽에 세우세요.</li><li>몇 전투마다 <b>에테르 축복</b> 3개 중 하나를 고릅니다. <b>이번 장에서만</b> 효력이 있고 장이 끝나면 사라집니다: ${D.BLESSINGS.map(b=>`${b.name}(${b.desc})`).join(', ')}.</li><li>장을 클리어하면 <b>아르카의 유산</b> 3개 중 하나를 고릅니다. 유산은 <b>영구 효과</b>로 다음 장부터 계속 쌓입니다(아래 「아르카의 유산」 참고).</li><li>별 평가: 클리어 ★ · 생명 75% 이상 ★★ · 한 마리도 놓치지 않으면 ★★★.</li></ul>`)}
 ${sec('♾ 아르카의 유산 (영구 효과)',`<ul><li>장을 클리어할 때마다 3개 중 하나를 고르고, 그 효과는 <b>이후 모든 장에 계속 적용</b>됩니다. 에테르 축복(이번 장에서만)과 다릅니다.</li><li>장마다 유산 칸이 하나 있어 최대 10개까지 모입니다. 같은 장을 다시 클리어하면 그 장의 유산을 다른 것으로 바꿀 수 있습니다.</li><li>같은 유산을 여러 장에서 고르면 효과가 겹칩니다(유산마다 최대 횟수가 있습니다).</li><li>타이틀의 「아르카의 유산」에서 모은 유산을 볼 수 있습니다.</li></ul><table><tr><th>유산</th><th>효과 · 최대</th></tr>`+D.LEGACIES.map(l=>`<tr><td>${l.icon} ${l.name}</td><td>${l.desc} · 최대 ${l.max}번${l.hero?` <small>(${D.UNITS[l.hero].name} 합류 후)</small>`:''}</td></tr>`).join('')+`</table><p><small>장 난이도는 앞 장들에서 유산을 모아 온 것을 기준으로 맞춰져 있습니다.</small></p>`)}
 ${sec('🎯 배치 공략',`<ul><li><b>굽이 안쪽이 명당</b>: 길이 꺾이는 안쪽 칸은 길 두세 구간을 동시에 사거리에 넣습니다. 리아·세라를 세우세요.</li><li><b>늦추고 → 모으고 → 터뜨린다</b>: 브란이 붙잡아 적이 뭉치면 리아의 범위 마법이 여러 마리를 한꺼번에 맞힙니다.</li><li><b>늪·모래 끝에 근접 캐릭터</b>: 느려진 구간과 붙잡기가 겹치면 적이 머무는 시간이 크게 늘어납니다.</li><li><b>네로는 벽 뒤에</b>: 브란을 지나친 적은 네로에게 등을 보여 암습 피해를 받고, 흘린 적도 마무리합니다.</li><li><b>세라는 길에서 한 칸 떨어진 고지대</b>: 바로 옆 칸을 쏘지 못하니 한 칸 띄우고, 고지대에서 사거리와 피해를 모두 챙기세요.</li><li><b>루나는 전선과 화력 사이</b>: 회복 사거리에 근접 캐릭터, 오라 범위에 화력 캐릭터가 함께 들어오는 칸이 좋습니다.</li><li><b>입구가 두 개인 장</b>(4장·8장): 두 길이 합쳐지는 곳에 화력을 모으면 한 번에 막을 수 있습니다.</li><li>배치나 캐릭터 메뉴를 여는 동안에는 시간이 1/4로 느려집니다. 급할 때는 일시정지(⏸)를 쓰세요.</li></ul>`)}`;}
-function settingsModal(back){const vols=[0,.25,.5,.75,1],m=modal(`<h2>소리 설정</h2><p>배경 음악</p><div class="seg">${vols.map(v=>`<button data-v="${v}" class="${settings.bgm===v?'primary':''}">${v?Math.round(v*100):'끔'}</button>`).join('')}</div><p>효과음</p><div class="seg"><button data-s="1" class="${settings.sfx?'primary':''}">켬</button><button data-s="0" class="${settings.sfx?'':'primary'}">끔</button></div><button class="primary" data-a="back">확인</button>`);
- m.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{settings.bgm=+b.dataset.v;saveJSON(SET_KEY,settings);bgm.volume();settingsModal(back);});m.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{settings.sfx=b.dataset.s==='1';saveJSON(SET_KEY,settings);sfx('ui_tap');settingsModal(back);});m.querySelector('[data-a=back]').onclick=back;}
+function settingsModal(back){const vols=[0,.25,.5,.75,1],m=modal(`<h2>소리 설정</h2><p>배경 음악</p><div class="seg">${vols.map(v=>`<button data-v="${v}" class="${settings.bgm===v?'primary':''}">${v?Math.round(v*100):'끔'}</button>`).join('')}</div><p>효과음</p><div class="seg">${vols.map(v=>`<button data-e="${v}" class="${settings.sfxVol===v?'primary':''}">${v?Math.round(v*100):'끔'}</button>`).join('')}</div><button class="primary" data-a="back">확인</button>`);
+ m.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{settings.bgm=+b.dataset.v;saveJSON(SET_KEY,settings);bgm.volume();settingsModal(back);});m.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{settings.sfxVol=+b.dataset.e;saveJSON(SET_KEY,settings);sfx('ui_confirm');settingsModal(back);});m.querySelector('[data-a=back]').onclick=back;}
 // Save slots: each keeps the state at the start of a battle, like the automatic save.
 const slots=()=>{const a=loadJSON(SLOT_KEY,[]);return Array.from({length:SLOTS},(_,i)=>a[i]||null);};
 const slotLabel=s=>{const c=D.CHAPTERS[s.snap.chapter];return `${c.label} · 전투 ${s.snap.battle+1}/${c.battles.length}<small>${new Date(s.time).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})} · 생명 ${s.snap.life} · 골드 ${s.snap.gold} · 동료 ${s.snap.units.length}명</small>`;};
