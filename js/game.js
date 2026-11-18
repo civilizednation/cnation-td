@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='0.4.10',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='0.4.11',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -121,7 +121,7 @@ let ac=null;
 function audioCtx(){if(!ac){try{ac=new (window.AudioContext||window.webkitAudioContext)();}catch(e){ac=null;}}if(ac&&ac.state==='suspended')ac.resume().catch(()=>{});return ac;}
 // Effect files that exist: name → number of candidates (sfx/<name>_1.mp3 …). The player picks a candidate in 소리 설정
 // (settings.sfxPick) while we compare takes; every other name uses the synth fallback below.
-const SFX_FILES={hit_melee:2,hit_arrow:2,hit_magic:2,monster_die:2,die_slime:2,die_beast:2,die_soldier:2};
+const SFX_FILES={hit_melee:2,hit_arrow:2,hit_magic:2,monster_die:2,die_slime:2,die_beast:2,die_soldier:2,die_spirit:2,die_stone:2,die_boss:2};
 const SFX_LABEL={hit_melee:'근접 공격',hit_arrow:'활 공격',hit_magic:'마법 공격',hit_holy:'빛 공격(사제)',monster_die:'몬스터 처치(기본)',die_slime:'슬라임 처치',die_beast:'짐승 처치',die_soldier:'병사 처치',die_spirit:'유령·정령 처치',die_stone:'골렘·나무 처치',die_boss:'보스 처치'};
 const sfxPick=n=>Math.min(SFX_FILES[n],Math.max(1,(settings.sfxPick||{})[n]||1));
 // Fallback blips: [start Hz, end Hz, seconds, gain, wave].
