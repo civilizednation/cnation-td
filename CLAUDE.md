@@ -25,7 +25,11 @@ Always write every message to the user in Korean (한국어).
 - Melee characters do not stop monsters: a monster inside a melee unit's tile (up to `block` at once) moves at `ENGAGE_SLOW` (1/3) and hits it.
 - `bgm/` and `fonts/` come from cnation TACTICS. After adding or changing in-game text run `python3 tools/subset-fonts.py`
   and bump the `?v=` on the font URLs in index.html, or new characters fall back to the system font.
-- Saves: auto save `cnation-td-save-v2` (taken at each battle start), slots `cnation-td-slots-v1` (3), clears `cnation-td-clear-v1`.
+- Saves: auto save `cnation-td-save-v2` (taken at each battle start), slots `cnation-td-slots-v1` (3), clears `cnation-td-clear-v1`,
+  Arca legacies `cnation-td-legacy-v1` = {picks:{chapterIndex: legacyId}}.
+- Two bonus kinds, keep them visibly apart: **에테르 축복** (`BLESSINGS`, chosen mid-chapter, this chapter only) and
+  **아르카의 유산** (`LEGACIES`, one slot per chapter picked after a clear, permanent and stacking; passed to `createSim` as `legacy` counts).
+  The bot (`legacyFor`) plays each chapter with the legacies an ordinary player would hold, and `diff` is calibrated with them.
 - Developer mode (title screen, beta only; to be removed at release): start any chapter, instant win and +500 gold from the in-game menu.
 
 ## Checking a change

@@ -37,9 +37,12 @@ const TERRAIN_NAME={grass:'평지',road:'길',high:'고지대',forest:'수풀',w
 
 function createSim(opts){
  const chapter=D.CHAPTERS[opts.chapter||0],map=buildMap(chapter.map),snap=opts.snapshot||null;
- const S={chapter,chapterIndex:opts.chapter||0,map,time:0,phase:'prep',prep:0,battle:snap?snap.battle:0,gold:snap?snap.gold:chapter.startGold,life:snap?snap.life:chapter.life,maxLife:snap?snap.maxLife:chapter.life,
+ // Arca legacies: permanent bonuses earned by clearing chapters ({id: times taken}).
+ const legacy=opts.legacy||{},L=k=>legacy[k]||0,freshLife=chapter.life+3*L('life');
+ const S={chapter,chapterIndex:opts.chapter||0,map,time:0,phase:'prep',prep:0,battle:snap?snap.battle:0,gold:snap?snap.gold:chapter.startGold+60*L('startGold'),life:snap?snap.life:freshLife,maxLife:snap?snap.maxLife:freshLife,legacy,command:chapter.command+L('command'),
   units:[],enemies:[],queue:[],events:[],mods:{burn:0,soldierCost:0,heroBlock:0,bounty:0,haste:0,range:0,cdr:0,rankCost:0,armor:0,grip:0},blessings:snap?snap.blessings.slice():[],offer:null,fortress:0,
   hero:{},nextId:1,leaks:0,leaksTotal:snap?snap.leaksTotal:0,kills:snap?snap.kills||0:0,rand:seeded((opts.seed??20261117)+(snap?snap.battle*7919:0)),acc:0,stats:{dealt:{},healed:0}};
+ S.mods.rankCost+=.08*L('rankDisc');S.mods.bounty+=.1*L('bounty');
  for(const id of S.blessings){const b=D.BLESSINGS.find(v=>v.id===id);if(b?.mod)for(const k in b.mod)S.mods[k]+=b.mod[k];}
  for(const id of chapter.roster)if(D.UNITS[id].kind==='hero')S.hero[id]={cd:0,keep:null};
  const emit=e=>{S.events.push(e);};
@@ -53,7 +56,8 @@ function createSim(opts){
   for(let i=0;i<rank;i++){const e=def.ranks[i];if(!e)continue;take(e);if(e.choice&&choice&&e.choice[choice])take(e.choice[choice]);}
   return k;}
  function refresh(u){const def=defOf(u),m=1+D.RANK_STAT*(u.rank-1),g=1+D.RANK_GUARD*(u.rank-1),kit=kitOf(def,u.rank,u.choice),t=map.tile(u.c,u.r),oldMax=u.maxHp||0;
-  u.maxHp=Math.round(def.hp*m);u.hp=oldMax?Math.min(u.maxHp,u.hp+(u.maxHp-oldMax)):u.maxHp;u.atk=def.atk*m;u.mag=def.mag*m;u.arm=def.def*g;u.res=def.res*g;
+  const hero=def.kind==='hero',own=hero?.15*L('hero_'+u.def):0,pw=1+(hero?.08*L('heroPower'):.12*L('soldierPower'))+own,hpm=1+(hero?.12*L('heroHp'):.12*L('soldierPower'))+own;
+  u.maxHp=Math.round(def.hp*m*hpm);u.hp=oldMax?Math.min(u.maxHp,u.hp+(u.maxHp-oldMax)):u.maxHp;u.atk=def.atk*m*pw;u.mag=def.mag*m*pw;u.arm=def.def*g;u.res=def.res*g;
   u.interval=(1.6-def.spd*.03)/(1+S.mods.haste+kit.haste);u.block=t.road?kit.block+(def.kind==='hero'&&def.melee?S.mods.heroBlock:0):0;u.splash=kit.splash;u.auras=kit.auras;u.ult=kit.ult;u.eva=kit.eva;u.counter=kit.counter;
   u.onHigh=t.terrain==='high';u.range=def.range+(def.melee?0:(u.onHigh?.5:0)-(t.terrain==='forest'?.5:0)+S.mods.range);
   const old=u.skills||[];u.skills=kit.list.map(id=>old.find(s=>s.id===id)||{id,cd:1.5});}
@@ -68,19 +72,19 @@ function createSim(opts){
   if(t.terrain==='high'&&d.melee)return '고지대에는 원거리 캐릭터만 설 수 있습니다';
   if(t.road)for(const p in t.pd){const first=map.paths[p].wp[0],inside=first[0]>=0&&first[1]>=0&&first[0]<W&&first[1]<H;if(t.pd[p]<(inside?1:2)||t.pd[p]>map.paths[p].total-1)return '적 출현 문과 수정 바로 앞은 비워 둬야 합니다';}
   if(d.kind==='hero'){if(S.units.some(u=>u.def===def))return `${d.name}은(는) 이미 전장에 있습니다`;if(S.hero[def].cd>0)return `${d.name} 재배치 대기 중`;}
-  if(S.units.length>=chapter.command)return `지휘력 한도(${chapter.command}명)입니다`;
+  if(S.units.length>=S.command)return `지휘력 한도(${S.command}명)입니다`;
   if(S.gold<deployCost(def))return '골드가 부족합니다';
   return null;}
  function makeUnit(def,c,r,keep,cost){const u={id:S.nextId++,def,c,r,x:c,y:r,rank:keep?keep.rank:1,choice:keep?keep.choice:null,invested:keep?keep.invested:cost,cd:.4,ultCd:keep?12:0,engaged:[],hp:0,maxHp:0,buff:1,defBuff:1,hasteBuff:1,st:{},taunt:0,calm:0,face:{dx:0,dy:1}};refresh(u);u.hp=u.maxHp;S.units.push(u);return u;}
- function deploy(def,c,r){const err=canDeploy(def,c,r);if(err)return err;const keep=S.hero[def]?.keep,cost=deployCost(def);S.gold-=cost;const u=makeUnit(def,c,r,keep,cost);if(S.hero[def])S.hero[def].keep=null;emit({t:'deploy',id:u.id});return null;}
+ function deploy(def,c,r){const err=canDeploy(def,c,r);if(err)return err;const keep=S.hero[def]?.keep,cost=deployCost(def);S.gold-=cost;const u=makeUnit(def,c,r,keep,cost);if(!keep&&S.hero[def]&&L('starter')&&u.rank<2){u.rank=2;refresh(u);u.hp=u.maxHp;}if(S.hero[def])S.hero[def].keep=null;emit({t:'deploy',id:u.id});return null;}
  const needsChoice=u=>{const k=defOf(u).ranks[u.rank];return !!(k&&k.choice);};
  function rankUp(id,choice){const u=S.units.find(v=>v.id===id);if(!u)return '없는 캐릭터입니다';const cost=rankCost(u);if(cost==null)return '최대 랭크입니다';if(S.gold<cost)return '골드가 부족합니다';
   if(needsChoice(u)){if(!defOf(u).ranks[u.rank].choice[choice])return '각인을 선택하세요';u.choice=choice;}
   S.gold-=cost;u.invested+=cost;u.rank++;refresh(u);if(u.ult&&u.rank===defOf(u).maxRank)u.ultCd=8;emit({t:'rank',id:u.id});return null;}
  function release(u){for(const e of S.enemies)if(e.engagedBy===u.id)e.engagedBy=null;u.engaged.length=0;}
  function withdraw(id){const i=S.units.findIndex(v=>v.id===id);if(i<0)return '없는 캐릭터입니다';const u=S.units[i],back=Math.round(u.invested*D.REFUND);S.gold+=back;release(u);S.units.splice(i,1);
-  if(S.hero[u.def]){S.hero[u.def].cd=defOf(u).cooldown||D.WITHDRAW_CD;S.hero[u.def].keep=null;}emit({t:'withdraw',id:u.id,gold:back});return null;}
- function down(u){release(u);S.units.splice(S.units.indexOf(u),1);u.gone=true;if(S.hero[u.def]){S.hero[u.def].cd=defOf(u).cooldown?15:D.DOWN_CD;S.hero[u.def].keep={rank:u.rank,choice:u.choice,invested:u.invested};}emit({t:'down',id:u.id,def:u.def,x:u.x,y:u.y,cd:S.hero[u.def]?.cd});}
+  if(S.hero[u.def]){S.hero[u.def].cd=(defOf(u).cooldown||D.WITHDRAW_CD)*(1-.25*L('redeploy'));S.hero[u.def].keep=null;}emit({t:'withdraw',id:u.id,gold:back});return null;}
+ function down(u){release(u);S.units.splice(S.units.indexOf(u),1);u.gone=true;if(S.hero[u.def]){S.hero[u.def].cd=Math.round((defOf(u).cooldown?15:D.DOWN_CD)*(1-.25*L('redeploy')));S.hero[u.def].keep={rank:u.rank,choice:u.choice,invested:u.invested};}emit({t:'down',id:u.id,def:u.def,x:u.x,y:u.y,cd:S.hero[u.def]?.cd});}
  function allyStatus(u,status){if(S.fortress>0||u.gone)return;u.st[status]={burn:3,poison:5,freeze:2.5,stun:1.5,silence:5}[status]||3;emit({t:'ustatus',unit:u.id,status,x:u.x,y:u.y});}
  // Damage to a character. src = attacking monster (for counters).
  function hurt(u,raw,magic,src,melee){if(u.gone)return;if(u.eva&&S.rand()<u.eva){emit({t:'dodge',x:u.x,y:u.y});return;}
@@ -121,7 +125,7 @@ function createSim(opts){
  function hit(src,e,o){if(e.dead)return 0;const magic=o.type==='magic',sd=defOf(src);
   if(!magic&&!o.skill&&e.eva&&S.rand()<e.eva){emit({t:'dmg',id:e.id,x:e.x,y:e.y,v:0,tag:'miss'});return 0;}
   const A=(magic?src.mag:src.atk)*(src.buff||1),Dv=(magic?e.res:e.def)*(1-(o.ignore||0)),raw=A*(o.power||1);let dmg=Math.max(raw-Dv*.5,raw*.2),tag=null;
-  const aff=affinity(o.element,e.element);dmg*=aff;if(aff>1)tag='weak';else if(aff<1)tag='resist';
+  const aff=affinity(o.element,e.element);dmg*=aff>1?aff+.1*L('affinity'):aff;if(aff>1)tag='weak';else if(aff<1)tag='resist';
   if(e.immunity==='physical'&&!magic){dmg*=o.element?.6:.35;tag='resist';}else if(e.immunity==='magic'&&magic){dmg*=e.boss?.5:.35;tag='resist';}
   if(e.st.defdown&&!magic)dmg*=1.25;if(e.shielded)dmg*=1-e.shielded;
   if(sd.highDmg&&src.onHigh)dmg*=1+sd.highDmg;
@@ -156,7 +160,7 @@ function createSim(opts){
    if(burning&&s.element==='wind'){let spread=0;for(const n of S.enemies)if(!n.dead&&n!==e&&!n.st.burn&&dist(n,e)<=1.3){addStatus(n,'burn');spread++;}if(spread)emit({t:'combo',x:e.x,y:e.y,name:'확산'});}}
   if(!s.self)u.face={dx:centre.x-u.x,dy:centre.y-u.y};return done();}
  function ult(id,x,y){const u=S.units.find(v=>v.id===id);if(!u||!u.ult)return '궁극기가 없습니다';if(u.ultCd>0)return '아직 준비되지 않았습니다';if(S.phase!=='battle')return '전투 중에만 쓸 수 있습니다';if(u.st.freeze||u.st.stun||u.st.silence)return '지금은 쓸 수 없는 상태입니다';
-  const s=D.SKILLS[u.ult];if(s.aim&&(x==null||y==null))return '위치를 지정하세요';const holder={id:u.ult,cd:0};if(!tryCast(u,holder,s.aim?{x,y}:null,true))return '사거리 안에 적이 없습니다';u.ultCd=holder.cd;emit({t:'ult',unit:u.id,name:s.name});return null;}
+  const s=D.SKILLS[u.ult];if(s.aim&&(x==null||y==null))return '위치를 지정하세요';const holder={id:u.ult,cd:0};if(!tryCast(u,holder,s.aim?{x,y}:null,true))return '사거리 안에 적이 없습니다';u.ultCd=holder.cd*(1-.15*L('ultCdr'));emit({t:'ult',unit:u.id,name:s.name});return null;}
 
  // ── Battle flow ──
  function loadBattle(){const b=chapter.battles[S.battle];S.queue=[];for(const [kind,count,gap,delay,flags,path] of b.waves)for(let i=0;i<count;i++)S.queue.push({t:delay+i*gap,kind,flags:flags||null,path:path||0});S.queue.sort((a,b2)=>a.t-b2.t);S.battleTime=0;S.leaks=0;S.fortress=0;}
@@ -168,7 +172,7 @@ function createSim(opts){
  function finishBattle(){const n=S.battle+1,clean=S.leaks===0,bonus=Math.round((30+n*8)*(clean?1.5:1));S.gold+=bonus;S.leaksTotal+=S.leaks;emit({t:'cleared',battle:S.battle,gold:bonus,clean});
   if(n>=chapter.battles.length){S.phase='won';emit({t:'won'});return;}
   S.battle=n;
-  if(chapter.bless.includes(n)){const pool=D.BLESSINGS.filter(b=>!S.blessings.includes(b.id)),pick=[];while(pick.length<3&&pool.length)pick.push(pool.splice(Math.floor(S.rand()*pool.length),1)[0].id);S.offer=pick;S.phase='bless';emit({t:'bless',offer:pick});}
+  if(chapter.bless.includes(n)){const pool=D.BLESSINGS.filter(b=>!S.blessings.includes(b.id)),pick=[];while(pick.length<3+L('blessChoices')&&pool.length)pick.push(pool.splice(Math.floor(S.rand()*pool.length),1)[0].id);S.offer=pick;S.phase='bless';emit({t:'bless',offer:pick});}
   else enterPrep();}
  function chooseBlessing(id){if(S.phase!=='bless'||!S.offer.includes(id))return '선택할 수 없습니다';const b=D.BLESSINGS.find(v=>v.id===id);S.blessings.push(id);if(b.mod)for(const k in b.mod)S.mods[k]+=b.mod[k];if(b.life){S.life+=b.life;S.maxLife+=b.life;}if(b.gold)S.gold+=b.gold;
   for(const u of S.units)refresh(u);S.offer=null;enterPrep();return null;}

@@ -15,15 +15,19 @@ function bestTile(S,def){const d=D.UNITS[def],map=S.map,roads=map.tiles.filter(t
    for(const u of S.units)if(D.UNITS[u.def].melee&&Math.hypot(u.x-t.c,u.y-t.r)<=range)score+=1.5;}
   if(!best||score>best.score)best={t,score};}
  return best&&best.t;}
+// Legacies an ordinary player would hold on reaching `chapter`: one per earlier chapter, taking the first of each offer
+// in this order of preference (a plain, not optimal, choice).
+const LEGACY_PREF=['heroPower','command','heroHp','startGold','soldierPower','life','rankDisc','hero_kyle','hero_ria','bounty','affinity','ultCdr','redeploy','starter','blessChoices'];
+function legacyFor(chapter,seed){const rand=D.seeded(seed*31+7),picks={};for(let c=0;c<chapter;c++){const offer=D.legacyOffer(D.legacyCounts(picks),c,rand);picks[c]=offer.slice().sort((a,b)=>{const ia=LEGACY_PREF.indexOf(a),ib=LEGACY_PREF.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib);})[0];}return D.legacyCounts(picks);}
 function play(chapter,seed,verbose,noBoss){
- const S=createSim({chapter,seed}),plan=ORDER.filter(id=>S.chapter.roster.includes(id)),log=[];let ults=0,last=-1,guard=0,think=0;
+ const legacy=process.env.NO_LEGACY?{}:legacyFor(chapter,seed),S=createSim({chapter,seed,legacy}),plan=ORDER.filter(id=>S.chapter.roster.includes(id)),log=[];let ults=0,last=-1,guard=0,think=0;
  const spend=()=>{
   for(const id in S.hero){const h=S.hero[id];if(h.keep&&h.cd<=0&&h.home&&!S.canDeploy(id,h.home[0],h.home[1]))S.deploy(id,h.home[0],h.home[1]);}
   // Each time it can afford something it takes the better deal: one more character, or a rank for one already out.
   for(let n=0;n<10;n++){
    while(plan.length&&D.UNITS[plan[0]].kind==='hero'&&(S.units.some(u=>u.def===plan[0])||S.hero[plan[0]].cd>0||S.hero[plan[0]].keep))plan.shift();
-   if(!plan.length&&S.units.length<S.chapter.command)plan.push(['hunter','militia','apprentice'][S.units.length%3]);
-   const place=plan.length&&S.units.length<S.chapter.command?{cost:S.deployCost(plan[0])*(1+S.units.length*.1)}:null;
+   if(!plan.length&&S.units.length<S.command)plan.push(['hunter','militia','apprentice'][S.units.length%3]);
+   const place=plan.length&&S.units.length<S.command?{cost:S.deployCost(plan[0])*(1+S.units.length*.1)}:null;
    const up=S.units.map(u=>({u,cost:S.rankCost(u)})).filter(v=>v.cost!=null).map(v=>({...v,w:v.cost*(S.defOf(v.u).kind==='hero'?1:1.6)})).sort((a,b)=>a.w-b.w)[0];
    if(place&&(!up||place.cost<=up.w)){if(S.gold<S.deployCost(plan[0]))return;const t=bestTile(S,plan[0]);if(t)S.deploy(plan[0],t.c,t.r);plan.shift();}
    else if(up){if(S.gold<up.cost)return;if(S.rankUp(up.u.id,S.needsChoice(up.u)?CHOICE[up.u.def]:undefined))return;}
@@ -43,7 +47,7 @@ function play(chapter,seed,verbose,noBoss){
   S.tick(1/30);
   for(const e of S.drain()){if(e.t==='leak')(log.leaks=log.leaks||[]).push(`${S.battle+1}:${e.name}`);if(e.t==='down')(log.downs=log.downs||[]).push(`${S.battle+1}:${e.def}`);if(e.t==='cleared'){const l=log[log.length-1];l.leaks=S.leaks;l.time=Math.round(S.battleTime);}}
  }
- if(verbose){for(const l of log)console.log(`  전투 ${String(l.b).padStart(2)}  골드 ${String(l.gold0).padStart(4)}  생명 ${String(l.life0).padStart(2)}  누수 ${l.leaks??'패배'}  ${l.time??'-'}초  [${l.units}]`);console.log('  누수',(log.leaks||[]).slice(-14).join(', '));console.log('  쓰러짐',(log.downs||[]).length,(log.downs||[]).slice(-12).join(', '));console.log('  피해량',JSON.stringify(S.stats.dealt),'회복',Math.round(S.stats.healed),'궁극기',ults);}
+ if(verbose){console.log('  유산',JSON.stringify(legacy));for(const l of log)console.log(`  전투 ${String(l.b).padStart(2)}  골드 ${String(l.gold0).padStart(4)}  생명 ${String(l.life0).padStart(2)}  누수 ${l.leaks??'패배'}  ${l.time??'-'}초  [${l.units}]`);console.log('  누수',(log.leaks||[]).slice(-14).join(', '));console.log('  쓰러짐',(log.downs||[]).length,(log.downs||[]).slice(-12).join(', '));console.log('  피해량',JSON.stringify(S.stats.dealt),'회복',Math.round(S.stats.healed),'궁극기',ults);}
  return {won:S.phase==='won',battle:S.battle+1,life:S.life,max:S.maxLife};
 }
 function run(ch,runs,verbose,noBoss){const res=[];for(let i=0;i<runs;i++)res.push(play(ch,1000+i*37,verbose&&i===0,noBoss));return {wins:res.filter(r=>r.won).length,life:res.reduce((s,r)=>s+(r.won?r.life:0),0)/runs,res};}
