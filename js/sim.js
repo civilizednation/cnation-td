@@ -26,7 +26,8 @@ function buildMap(id){
  for(const t of tiles)t.rd=Math.min(...roads.map(q=>Math.max(Math.abs(q.c-t.c),Math.abs(q.r-t.r))));
  const free=()=>tiles.filter(t=>t.terrain==='grass');
  // High ground goes where it overlooks the most road, never two side by side.
- const chosen=[];for(const t of free().filter(t=>t.rd===1).map(t=>({t,s:roads.filter(q=>Math.hypot(q.c-t.c,q.r-t.r)<=2.6).length+rand()*2})).sort((a,b)=>b.s-a.s)){if(chosen.length>=spec.high)break;if(chosen.some(q=>Math.max(Math.abs(q.c-t.t.c),Math.abs(q.r-t.t.r))<=1))continue;t.t.terrain='high';chosen.push(t.t);}
+  // High ground (the only places for ranged characters): tiles overlooking the most road, beside it first, never two sharing an edge.
+ const chosen=[];for(const t of free().filter(t=>t.rd<=2).map(t=>({t,s:roads.filter(q=>Math.hypot(q.c-t.c,q.r-t.r)<=2.6).length+(t.rd===1?4:0)+rand()*2})).sort((a,b)=>b.s-a.s)){if(chosen.length>=spec.high)break;if(chosen.some(q=>Math.abs(q.c-t.t.c)+Math.abs(q.r-t.t.r)<=1))continue;t.t.terrain='high';chosen.push(t.t);}
  const scatter=(n,terrain,minRd)=>{const pool=free().filter(t=>t.rd>=minRd);for(let i=0;i<n&&pool.length;i++)pool.splice(Math.floor(rand()*pool.length),1)[0].terrain=terrain;};
  scatter(spec.cliff||0,'cliff',2);scatter(spec.prop||0,'prop',2);scatter(spec.rock||0,'rock',2);scatter(spec.forest||0,'forest',1);
  for(const t of tiles){t.alt=t.terrain==='grass'&&rand()<.3;t.h=t.terrain==='high'?.45:t.terrain==='cliff'?.85+rand()*.5:t.terrain==='water'?-.2:t.terrain==='bridge'?-.02:t.road?-.07:t.terrain==='prop'||t.terrain==='rock'?.04:rand()*.07;t.v=rand();}
@@ -70,7 +71,7 @@ function createSim(opts){
   if(S.phase!=='prep'&&S.phase!=='battle')return '지금은 배치할 수 없습니다';
   if(BLOCKED[t.terrain])return `${TERRAIN_NAME[t.terrain]}에는 배치할 수 없습니다`;
   if(S.units.some(u=>u.c===c&&u.r===r))return '이미 다른 동료가 있습니다';
-  if(t.road&&!d.melee)return '길 위에는 근접 캐릭터만 설 수 있습니다';
+  if(!d.melee&&t.terrain!=='high')return '원거리 캐릭터는 올라온 발판(고지대)에만 설 수 있습니다';
   if(t.terrain==='high'&&d.melee)return '고지대에는 원거리 캐릭터만 설 수 있습니다';
   // No melee on the road right by a monster gate, so monsters are not held the moment they appear.
   if(d.melee&&t.road&&map.gates.some(g=>Math.hypot(g.x-c,g.y-r)<D.GATE_GAP))return `적 출현 문 ${D.GATE_GAP}칸 안에는 근접 캐릭터를 세울 수 없습니다`;
