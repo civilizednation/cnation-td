@@ -58,7 +58,7 @@ function createSim(opts){
  function refresh(u){const def=defOf(u),m=1+D.RANK_STAT*(u.rank-1),g=1+D.RANK_GUARD*(u.rank-1),kit=kitOf(def,u.rank,u.choice),t=map.tile(u.c,u.r),oldMax=u.maxHp||0;
   const hero=def.kind==='hero',own=hero?.15*L('hero_'+u.def):0,pw=1+(hero?.08*L('heroPower'):.12*L('soldierPower'))+own,hpm=1+(hero?.12*L('heroHp'):.12*L('soldierPower'))+own;
   u.maxHp=Math.round(def.hp*m*hpm);u.hp=oldMax?Math.min(u.maxHp,u.hp+(u.maxHp-oldMax)):u.maxHp;u.atk=def.atk*m*pw;u.mag=def.mag*m*pw;u.arm=def.def*g;u.res=def.res*g;
-  u.interval=(1.6-def.spd*.03)/(1+S.mods.haste+kit.haste);u.block=t.road?kit.block+(def.kind==='hero'&&def.melee?S.mods.heroBlock:0):0;u.splash=kit.splash;u.auras=kit.auras;u.ult=kit.ult;u.ultBoost=kit.ultBoost;u.eva=kit.eva;u.counter=kit.counter;
+  u.interval=(1.6-def.spd*.03)*(def.melee?1:D.RANGED_INTERVAL)/(1+S.mods.haste+kit.haste);u.block=t.road?kit.block+(def.kind==='hero'&&def.melee?S.mods.heroBlock:0):0;u.splash=kit.splash;u.auras=kit.auras;u.ult=kit.ult;u.ultBoost=kit.ultBoost;u.eva=kit.eva;u.counter=kit.counter;
   u.onHigh=t.terrain==='high';u.range=def.range+(def.melee?0:(u.onHigh?.5:0)-(t.terrain==='forest'?.5:0)+S.mods.range);
   const old=u.skills||[];u.skills=kit.list.map(id=>old.find(s=>s.id===id)||{id,cd:1.5});}
  const costOf=(def,mult)=>{const d=D.UNITS[def];return Math.round(d.cost*mult*(1-(d.kind==='soldier'?S.mods.soldierCost:0)));};
@@ -235,7 +235,7 @@ function createSim(opts){
    u.cd-=dt*u.hasteBuff;let cast=false;
    for(const sk of u.skills){if(sk.cd>0){sk.cd-=dt;continue;}if(cast||u.cd>.25||st.silence)continue;if(tryCast(u,sk)){u.cd=Math.max(u.cd,.45);cast=true;}else sk.cd=.3;}
    if(cast||u.cd>0)continue;const target=pickTarget(u,u.range,!def.melee);if(!target)continue;
-   u.cd=u.interval;u.face={dx:target.x-u.x,dy:target.y-u.y};u.faceT=S.time;const o={type:def.magic?'magic':'physical',power:def.basic||1,element:def.element};emit({t:'attack',unit:u.id,target:target.id,from:{x:u.x,y:u.y},to:{x:target.x,y:target.y},melee:def.melee,magic:!!def.magic});
+   u.cd=u.interval;u.face={dx:target.x-u.x,dy:target.y-u.y};u.faceT=S.time;const o={type:def.magic?'magic':'physical',power:(def.basic||1)*(def.melee?1:D.RANGED_POWER),element:def.element};emit({t:'attack',unit:u.id,target:target.id,from:{x:u.x,y:u.y},to:{x:target.x,y:target.y},melee:def.melee,magic:!!def.magic});
    if(u.splash){const c={x:target.x,y:target.y};for(const e of S.enemies.slice())if(!e.dead&&Math.hypot(e.x-c.x,e.y-c.y)<=u.splash)hit(u,e,e===target?o:{...o,power:.5});}else hit(u,target,o);}
   S.enemies=S.enemies.filter(e=>!e.dead);
   if(!S.queue.length&&!S.enemies.length&&S.phase==='battle')finishBattle();}

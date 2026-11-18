@@ -46,10 +46,10 @@ function play(chapter,seed,verbose,noBoss){
  if(verbose){console.log('  유산',JSON.stringify(legacy));for(const l of log)console.log(`  전투 ${String(l.b).padStart(2)}  골드 ${String(l.gold0).padStart(4)}  생명 ${String(l.life0).padStart(2)}  누수 ${l.leaks??'패배'}  ${l.time??'-'}초  [${l.units}]`);console.log('  누수',(log.leaks||[]).slice(-14).join(', '));console.log('  쓰러짐',(log.downs||[]).length,(log.downs||[]).slice(-12).join(', '));console.log('  피해량',JSON.stringify(S.stats.dealt),'회복',Math.round(S.stats.healed),'궁극기',ults);}
  return {won:S.phase==='won',battle:S.battle+1,life:S.life,max:S.maxLife};
 }
-function run(ch,runs,verbose,noBoss){const res=[];for(let i=0;i<runs;i++)res.push(play(ch,1000+i*37,verbose&&i===0,noBoss));return {wins:res.filter(r=>r.won).length,life:res.reduce((s,r)=>s+(r.won?r.life:0),0)/runs,res};}
+function run(ch,runs,verbose,noBoss){const res=[];for(let i=0;i<runs;i++)res.push(play(ch,1000+i*37,verbose&&i===(+process.env.BOT_RUN||0),noBoss));return {wins:res.filter(r=>r.won).length,life:res.reduce((s,r)=>s+(r.won?r.life:0),0)/runs,res};}
 const args=process.argv.slice(2),verbose=args.includes('-v'),pos=args.filter(a=>a!=='-v');
 if(pos[0]==='calibrate'){const list=pos[1]==null||pos[1]==='all'?D.CHAPTERS.map((_,i)=>i):[+pos[1]],runs=+(pos[2]||4),out=[];
- for(const ch of list){const C=D.CHAPTERS[ch],base=C.battles.map(b=>b.tune[0]/C.diff[0]);let lo=.4,hi=4,k=C.diff[0];
+ for(const ch of list){const C=D.CHAPTERS[ch],base=C.battles.map(b=>b.tune[0]/C.diff[0]);let lo=.2,hi=4,k=C.diff[0];
   // Step 1 — ordinary battles: reach the boss with 13–17 life (a few leaks).  Step 2 — boss: 70% of the toughest boss the bot still beats every run.
   for(let it=0;it<9;it++){k=Math.sqrt(lo*hi);C.battles.forEach((b,i)=>{b.tune[0]=base[i]*k;});const r=run(ch,runs,false,true);if(r.wins<runs||r.life<13)hi=k;else if(r.life>17)lo=k;else break;}
   C.battles.forEach((b,i)=>{b.tune[0]=base[i]*k;});let bl=.15,bh=8;for(let it=0;it<8;it++){const m=Math.sqrt(bl*bh);C.bossScale=m;if(run(ch,runs).wins===runs)bl=m;else bh=m;}

@@ -27,6 +27,7 @@ Always write every message to the user in Korean (한국어).
 - Every hero has a 필살기 (`UNITS[id].ult`) from ★1, ~18–24 s cooldown, starting half charged; ★5 is `ultBoost` (+30% power, −15% cooldown).
   A ready hero's dock card glows and casts on tap. Call it 필살기 in all player-facing text.
 - Maps have their own size (`MAPS[id].w/h`): early chapters are smaller (9×9 … 9×12), 9×14 from chapter 4.
+- Ranged basic attacks use `RANGED_INTERVAL` (×2 interval) and `RANGED_POWER` (×0.5); skills, 필살기 and heals are not affected.
 - Waves use half as many monsters with twice the HP and twice the gold each (`buildChapter`, `spawn`).
 - Music volume = setting × 0.25; effect blips are doubled (capped). Developer mode applies `D.typicalLegacy(chapter)` instead of the player's legacies.
 - `bgm/` and `fonts/` come from cnation TACTICS. After adding or changing in-game text run `python3 tools/subset-fonts.py`
