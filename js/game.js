@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='0.4.9',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='0.4.10',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -15,6 +15,8 @@ let vw=1,vh=1,pxU=40,tz=.25,dpr=1;
 const objs=new Map(),dying=[],fx=[],warns=new Map();
 const loadJSON=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k)||'null');return v??d;}catch(e){return d;}},saveJSON=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
 const settings=Object.assign({bgm:.5,sfx:true},loadJSON(SET_KEY,{}));
+// Sound candidates were reset to take 1 for every effect (owner's temporary choice). Bump SFX_PICK_RESET to reset again.
+const SFX_PICK_RESET=1;if((settings.sfxPickReset||0)<SFX_PICK_RESET){settings.sfxPick={};settings.sfxPickReset=SFX_PICK_RESET;saveJSON(SET_KEY,settings);}
 
 // ── Renderer ──
 let renderer;
