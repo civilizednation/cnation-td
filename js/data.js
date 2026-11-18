@@ -127,7 +127,7 @@ const HERO_ORDER=['kyle','ria','bran','sera','luna','nero'],SOLDIER_ORDER=['mili
 const RANK_COST=[1,.8,1.2,1.8,2.5];      // × deploy cost, index = rank reached − 1
 const RANK_STAT=.25,RANK_GUARD=.15;      // per rank: +25% HP/ATK/MAG, +15% DEF/RES
 const REFUND=.7,WITHDRAW_CD=20,DOWN_CD=30;
-const ENGAGE_SLOW=1/3;
+const ENGAGE_SLOW=1/2;
 // Ranged basic attacks: twice the interval and half the power of the base numbers (skills and 필살기 unchanged).
 const RANGED_INTERVAL=2,RANGED_POWER=.5;                   // a monster held by a melee character walks past at a third of its speed
 
@@ -239,7 +239,7 @@ const BOSSES=[
 // set with the balance bot (node tools/bot.js calibrate).
 const POOLS=[[0,1,2,10,11,12],[1,3,4,10,11,15],[2,11,12,16,18,20],[0,8,13,19,20,22],[3,4,5,15,17,20,8],[11,15,16,18,20,21,24,26],[6,7,17,18,21,22,25,27],[5,15,17,20,21,22,28,29],[3,4,7,15,20,21,24,26,28],[6,7,9,17,21,22,25,27,29]];
 const CHAPTER_DEFS=[
- {id:'prologue',label:'PROLOGUE',name:'깨어난 빛',place:'국경 마을 에린',map:'prologue',battles:5,command:6,bless:[2,4],diff:[.29,1,1.7],
+ {id:'prologue',label:'PROLOGUE',name:'깨어난 빛',place:'국경 마을 에린',map:'prologue',battles:5,command:6,bless:[2,4],diff:[.26,1,1.7],
   names:['유적의 문','잠든 소녀','숲길의 소란','마을로 돌아가는 길'],
   intro:[['카일','이런 곳에 사람이… 괜찮아? 내 목소리 들려?'],['리아','리아… 내 이름은 리아. 그 외에는 아무것도 기억나지 않아.'],['카일','뒤에서 뭔가 움직여. 내 곁에 있어. 마을까지는 한 마리도 못 지나가게 하자.']],
   outro:[['리아','끝났어…? 저 수정이 무사해.'],['카일','응. 하지만 이건 시작일 뿐이야. 남문 쪽에서 연기가 올라오고 있어.']]},
@@ -251,7 +251,7 @@ const CHAPTER_DEFS=[
   names:['산길의 매복','바람길 정찰','바람의 궁수','협곡의 피난민','흔들리는 다리','설산의 문턱'],
   intro:[['세라','그 길은 막혔어. 살아서 산을 넘고 싶다면 따라와.'],['카일','우릴 왜 도와주는 거지?'],['세라','제국이 태운 마을이 너희 마을뿐인 줄 알아?']],
   outro:[['세라','폭군이 무너졌어. 이제 숲까지는 내리막이야.'],['리아','숲에서… 누군가 부르는 소리가 들려.']]},
- {id:'c3',label:'CHAPTER 03',name:'고대의 숲',place:'엘렌 숲',map:'forest',battles:8,command:9,bless:[3,6],diff:[1.02,1,.22],
+ {id:'c3',label:'CHAPTER 03',name:'고대의 숲',place:'엘렌 숲',map:'forest',battles:8,command:9,bless:[3,6],diff:[.95,1,.22],
   names:['정령의 속삭임','오염된 뿌리','오염된 샘','숲의 샘을 지켜라','가시 덩굴 길','늪의 사냥꾼','숲의 심장'],
   intro:[['루나','정령들이 울고 있어요. 에테르의 흐름이 뒤틀렸어요.'],['리아','이 숲의 노래… 어디선가 들었어.'],['루나','당신을 두려워하는 게 아니에요. 기다리고 있었던 거예요.']],
   outro:[['루나','수호목이 잠들었어요. 숲이 다시 숨을 쉬어요.'],['카일','다음은 왕도야. 답을 아는 사람이 거기 있어.']]},

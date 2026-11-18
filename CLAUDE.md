@@ -22,7 +22,7 @@ Always write every message to the user in Korean (한국어).
   `diff` = [monster HP, monster attack, boss HP] for each chapter in `CHAPTER_DEFS` (js/data.js); copy the result in by hand.
 - Chapters are generated from `CHAPTER_DEFS` by `buildChapter` (waves from `POOLS`, roster from `JOIN_AT`). Maps in `MAPS` are grown
   around the road by `sim.buildMap` from each map's seed, so the same map always comes out the same.
-- Melee characters do not stop monsters: a monster inside a melee unit's tile (up to `block` at once) moves at `ENGAGE_SLOW` (1/3) and hits it.
+- Melee characters do not stop monsters: a monster inside a melee unit's tile (up to `block` at once) moves at `ENGAGE_SLOW` (1/2) and hits it.
   Melee units on the road must stand at least `MELEE_GAP` (3) tiles apart (`canDeploy`); the screen shows the forbidden zone while placing.
 - Every hero has a 필살기 (`UNITS[id].ult`) from ★1, ~18–24 s cooldown, starting half charged; ★5 is `ultBoost` (+30% power, −15% cooldown).
   A ready hero's dock card glows and casts on tap. Call it 필살기 in all player-facing text.
