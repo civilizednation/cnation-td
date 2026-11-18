@@ -22,12 +22,13 @@ Always write every message to the user in Korean (한국어).
   `diff` = [monster HP, monster attack, boss HP] for each chapter in `CHAPTER_DEFS` (js/data.js); copy the result in by hand.
 - Chapters are generated from `CHAPTER_DEFS` by `buildChapter` (waves from `POOLS`, roster from `JOIN_AT`). Maps in `MAPS` are grown
   around the road by `sim.buildMap` from each map's seed, so the same map always comes out the same.
-- Melee characters do not stop monsters: a monster inside a melee unit's tile (up to `block` at once) moves at `ENGAGE_SLOW` (1/2) and hits it.
+- Melee characters do not stop monsters: a monster inside a melee unit's tile (up to `block` at once) moves at `ENGAGE_SLOW` (2/3) and hits it.
   Melee units on the road must stand at least `MELEE_GAP` (3) tiles apart (`canDeploy`); the screen shows the forbidden zone while placing.
 - Every hero has a 필살기 (`UNITS[id].ult`) from ★1, ~18–24 s cooldown, starting half charged; ★5 is `ultBoost` (+30% power, −15% cooldown).
   A ready hero's dock card glows and casts on tap. Call it 필살기 in all player-facing text.
 - Maps have their own size (`MAPS[id].w/h`): early chapters are smaller (9×9 … 9×12), 9×14 from chapter 4.
-- Ranged basic attacks use `RANGED_INTERVAL` (×2 interval) and `RANGED_POWER` (×0.5); skills, 필살기 and heals are not affected.
+- Basic attacks: ranged `RANGED_INTERVAL` 1.2 / `RANGED_POWER` 0.3, melee `MELEE_INTERVAL` 0.7 / `MELEE_POWER` 0.7 of the base numbers;
+  skills, 필살기 and heals are not affected. No melee on the road within `GATE_GAP` (3) tiles of a monster gate (`map.gates`).
 - Waves use half as many monsters with twice the HP and twice the gold each (`buildChapter`, `spawn`).
 - Music volume = setting × 0.25; effect blips are doubled (capped). Developer mode applies `D.typicalLegacy(chapter)` instead of the player's legacies.
 - `bgm/` and `fonts/` come from cnation TACTICS. After adding or changing in-game text run `python3 tools/subset-fonts.py`

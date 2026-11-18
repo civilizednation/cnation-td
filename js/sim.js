@@ -30,7 +30,9 @@ function buildMap(id){
  const scatter=(n,terrain,minRd)=>{const pool=free().filter(t=>t.rd>=minRd);for(let i=0;i<n&&pool.length;i++)pool.splice(Math.floor(rand()*pool.length),1)[0].terrain=terrain;};
  scatter(spec.cliff||0,'cliff',2);scatter(spec.prop||0,'prop',2);scatter(spec.rock||0,'rock',2);scatter(spec.forest||0,'forest',1);
  for(const t of tiles){t.alt=t.terrain==='grass'&&rand()<.3;t.h=t.terrain==='high'?.45:t.terrain==='cliff'?.85+rand()*.5:t.terrain==='water'?-.2:t.terrain==='bridge'?-.02:t.road?-.07:t.terrain==='prop'||t.terrain==='rock'?.04:rand()*.07;t.v=rand();}
- return {id,w:W,h:H,tiles,tile,paths,posAt,scene:D.SCENES[spec.scene],sceneId:spec.scene,seed:spec.seed};
+ // Where each road enters the field: the gate tile, clamped inside.
+ const gates=paths.map(p=>({x:Math.max(0,Math.min(W-1,p.wp[0][0])),y:Math.max(0,Math.min(H-1,p.wp[0][1]))}));
+ return {id,w:W,h:H,tiles,tile,paths,posAt,gates,scene:D.SCENES[spec.scene],sceneId:spec.scene,seed:spec.seed};
 }
 const BLOCKED={water:1,rock:1,cliff:1,prop:1};
 const TERRAIN_NAME={grass:'평지',road:'길',high:'고지대',forest:'수풀',water:'물',rock:'바위',cliff:'절벽',prop:'구조물',swamp:'늪',sand:'모래',bridge:'다리'};
@@ -58,7 +60,7 @@ function createSim(opts){
  function refresh(u){const def=defOf(u),m=1+D.RANK_STAT*(u.rank-1),g=1+D.RANK_GUARD*(u.rank-1),kit=kitOf(def,u.rank,u.choice),t=map.tile(u.c,u.r),oldMax=u.maxHp||0;
   const hero=def.kind==='hero',own=hero?.15*L('hero_'+u.def):0,pw=1+(hero?.08*L('heroPower'):.12*L('soldierPower'))+own,hpm=1+(hero?.12*L('heroHp'):.12*L('soldierPower'))+own;
   u.maxHp=Math.round(def.hp*m*hpm);u.hp=oldMax?Math.min(u.maxHp,u.hp+(u.maxHp-oldMax)):u.maxHp;u.atk=def.atk*m*pw;u.mag=def.mag*m*pw;u.arm=def.def*g;u.res=def.res*g;
-  u.interval=(1.6-def.spd*.03)*(def.melee?1:D.RANGED_INTERVAL)/(1+S.mods.haste+kit.haste);u.block=t.road?kit.block+(def.kind==='hero'&&def.melee?S.mods.heroBlock:0):0;u.splash=kit.splash;u.auras=kit.auras;u.ult=kit.ult;u.ultBoost=kit.ultBoost;u.eva=kit.eva;u.counter=kit.counter;
+  u.interval=(1.6-def.spd*.03)*(def.melee?D.MELEE_INTERVAL:D.RANGED_INTERVAL)/(1+S.mods.haste+kit.haste);u.block=t.road?kit.block+(def.kind==='hero'&&def.melee?S.mods.heroBlock:0):0;u.splash=kit.splash;u.auras=kit.auras;u.ult=kit.ult;u.ultBoost=kit.ultBoost;u.eva=kit.eva;u.counter=kit.counter;
   u.onHigh=t.terrain==='high';u.range=def.range+(def.melee?0:(u.onHigh?.5:0)-(t.terrain==='forest'?.5:0)+S.mods.range);
   const old=u.skills||[];u.skills=kit.list.map(id=>old.find(s=>s.id===id)||{id,cd:1.5});}
  const costOf=(def,mult)=>{const d=D.UNITS[def];return Math.round(d.cost*mult*(1-(d.kind==='soldier'?S.mods.soldierCost:0)));};
@@ -70,6 +72,8 @@ function createSim(opts){
   if(S.units.some(u=>u.c===c&&u.r===r))return '이미 다른 동료가 있습니다';
   if(t.road&&!d.melee)return '길 위에는 근접 캐릭터만 설 수 있습니다';
   if(t.terrain==='high'&&d.melee)return '고지대에는 원거리 캐릭터만 설 수 있습니다';
+  // No melee on the road right by a monster gate, so monsters are not held the moment they appear.
+  if(d.melee&&t.road&&map.gates.some(g=>Math.hypot(g.x-c,g.y-r)<D.GATE_GAP))return `적 출현 문 ${D.GATE_GAP}칸 안에는 근접 캐릭터를 세울 수 없습니다`;
   // Melee characters on the road must keep their distance, so monsters cannot be held in one spot by a crowd.
   if(d.melee&&t.road&&S.units.some(u=>defOf(u).melee&&map.tile(u.c,u.r).road&&Math.hypot(u.c-c,u.r-r)<D.MELEE_GAP))return `길 위의 근접 캐릭터끼리는 ${D.MELEE_GAP}칸 이상 떨어져야 합니다`;
   if(t.road)for(const p in t.pd){const first=map.paths[p].wp[0],inside=first[0]>=0&&first[1]>=0&&first[0]<map.w&&first[1]<map.h;if(t.pd[p]<(inside?1:2)||t.pd[p]>map.paths[p].total-1)return '적 출현 문과 수정 바로 앞은 비워 둬야 합니다';}
@@ -235,7 +239,7 @@ function createSim(opts){
    u.cd-=dt*u.hasteBuff;let cast=false;
    for(const sk of u.skills){if(sk.cd>0){sk.cd-=dt;continue;}if(cast||u.cd>.25||st.silence)continue;if(tryCast(u,sk)){u.cd=Math.max(u.cd,.45);cast=true;}else sk.cd=.3;}
    if(cast||u.cd>0)continue;const target=pickTarget(u,u.range,!def.melee);if(!target)continue;
-   u.cd=u.interval;u.face={dx:target.x-u.x,dy:target.y-u.y};u.faceT=S.time;const o={type:def.magic?'magic':'physical',power:(def.basic||1)*(def.melee?1:D.RANGED_POWER),element:def.element};emit({t:'attack',unit:u.id,target:target.id,from:{x:u.x,y:u.y},to:{x:target.x,y:target.y},melee:def.melee,magic:!!def.magic});
+   u.cd=u.interval;u.face={dx:target.x-u.x,dy:target.y-u.y};u.faceT=S.time;const o={type:def.magic?'magic':'physical',power:(def.basic||1)*(def.melee?D.MELEE_POWER:D.RANGED_POWER),element:def.element};emit({t:'attack',unit:u.id,target:target.id,from:{x:u.x,y:u.y},to:{x:target.x,y:target.y},melee:def.melee,magic:!!def.magic});
    if(u.splash){const c={x:target.x,y:target.y};for(const e of S.enemies.slice())if(!e.dead&&Math.hypot(e.x-c.x,e.y-c.y)<=u.splash)hit(u,e,e===target?o:{...o,power:.5});}else hit(u,target,o);}
   S.enemies=S.enemies.filter(e=>!e.dead);
   if(!S.queue.length&&!S.enemies.length&&S.phase==='battle')finishBattle();}
