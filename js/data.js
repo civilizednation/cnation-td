@@ -5,7 +5,7 @@ function seeded(seed){return ()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul
 
 // ── Skills ──────────────────────────────────────────────────────────────────────────────────────────
 // type: physical | magic | heal | cleanse | taunt | fortress. range 0 = the unit's own range. area = blast radius in tiles.
-// cd = seconds between automatic casts (TACTICS MP cost → about 2.5 + mp × 0.4). ult:true = cast by the player.
+// cd = seconds between automatic casts (TACTICS MP cost → about 2.5 + mp × 0.4). ult:true = the hero's 필살기, cast by the player (every hero has one from ★1, about every 20 s).
 const SKILLS={
  // 카일
  flame:{name:'화염검',type:'physical',power:1.3,element:'fire',status:'burn',chance:.6,cd:5.3,fx:'slash'},
@@ -13,7 +13,7 @@ const SKILLS={
  break:{name:'갑옷 가르기',type:'physical',power:1.4,status:'defdown',chance:1,cd:6.1,fx:'slash'},
  iceblade:{name:'얼음 베기',type:'physical',power:1.35,element:'water',status:'slow',chance:1,cd:5.7,fx:'slash'},
  stormblade:{name:'폭풍 베기',type:'physical',power:1.45,area:1.2,element:'wind',knockback:.9,cd:7.3,fx:'slash'},
- arcaslash:{name:'아르카 참격',type:'physical',power:2.2,area:3,self:true,element:'light',cd:30,ult:true,fx:'nova'},
+ arcaslash:{name:'아르카 참격',type:'physical',power:1.6,area:2.6,self:true,element:'light',cd:18,ult:true,fx:'nova'},
  // 리아
  fire:{name:'파이어',type:'magic',power:1.25,area:1.1,element:'fire',status:'burn',chance:.3,cd:5.7,fx:'blast'},
  ice:{name:'프로스트',type:'magic',power:1.15,area:1.1,element:'ice',status:'freeze',chance:.45,cd:6.5,fx:'blast'},
@@ -21,13 +21,13 @@ const SKILLS={
  storm:{name:'파이어 스톰',type:'magic',power:1.35,area:1.9,element:'fire',status:'burn',chance:.5,cd:12,fx:'blast'},
  whirlwind:{name:'회오리 폭풍',type:'magic',power:1.2,area:1.9,element:'wind',status:'slow',chance:1,cd:11,fx:'blast'},
  thunder:{name:'썬더',type:'magic',power:1.6,range:3.5,element:'thunder',status:'stun',chance:.4,cd:7.7,fx:'bolt'},
- meteor:{name:'메테오',type:'magic',power:1.98,area:2.1,element:'fire',status:'burn',chance:1,cd:35,ult:true,aim:true,fx:'meteor'},
+ meteor:{name:'메테오',type:'magic',power:1.45,area:1.9,element:'fire',status:'burn',chance:1,cd:22,ult:true,aim:true,fx:'meteor'},
  // 브란
  bash:{name:'실드 배시',type:'physical',power:1.1,status:'stun',chance:.6,cd:4.9,fx:'slash'},
  taunt:{name:'도발',type:'taunt',area:1.9,self:true,hold:1.8,cd:7.5,fx:'nova'},
  icebash:{name:'빙벽 강타',type:'physical',power:1.3,element:'water',status:'slow',chance:1,cd:6.1,fx:'slash'},
  quake:{name:'대지 충격',type:'physical',power:1.4,area:1.4,self:true,status:'stun',chance:.3,cd:8.9,fx:'nova'},
- fortress:{name:'철벽의 성채',type:'fortress',dur:8,area:1.9,self:true,cd:40,ult:true,fx:'nova',element:'light'},
+ fortress:{name:'철벽의 성채',type:'fortress',dur:5,area:1.9,self:true,cd:24,ult:true,fx:'nova',element:'light'},
  // 세라
  pierce:{name:'관통 사격',type:'physical',power:1.4,ignore:.5,cd:5.3,fx:'bolt'},
  poison:{name:'독화살',type:'physical',power:1.1,status:'poison',chance:1,cd:5.7,fx:'shot'},
@@ -35,13 +35,13 @@ const SKILLS={
  icearrow:{name:'얼음 화살',type:'physical',power:1.25,element:'water',status:'slow',chance:1,cd:4.9,fx:'shot'},
  galearrow:{name:'질풍 화살',type:'physical',power:1.3,range:5.5,element:'wind',cd:6.5,fx:'shot'},
  volley:{name:'화살비',type:'physical',power:1.1,area:1.4,cd:8.1,fx:'blast'},
- hawk:{name:'매의 심판',type:'physical',power:5,range:7,ignore:.7,pick:'strong',cd:30,ult:true,fx:'bolt'},
+ hawk:{name:'매의 심판',type:'physical',power:3.5,range:7,ignore:.7,pick:'strong',cd:18,ult:true,fx:'bolt'},
  // 루나
  heal:{name:'힐',type:'heal',power:1.6,cd:4.6,element:'light',fx:'heal'},
  purify:{name:'정화',type:'cleanse',cd:5,element:'light',fx:'heal'},
  holy:{name:'홀리',type:'magic',power:1.5,area:1.2,element:'light',cd:8.1,fx:'blast'},
  waterwave:{name:'정화의 물결',type:'magic',power:1.2,area:1.3,element:'water',status:'slow',chance:.5,cd:7.3,fx:'blast'},
- miracle:{name:'생명의 기적',type:'heal',power:1.8,all:true,cleanse:true,cd:40,ult:true,element:'light',fx:'nova'},
+ miracle:{name:'생명의 기적',type:'heal',power:1.3,all:true,cleanse:true,cd:24,ult:true,element:'light',fx:'nova'},
  mend:{name:'응급 치료',type:'heal',power:1.1,cd:6,element:'light',fx:'heal'},
  // 네로
  backstab:{name:'그림자 찌르기',type:'physical',power:1.5,ignore:.3,cd:5.3,fx:'slash'},
@@ -49,63 +49,63 @@ const SKILLS={
  firecurse:{name:'화염 저주',type:'physical',power:1.25,range:3,element:'fire',status:'burn',chance:1,cd:6.5,fx:'shot'},
  iceprison:{name:'얼음 감옥',type:'physical',power:1.15,range:3,element:'water',status:'stun',chance:1,cd:7.3,fx:'shot'},
  silence:{name:'침묵의 표식',type:'physical',power:1.25,range:3,element:'dark',status:'silence',chance:1,cd:6.5,fx:'shot'},
- eclipse:{name:'월식',type:'physical',power:3,area:2.1,self:true,element:'dark',status:'poison',chance:1,cd:30,ult:true,fx:'nova'}
+ eclipse:{name:'월식',type:'physical',power:2.2,area:2,self:true,element:'dark',status:'poison',chance:1,cd:20,ult:true,fx:'nova'}
 };
 
 // ── Deployable characters ───────────────────────────────────────────────────────────────────────────
 // ranks[n] = what rank n+1 adds. choice = the ★3 engraving (one of three). props are merged into the unit.
 const UNITS={
- kyle:{name:'카일',job:'검사',kind:'hero',melee:true,block:2,cost:100,maxRank:5,
+ kyle:{name:'카일',job:'검사',kind:'hero',ult:'arcaslash',melee:true,block:2,cost:100,maxRank:5,
   hp:108,atk:25,def:16,mag:10,res:12,spd:12,crit:.10,range:1,model:{heroId:'kyle',hair:0x855537},
   ranks:[{skills:['flame']},{skills:['break']},
    {choice:{fire:{label:'🔥 불',swap:['flame','flame2'],desc:'화염검이 반드시 화상을 입히고 더 강해집니다.'},
             water:{label:'💧 물',skills:['iceblade'],desc:'얼음 베기: 맞은 적이 느려집니다.'},
             wind:{label:'🪽 바람',skills:['stormblade'],desc:'폭풍 베기: 주변 적을 함께 베고 밀어냅니다.'}}},
    {aura:{stat:'atk',mult:1.25,radius:2},desc:'용기의 맹세: 주변 2칸 아군 공격 +25%'},
-   {ult:'arcaslash'}],
+   {ultBoost:true,desc:'필살기 강화: 위력 +30% · 재사용 −15%'}],
   role:'적을 붙잡아 늦추는 근접 검사. 화상과 방어 깎기로 화력을 끌어올립니다.'},
- ria:{name:'리아',job:'마도사',kind:'hero',melee:false,block:0,cost:140,maxRank:5,magic:true,
+ ria:{name:'리아',job:'마도사',kind:'hero',ult:'meteor',melee:false,block:0,cost:140,maxRank:5,magic:true,
   hp:74,atk:10,def:8,mag:30,res:22,spd:11,crit:.10,range:2.5,model:{heroId:'ria',hair:0xe4e4ee},
   ranks:[{skills:['fire']},{skills:['ice']},
    {choice:{fire:{label:'🔥 불',skills:['storm'],desc:'파이어 스톰: 넓은 범위를 불태웁니다.'},
             water:{label:'💧 물',swap:['ice','ice2'],desc:'프로스트가 더 넓어지고 더 자주 얼립니다.'},
             wind:{label:'🪽 바람',skills:['whirlwind'],desc:'회오리 폭풍: 넓은 범위를 느리게 만듭니다.'}}},
-   {skills:['thunder']},{ult:'meteor'}],
+   {skills:['thunder']},{ultBoost:true,desc:'필살기 강화: 위력 +30% · 재사용 −15%'}],
   role:'넓은 범위를 공격하는 마도사. 무리 지은 적과 물리에 강한 적에게 좋습니다.'},
- bran:{name:'브란',job:'전사',kind:'hero',melee:true,block:3,cost:120,maxRank:5,
+ bran:{name:'브란',job:'전사',kind:'hero',ult:'fortress',melee:true,block:3,cost:120,maxRank:5,
   hp:150,atk:24,def:26,mag:9,res:15,spd:8,crit:.10,range:1,model:{heroId:'bran',hair:0x66492e},
   ranks:[{skills:['bash']},{skills:['taunt']},
    {choice:{fire:{label:'🔥 불',props:{counter:.6},desc:'화염 방패: 자신을 때린 적에게 화염 반격.'},
             water:{label:'💧 물',skills:['icebash'],desc:'빙벽 강타: 맞은 적이 느려집니다.'},
             wind:{label:'🪨 대지',skills:['quake'],desc:'대지 충격: 주변 적을 모두 때리고 기절시킵니다.'}}},
    {aura:{stat:'def',mult:1.35,radius:2},desc:'수호의 진: 주변 2칸 아군 방어 +35%'},
-   {ult:'fortress'}],
+   {ultBoost:true,desc:'필살기 강화: 위력 +30% · 재사용 −15%'}],
   role:'가장 많은 적을 붙잡는 방패. 기절과 도발로 길목을 지킵니다.'},
- sera:{name:'세라',job:'궁수',kind:'hero',melee:false,block:0,cost:110,maxRank:5,
+ sera:{name:'세라',job:'궁수',kind:'hero',ult:'hawk',melee:false,block:0,cost:110,maxRank:5,
   hp:88,atk:26,def:11,mag:13,res:13,spd:16,crit:.12,range:4,minRange:1.2,highDmg:.15,model:{heroId:'sera',hair:0xe2bc69},
   ranks:[{skills:['pierce']},{skills:['poison']},
    {choice:{fire:{label:'🔥 불',skills:['flamearrow'],desc:'화염 화살: 화상을 입힙니다.'},
             water:{label:'💧 물',skills:['icearrow'],desc:'얼음 화살: 맞은 적이 느려집니다.'},
             wind:{label:'🪽 바람',skills:['galearrow'],desc:'질풍 화살: 아주 먼 적까지 맞힙니다.'}}},
-   {skills:['volley']},{ult:'hawk'}],
+   {skills:['volley']},{ultBoost:true,desc:'필살기 강화: 위력 +30% · 재사용 −15%'}],
   role:'가장 멀리 쏘는 궁수. 바로 옆 칸은 쏘지 못하고, 고지대에서 더 강합니다.'},
- luna:{name:'루나',job:'사제',kind:'hero',melee:false,block:0,cost:130,maxRank:5,magic:true,
+ luna:{name:'루나',job:'사제',kind:'hero',ult:'miracle',melee:false,block:0,cost:130,maxRank:5,magic:true,
   hp:82,atk:12,def:12,mag:26,res:25,spd:10,crit:.10,range:2.5,basic:.7,element:'light',model:{heroId:'luna',hair:0xcf8d85},
   ranks:[{skills:['heal']},{skills:['purify']},
    {choice:{fire:{label:'✨ 빛',skills:['holy'],desc:'홀리: 빛의 범위 공격. 암흑 적에게 강합니다.'},
             water:{label:'💧 물',skills:['waterwave'],desc:'정화의 물결: 물 범위 공격과 둔화.'},
             wind:{label:'🪽 바람',aura:{stat:'haste',mult:1.2,radius:2},desc:'바람의 축복: 주변 아군 공격 속도 +20%.'}}},
    {aura:{stat:'atk',mult:1.25,radius:2},desc:'빛의 축복: 주변 2칸 아군 공격 +25%'},
-   {ult:'miracle'}],
+   {ultBoost:true,desc:'필살기 강화: 위력 +30% · 재사용 −15%'}],
   role:'다친 동료를 치료하고 나쁜 상태를 지워 주는 사제.'},
- nero:{name:'네로',job:'도적',kind:'hero',melee:true,block:1,cost:110,maxRank:5,
+ nero:{name:'네로',job:'도적',kind:'hero',ult:'eclipse',melee:true,block:1,cost:110,maxRank:5,
   hp:90,atk:28,def:10,mag:15,res:14,spd:22,crit:.18,range:1,behind:.25,steal:.3,cooldown:8,model:{heroId:'nero',hair:0x33394d},
   ranks:[{skills:['backstab']},{skills:['sleep']},
    {choice:{fire:{label:'🔥 불',skills:['firecurse'],desc:'화염 저주: 멀리 있는 적을 반드시 불태웁니다.'},
             water:{label:'💧 물',skills:['iceprison'],desc:'얼음 감옥: 멀리 있는 적을 기절시킵니다.'},
             wind:{label:'🌑 암흑',skills:['silence'],desc:'침묵의 표식: 적의 특수 능력을 봉인합니다.'}}},
    {props:{eva:.3},desc:'잔상: 적의 공격을 30% 확률로 피함'},
-   {ult:'eclipse'}],
+   {ultBoost:true,desc:'필살기 강화: 위력 +30% · 재사용 −15%'}],
   role:'가장 빠른 암살자. 자신을 지나친 적에게 더 강하고, 처치하면 골드를 더 얻습니다.'},
  militia:{name:'민병',job:'연합군',kind:'soldier',melee:true,block:1,cost:50,maxRank:3,
   hp:72,atk:15,def:10,mag:5,res:8,spd:11,crit:.05,range:1,model:{heroId:'kyle',hair:0x5b4a3a,hpal:[0x8a7a5c,0x5a4b3a,0xb9b39c],scale:.86},
@@ -180,7 +180,7 @@ const MOVE_SPEED=.22;                    // tiles per second per MOVE point
 const ELEMENT_ICON={fire:'🔥',water:'💧',ice:'❄',wind:'🪽',thunder:'⚡',light:'✨',dark:'🌑'};
 
 // ── Maps ───────────────────────────────────────────────────────────────────────────────────────────
-// 9 × 14 tiles. paths = tile waypoints (the first and last may lie just outside the field).
+// w × h tiles (early chapters are smaller and grow to 9 × 14). paths = tile waypoints (the first and last may lie just outside the field).
 // Terrain is grown around the road by sim.buildMap from these counts, with the map's own seed.
 const SCENES={
  ruin:{land:0x7eaa83,alt:0x8fb47f,high:0xb7bea0,road:0xcbb998,tree:[0x3a6f5d,0x5d9270],water:0x20576a,sky:0xc9dfc9,rock:0xa6b3a0,cliff:0x93a394,accent:0x8be1bf,prop:'ruin',slow:0x677f77},
@@ -195,14 +195,14 @@ const SCENES={
  core:{land:0x698e8d,alt:0x5c8281,high:0xa2c2bc,road:0xa9c4bd,tree:[0x3f8f96,0x8ff0e0],water:0x135a66,sky:0xb4dad5,rock:0x8fb3ae,cliff:0x456b75,accent:0xb3f3df,prop:'crystal',slow:0x4d7a7c}
 };
 const MAPS={
- prologue:{scene:'ruin',seed:11,paths:[[[1,-1],[1,1],[7,1],[7,4],[1,4],[1,7],[7,7],[7,10],[3,10],[3,14]]],
-  slow:[{path:0,from:15,to:17,type:'swamp'}],lakes:[[8,12,1.6]],high:6,forest:9,cliff:2,prop:2,rock:4},
- fort:{scene:'fort',seed:23,paths:[[[9,2],[2,2],[2,5],[6,5],[6,8],[1,8],[1,11],[5,11],[5,14]]],
-  slow:[{path:0,from:10,to:13,type:'sand'}],lakes:[[8,12,1.3]],high:6,forest:5,cliff:4,prop:4,rock:6},
- river:{scene:'river',seed:37,paths:[[[4,-1],[4,1],[1,1],[1,4],[7,4],[7,7],[2,7],[2,10],[6,10],[6,14]]],
-  rivers:[{row:5,from:3,to:8},{row:12,from:0,to:8}],high:8,forest:6,cliff:5,prop:2,rock:5},
- forest:{scene:'forest',seed:41,paths:[[[7,-1],[7,2],[1,2],[1,6],[5,6],[5,9],[1,9],[1,12],[7,12],[7,14]]],
-  slow:[{path:0,from:5,to:8,type:'swamp'},{path:0,from:20,to:23,type:'swamp'}],lakes:[[7,8,1.5]],high:6,forest:14,cliff:2,prop:4,rock:3},
+ prologue:{scene:'ruin',seed:11,w:9,h:9,paths:[[[1,-1],[1,1],[7,1],[7,4],[1,4],[1,7],[5,7],[5,9]]],
+  slow:[{path:0,from:12,to:14,type:'swamp'}],lakes:[[8,7.6,1.3]],high:5,forest:6,cliff:1,prop:2,rock:3},
+ fort:{scene:'fort',seed:23,w:9,h:10,paths:[[[9,1],[1,1],[1,4],[7,4],[7,7],[2,7],[2,10]]],
+  slow:[{path:0,from:13,to:16,type:'sand'}],lakes:[[8,9,1.2]],high:5,forest:4,cliff:3,prop:3,rock:4},
+ river:{scene:'river',seed:37,w:9,h:11,paths:[[[4,-1],[4,1],[1,1],[1,4],[7,4],[7,7],[2,7],[2,9],[6,9],[6,11]]],
+  rivers:[{row:5,from:3,to:8}],lakes:[[0,9.5,1.2]],high:6,forest:5,cliff:4,prop:2,rock:4},
+ forest:{scene:'forest',seed:41,w:9,h:12,paths:[[[7,-1],[7,2],[1,2],[1,5],[5,5],[5,8],[1,8],[1,10],[6,10],[6,12]]],
+  slow:[{path:0,from:5,to:8,type:'swamp'},{path:0,from:19,to:21,type:'swamp'}],lakes:[[7,7,1.3]],high:6,forest:12,cliff:2,prop:4,rock:3},
  city:{scene:'city',seed:53,paths:[[[1,-1],[1,3],[4,3],[4,6],[1,6],[1,9],[7,9],[7,12],[3,12],[3,14]],[[7,-1],[7,3],[4,3],[4,6],[1,6],[1,9],[7,9],[7,12],[3,12],[3,14]]],
   rivers:[{col:8,from:5,to:7}],high:7,forest:4,cliff:2,prop:8,rock:3},
  plain:{scene:'camp',seed:67,paths:[[[-1,1],[6,1],[6,4],[2,4],[2,7],[7,7],[7,10],[1,10],[1,12],[5,12],[5,14]]],
@@ -237,43 +237,43 @@ const BOSSES=[
 // set with the balance bot (node tools/bot.js calibrate).
 const POOLS=[[0,1,2,10,11,12],[1,3,4,10,11,15],[2,11,12,16,18,20],[0,8,13,19,20,22],[3,4,5,15,17,20,8],[11,15,16,18,20,21,24,26],[6,7,17,18,21,22,25,27],[5,15,17,20,21,22,28,29],[3,4,7,15,20,21,24,26,28],[6,7,9,17,21,22,25,27,29]];
 const CHAPTER_DEFS=[
- {id:'prologue',label:'PROLOGUE',name:'깨어난 빛',place:'국경 마을 에린',map:'prologue',battles:5,command:6,bless:[2,4],diff:[.71,1,1.9],
+ {id:'prologue',label:'PROLOGUE',name:'깨어난 빛',place:'국경 마을 에린',map:'prologue',battles:5,command:6,bless:[2,4],diff:[.71,1,1.7],
   names:['유적의 문','잠든 소녀','숲길의 소란','마을로 돌아가는 길'],
   intro:[['카일','이런 곳에 사람이… 괜찮아? 내 목소리 들려?'],['리아','리아… 내 이름은 리아. 그 외에는 아무것도 기억나지 않아.'],['카일','뒤에서 뭔가 움직여. 내 곁에 있어. 마을까지는 한 마리도 못 지나가게 하자.']],
   outro:[['리아','끝났어…? 저 수정이 무사해.'],['카일','응. 하지만 이건 시작일 뿐이야. 남문 쪽에서 연기가 올라오고 있어.']]},
- {id:'c1',label:'CHAPTER 01',name:'국경의 불꽃',place:'에린 남문',map:'fort',battles:6,command:7,bless:[2,4],diff:[1.3,1,.38],
+ {id:'c1',label:'CHAPTER 01',name:'국경의 불꽃',place:'에린 남문',map:'fort',battles:6,command:7,bless:[2,4],diff:[1.6,1,.35],
   names:['불타는 파수대','잿더미의 약속','남문의 방패','남문의 잔불','국경을 넘어서'],
   intro:[['브란','제국군이 마을을 포위했다. 퇴로는 내가 열겠다.'],['리아','저 병기들… 나를 찾고 있는 것 같아.'],['카일','누구에게도 넘기지 않아. 모두 살아서 나간다.']],
   outro:[['브란','집행관이 쓰러졌다. 지금이다, 국경을 넘어라!'],['카일','브란, 당신도 같이 가는 거야.']]},
- {id:'c2',label:'CHAPTER 02',name:'도망자',place:'회색 산맥',map:'river',battles:7,command:8,bless:[3,5],diff:[1.2,1,.5],
+ {id:'c2',label:'CHAPTER 02',name:'도망자',place:'회색 산맥',map:'river',battles:7,command:8,bless:[3,5],diff:[1.3,1,.6],
   names:['산길의 매복','바람길 정찰','바람의 궁수','협곡의 피난민','흔들리는 다리','설산의 문턱'],
   intro:[['세라','그 길은 막혔어. 살아서 산을 넘고 싶다면 따라와.'],['카일','우릴 왜 도와주는 거지?'],['세라','제국이 태운 마을이 너희 마을뿐인 줄 알아?']],
   outro:[['세라','폭군이 무너졌어. 이제 숲까지는 내리막이야.'],['리아','숲에서… 누군가 부르는 소리가 들려.']]},
- {id:'c3',label:'CHAPTER 03',name:'고대의 숲',place:'엘렌 숲',map:'forest',battles:8,command:9,bless:[3,6],diff:[1.55,1,.45],
+ {id:'c3',label:'CHAPTER 03',name:'고대의 숲',place:'엘렌 숲',map:'forest',battles:8,command:9,bless:[3,6],diff:[1.65,1,.26],
   names:['정령의 속삭임','오염된 뿌리','오염된 샘','숲의 샘을 지켜라','가시 덩굴 길','늪의 사냥꾼','숲의 심장'],
   intro:[['루나','정령들이 울고 있어요. 에테르의 흐름이 뒤틀렸어요.'],['리아','이 숲의 노래… 어디선가 들었어.'],['루나','당신을 두려워하는 게 아니에요. 기다리고 있었던 거예요.']],
   outro:[['루나','수호목이 잠들었어요. 숲이 다시 숨을 쉬어요.'],['카일','다음은 왕도야. 답을 아는 사람이 거기 있어.']]},
- {id:'c4',label:'CHAPTER 04',name:'왕도의 그림자',place:'왕도 레온',map:'city',battles:10,command:10,bless:[3,6,9],diff:[1.05,1,.5],
+ {id:'c4',label:'CHAPTER 04',name:'왕도의 그림자',place:'왕도 레온',map:'city',battles:10,command:10,bless:[3,6,9],diff:[1.4,1,.5],
   names:['지붕 위의 추적','그림자 문서','밤의 연락망','봉인된 기록','골목의 석궁','지하 서고','망령의 회랑','왕의 침묵','재상의 호위대'],
   intro:[['네로','왕궁 기록에 네 이름이 있더라. 백 년 전 문서에.'],['리아','내가… 백 년 전에?'],['네로','답을 원하면 지하 서고로 와. 경비병들은 알아서 피하고.']],
   outro:[['네로','재상은 그림자였어. 진짜는 북쪽에 있다.'],['브란','두 왕국이 움직이기 전에 평원으로 가야 한다.']]},
- {id:'c5',label:'CHAPTER 05',name:'두 왕국',place:'벨른 평원',map:'plain',battles:10,command:10,bless:[3,6,9],diff:[1.9,1,.17],
+ {id:'c5',label:'CHAPTER 05',name:'두 왕국',place:'벨른 평원',map:'plain',battles:10,command:10,bless:[3,6,9],diff:[2.25,1,.11],
   names:['갈라진 깃발','갈라진 전선','약탈자의 길','연합의 방어선','모래바람','황혼의 추적','포격 진지','강철의 행군','새벽의 진군'],
   intro:[['브란','두 왕국이 등을 돌린 사이 제국은 코어를 깨우고 있다.'],['세라','왕들이 못 정하면 우리가 길을 열면 돼.'],['카일','사람들을 지키자. 어느 깃발 아래에 있든.']],
   outro:[['세라','골렘이 멈췄어. 저 안에… 아르카의 문양이 있어.'],['리아','유적으로 가야 해. 내가 무엇이었는지 거기 있어.']]},
- {id:'c6',label:'CHAPTER 06',name:'아르카 유적',place:'아르카 외곽',map:'ruins',battles:10,command:11,bless:[3,6,9],diff:[.82,1,.3],
+ {id:'c6',label:'CHAPTER 06',name:'아르카 유적',place:'아르카 외곽',map:'ruins',battles:10,command:11,bless:[3,6,9],diff:[1.4,1,.21],
   names:['강철의 기억','무너진 수로','에테르 수로','불씨의 통로','물안개 회랑','잠든 골렘','파수꾼의 길','수정 정원','봉인의 문'],
   intro:[['리아','나는 병기가 아니야. 병기를 멈추기 위한 열쇠였어.'],['루나','그렇다면 이번에도 멈출 수 있어요.'],['카일','과거가 널 정하게 두지 마. 지금의 선택은 네 거야.']],
   outro:[['리아','감시자가 꺼졌어. 문이 열려.'],['네로','그리고 나쁜 소식. 우리 좌표가 새고 있었어.']]},
- {id:'c7',label:'CHAPTER 07',name:'배신자',place:'검은 첨탑',map:'tower',battles:10,command:11,bless:[3,6,9],diff:[1.58,1,.22],
+ {id:'c7',label:'CHAPTER 07',name:'배신자',place:'검은 첨탑',map:'tower',battles:10,command:11,bless:[3,6,9],diff:[1.85,1,.08],
   names:['부서진 맹세','배신자의 흔적','거짓된 명령','나선 계단','폭풍의 층','망령의 층','검은 숲의 그림자','첨탑의 진실','대공의 날개'],
   intro:[['네로','연합군의 좌표를 넘긴 건 왕의 고문이었어.'],['브란','우리를 미끼로 썼다는 건가.'],['리아','코어가 모든 전장의 에테르를 흡수하고 있어. 전쟁 자체가 함정이야.']],
   outro:[['카일','대공이 떨어졌다. 남은 건 수도뿐이야.'],['세라','성문이 보여. 이젠 물러설 곳이 없어.']]},
- {id:'c8',label:'CHAPTER 08',name:'제국 수도',place:'북부 제국 아스켈',map:'capital',battles:10,command:12,bless:[3,6,9],diff:[1.2,1,.22],
+ {id:'c8',label:'CHAPTER 08',name:'제국 수도',place:'북부 제국 아스켈',map:'capital',battles:10,command:12,bless:[3,6,9],diff:[1.65,1,.08],
   names:['제국의 성문','수도의 피난길','불타는 거리','황혼의 광장','근위 석궁대','화염 포격','강철 근위대','왕좌의 계단','왕좌 너머'],
   intro:[['세라','성문이 열렸어. 이젠 물러설 곳이 없어.'],['카일','우린 제국을 무너뜨리러 온 게 아니야. 전쟁을 끝내러 왔어.'],['리아','코어의 목소리가 가까워지고 있어. 서둘러야 해.']],
   outro:[['카일','황제는 이미 오래전에 코어의 그림자였어.'],['리아','아래로 내려가는 길이 열렸어. 마지막이야.']]},
- {id:'final',label:'FINAL',name:'마지막 아르카',place:'코어의 심층',map:'core',battles:10,command:12,bless:[3,6,9],diff:[1.15,1,.08],
+ {id:'final',label:'FINAL',name:'마지막 아르카',place:'코어의 심층',map:'core',battles:10,command:12,bless:[3,6,9],diff:[1.6,1,.11],
   names:['기억의 회랑','마지막 에테르','수정의 파도','불과 물의 방','바람의 방','골렘의 무덤','비룡의 둥지','여섯 개의 빛','심층의 문'],
   intro:[['리아','다시 나를 봉인하면 모든 걸 멈출 수 있어.'],['카일','그건 백 년 전의 답이야. 이번에는 혼자가 아니잖아.'],['리아','응. 이번에는… 모두 함께 돌아가자.']],
   outro:[['리아','코어가 잠들었어. 이번에는… 나도 여기 있어.'],['카일','돌아가자. 모두 함께.']]}
@@ -285,11 +285,11 @@ function buildChapter(def,index){
  const roster=JOIN.slice();for(let c=1;c<=index;c++)if(JOIN_AT[c])roster.push(...JOIN_AT[c]);
  const rand=seeded(index*7919+101),pool=POOLS[index].slice().sort((a,b)=>MONSTERS[a].hp*MONSTERS[a].move-MONSTERS[b].hp*MONSTERS[b].move),paths=MAPS[def.map].paths.length,battles=[];
  for(let i=0;i<def.battles;i++){const boss=i===def.battles-1,frac=def.battles>1?i/(def.battles-1):1,avail=pool.slice(0,Math.min(pool.length,2+Math.ceil(frac*(pool.length-2)))),groups=2+Math.min(3,Math.round(frac*3)),budget=waveBudget(i)*(boss?.75:1),waves=[];
-  for(let j=0;j<groups;j++){const kind=j===groups-1?avail[avail.length-1]:avail[Math.floor(rand()*avail.length)],m=MONSTERS[kind],count=Math.max(2,Math.round(budget/groups/m.hp)),gap=+(.55+1.9/m.move*(.8+rand()*.4)).toFixed(2);
+  for(let j=0;j<groups;j++){const kind=j===groups-1?avail[avail.length-1]:avail[Math.floor(rand()*avail.length)],m=MONSTERS[kind],count=Math.max(2,Math.round(budget/groups/m.hp/2)),gap=+((.55+1.9/m.move*(.8+rand()*.4))*1.7).toFixed(2);
    waves.push([kind,count,gap,+(j*6.5+rand()*2).toFixed(1),null,j%paths]);}
   if(!boss&&i>=2&&(i%2===0||frac>.6)){const kind=avail[Math.max(0,avail.length-1-Math.floor(rand()*2))];waves.push([kind,frac>.7?2:1,3,+(groups*4+rand()*3).toFixed(1),'elite',Math.floor(rand()*paths)]);}
   if(boss)waves.push([0,1,0,10,'boss',0]);
-  battles.push({name:boss?BOSSES[index].name:def.names[i]||`전투 ${i+1}`,boss,tune:[+(tuneHp(i)*def.diff[0]).toFixed(3),+(tuneAtk(i)*def.diff[1]*(1+.06*index)).toFixed(3)],waves});}
+  battles.push({name:boss?BOSSES[index].name:def.names[i]||`전투 ${i+1}`,boss,tune:[+(tuneHp(i)*def.diff[0]*2).toFixed(3),+(tuneAtk(i)*def.diff[1]*(1+.06*index)).toFixed(3)],waves});}
  const b=BOSSES[index];
  return {...def,index,roster,bossScale:def.diff[2]??1,startGold:220+20*index,life:20,battles,boss:b,bossIntro:[['리아',`${b.name}… 엄청난 기운이야!`],['카일',b.hint]]};
 }
@@ -304,7 +304,7 @@ const BLESSINGS=[
  {id:'bounty',name:'현상금',desc:'처치 골드 +20%',mod:{bounty:.2}},
  {id:'tempo',name:'전장의 박자',desc:'모든 아군 공격 속도 +12%',mod:{haste:.12}},
  {id:'sight',name:'매의 눈',desc:'원거리 아군 사거리 +0.5칸',mod:{range:.5}},
- {id:'focus',name:'에테르 순환',desc:'스킬·궁극기 재사용 시간 −20%',mod:{cdr:.2}},
+ {id:'focus',name:'에테르 순환',desc:'스킬·필살기 재사용 시간 −20%',mod:{cdr:.2}},
  {id:'purse',name:'숨겨둔 금화',desc:'즉시 골드 +120',gold:120},
  {id:'drill',name:'실전 훈련',desc:'랭크업 비용 −15%',mod:{rankCost:.15}},
  {id:'armor',name:'단단한 갑옷',desc:'아군이 받는 피해 −15%',mod:{armor:.15}},
@@ -326,7 +326,7 @@ const LEGACIES=[
  {id:'redeploy',icon:'⏱',name:'신속한 전개',desc:'영웅 재배치 대기 시간 −25%',max:2},
  {id:'starter',icon:'🌟',name:'준비된 영웅',desc:'영웅을 처음 배치하면 ★2로 시작',max:1},
  {id:'blessChoices',icon:'✨',name:'에테르 친화',desc:'에테르 축복 선택지 4개',max:1},
- {id:'ultCdr',icon:'💥',name:'궁극기 각성',desc:'궁극기 재사용 시간 −15%',max:2},
+ {id:'ultCdr',icon:'💥',name:'필살기 각성',desc:'필살기 재사용 시간 −15%',max:2},
  {id:'affinity',icon:'🔥',name:'원소 숙련',desc:'상성이 맞을 때 피해 ×1.25 → ×1.35',max:2},
  {id:'bounty',icon:'🪙',name:'약탈 본능',desc:'처치 골드 +10%',max:3},
  ...['kyle','ria','bran','sera','luna','nero'].map(id=>({id:'hero_'+id,hero:id,icon:'👑',name:`${UNITS[id].name}의 각성`,desc:`${UNITS[id].name} 공격·마법·HP +15%`,max:2}))
@@ -334,8 +334,12 @@ const LEGACIES=[
 // Three (or `n`) legacies to offer after clearing chapter `index`, never one already at its cap. counts = {id: times taken}.
 function legacyOffer(counts,index,rand,n=3){const roster=CHAPTERS[index].roster,pool=LEGACIES.filter(l=>(counts[l.id]||0)<l.max&&(!l.hero||roster.includes(l.hero))),pick=[];
  while(pick.length<n&&pool.length)pick.push(pool.splice(Math.floor(rand()*pool.length),1)[0].id);return pick;}
+// The legacies an ordinary player would hold on reaching `chapter`: one per earlier chapter, taking the first of each
+// offer in this order of preference. Used by the balance bot and by developer mode.
+const LEGACY_PREF=['heroPower','command','heroHp','startGold','soldierPower','life','rankDisc','hero_kyle','hero_ria','bounty','affinity','ultCdr','redeploy','starter','blessChoices'];
+function typicalLegacy(chapter,seed=1){const rand=seeded(seed*31+7),picks={};for(let c=0;c<chapter;c++){const offer=legacyOffer(legacyCounts(picks),c,rand);picks[c]=offer.slice().sort((a,b)=>{const ia=LEGACY_PREF.indexOf(a),ib=LEGACY_PREF.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib);})[0];}return legacyCounts(picks);}
 const legacyCounts=picks=>{const c={};for(const k in picks||{})if(picks[k])c[picks[k]]=(c[picks[k]]||0)+1;return c;};
 
-const TDData={seeded,LEGACIES,legacyOffer,legacyCounts,SKILLS,UNITS,HERO_ORDER,SOLDIER_ORDER,RANK_COST,RANK_STAT,RANK_GUARD,REFUND,WITHDRAW_CD,DOWN_CD,ENGAGE_SLOW,MONSTERS,MODEL_TRAITS,MOVE_SPEED,ELEMENT_ICON,SCENES,MAPS,CHAPTERS,BOSSES,BLESSINGS};
+const TDData={seeded,LEGACIES,legacyOffer,legacyCounts,typicalLegacy,MELEE_GAP:3,SKILLS,UNITS,HERO_ORDER,SOLDIER_ORDER,RANK_COST,RANK_STAT,RANK_GUARD,REFUND,WITHDRAW_CD,DOWN_CD,ENGAGE_SLOW,MONSTERS,MODEL_TRAITS,MOVE_SPEED,ELEMENT_ICON,SCENES,MAPS,CHAPTERS,BOSSES,BLESSINGS};
 if(typeof module!=='undefined'&&module.exports)module.exports=TDData;else root.TDData=TDData;
 })(typeof window!=='undefined'?window:globalThis);

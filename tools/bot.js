@@ -15,12 +15,8 @@ function bestTile(S,def){const d=D.UNITS[def],map=S.map,roads=map.tiles.filter(t
    for(const u of S.units)if(D.UNITS[u.def].melee&&Math.hypot(u.x-t.c,u.y-t.r)<=range)score+=1.5;}
   if(!best||score>best.score)best={t,score};}
  return best&&best.t;}
-// Legacies an ordinary player would hold on reaching `chapter`: one per earlier chapter, taking the first of each offer
-// in this order of preference (a plain, not optimal, choice).
-const LEGACY_PREF=['heroPower','command','heroHp','startGold','soldierPower','life','rankDisc','hero_kyle','hero_ria','bounty','affinity','ultCdr','redeploy','starter','blessChoices'];
-function legacyFor(chapter,seed){const rand=D.seeded(seed*31+7),picks={};for(let c=0;c<chapter;c++){const offer=D.legacyOffer(D.legacyCounts(picks),c,rand);picks[c]=offer.slice().sort((a,b)=>{const ia=LEGACY_PREF.indexOf(a),ib=LEGACY_PREF.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib);})[0];}return D.legacyCounts(picks);}
 function play(chapter,seed,verbose,noBoss){
- const legacy=process.env.NO_LEGACY?{}:legacyFor(chapter,seed),S=createSim({chapter,seed,legacy}),plan=ORDER.filter(id=>S.chapter.roster.includes(id)),log=[];let ults=0,last=-1,guard=0,think=0;
+ const legacy=process.env.NO_LEGACY?{}:D.typicalLegacy(chapter,seed),S=createSim({chapter,seed,legacy}),plan=ORDER.filter(id=>S.chapter.roster.includes(id)),log=[];let ults=0,last=-1,guard=0,think=0;
  const spend=()=>{
   for(const id in S.hero){const h=S.hero[id];if(h.keep&&h.cd<=0&&h.home&&!S.canDeploy(id,h.home[0],h.home[1]))S.deploy(id,h.home[0],h.home[1]);}
   // Each time it can afford something it takes the better deal: one more character, or a rank for one already out.
