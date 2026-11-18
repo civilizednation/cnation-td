@@ -114,7 +114,7 @@ function createSim(opts){
    canSplit,slots:bossy?2:trait.slots||1,path:o.path||0,dist:o.at??0,lane:(S.rand()-.5)*.44,engagedBy:null,cd:.6+S.rand()*.6,rcd:1+S.rand()*1.5,st:{},poison:0,x:0,y:0,dx:0,dy:1,timers:{wave:4,summon:6,beam:5,fly:0},phase:0,cloned:false};
   if(bossy&&cfg.fly){e.flying=true;e.timers.fly=cfg.fly.air;}
   const p=map.posAt(e.path,e.dist,e.lane);e.x=p.x;e.y=p.y;e.dx=p.dx;e.dy=p.dy;S.enemies.push(e);emit({t:'spawn',id:e.id,boss:bossy});return e;}
- function killEnemy(e,by){e.hp=0;e.dead=true;const steal=by&&defOf(by).steal?defOf(by).steal:0,gold=Math.round(e.gold*(1+S.mods.bounty+steal));S.gold+=gold;S.kills++;emit({t:'die',id:e.id,x:e.x,y:e.y,gold,boss:e.boss,steal:!!steal});
+ function killEnemy(e,by){e.hp=0;e.dead=true;const steal=by&&defOf(by).steal?defOf(by).steal:0,gold=Math.round(e.gold*(1+S.mods.bounty+steal));S.gold+=gold;S.kills++;emit({t:'die',id:e.id,x:e.x,y:e.y,gold,boss:e.boss,model:e.model,steal:!!steal});
   if(e.canSplit)for(const off of [-.25,.2])spawn({kind:e.kind,path:e.path,at:Math.max(0,e.dist+off),parent:e,split:true});}
  function addStatus(e,status){const tough=e.boss||(e.bossKin&&e.gen===1);
   if(status==='burn')e.st.burn=4;

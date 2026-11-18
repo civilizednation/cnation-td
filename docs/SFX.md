@@ -1,6 +1,6 @@
 # cnation TD 효과음 제작 가이드 (Suno용)
 
-게임에 쓰이는 효과음 28종의 **파일명 · 쓰이는 곳 · 목표 길이 · Suno 스타일 프롬프트**입니다.
+게임에 쓰이는 효과음 35종의 **파일명 · 쓰이는 곳 · 목표 길이 · Suno 스타일 프롬프트**입니다.
 파일명 그대로 만들어 한꺼번에 주시면, 앞뒤 불필요한 부분을 잘라 필요한 구간만 남기고 음량을 맞춰 `sfx/` 폴더에 넣겠습니다.
 파일이 없는 효과음은 지금처럼 게임이 직접 합성한 소리로 대신 나오므로, 일부만 먼저 주셔도 됩니다.
 
@@ -42,6 +42,20 @@ game sound effect, one-shot, isolated, no music, no melody, no drums, no vocals,
 | `hit_arrow` | 활 기본 공격(세라·사냥꾼). 매우 자주 | 0.4초 | `bow string twang and fast arrow whoosh ending in a soft thunk, light` |
 | `hit_magic` | 마법 기본 공격(리아·루나·수습 마도사·수습 사제). 매우 자주 | 0.4초 | `small magic bolt, soft sparkling zap with a gentle pop on impact, light arcane` |
 | `monster_die` | 몬스터가 쓰러질 때 | 0.5초 | `cute monster defeat, soft poof puff of smoke with a tiny squeak, cartoony, not gory` |
+
+### 2-1. 추가: 사제 빛 공격 · 몬스터 종류별 처치음
+
+파일이 없는 동안에는 `hit_holy`는 `hit_magic`, `die_*`는 `monster_die` 소리를 대신 씁니다. 그래서 하나씩 만들어 주셔도 됩니다.
+
+| 파일명 | 쓰이는 곳 | 목표 길이 | 스타일 프롬프트 |
+|---|---|---|---|
+| `hit_holy` | 루나·수습 사제의 빛 속성 기본 공격. 자주 나옴 | 0.4초 | `small holy light bolt, soft bright bell-like ping with a gentle shimmer on impact, light and pure, very short` |
+| `die_slime` | 슬라임(이끼·붉은 진흙 슬라임) 처치 | 0.5초 | `cute slime defeat, soft wet squishy pop and splat, bubbly, cartoony, very short` |
+| `die_beast` | 늑대·거미·비룡·매 처치 | 0.6초 | `small fantasy beast defeat, short yelp or screech fading out with a soft thud, not gory` |
+| `die_soldier` | 고블린·제국 보병·척후병·궁수 처치 | 0.6초 | `goblin soldier defeat, short grunt with armor and weapon clattering to the ground` |
+| `die_spirit` | 유령·정령·임프 처치 | 0.7초 | `ghost spirit defeat, airy whoosh dissolving into sparkles, fading wisp, ethereal` |
+| `die_stone` | 골렘·덩굴병·고목·파수꾼 처치 | 0.7초 | `stone golem defeat, rocks crumbling and wood cracking, heavy short collapse` |
+| `die_boss` | 장마다 나오는 보스 처치 | 2.5초 | `giant boss defeat, long monstrous roar fading into a big rumbling collapse and magical burst, epic` |
 
 ## 3. 스킬 (속성별, 스킬이 나갈 때)
 
@@ -87,6 +101,12 @@ game sound effect, one-shot, isolated, no music, no melody, no drums, no vocals,
 | `defeat` | 패배(수정이 깨짐) | 2.5초 | `sad defeat sting, slow descending soft notes with a shattering crystal, melancholic, short` |
 
 ---
+
+## 게임에서 재생되는 방식
+
+- 같은 소리가 아주 짧은 간격(공격음 0.07초, 처치음 0.05초)으로 겹치면 한 번만 납니다.
+- 한 순간에 여러 마리가 쓰러지면(범위 스킬·필살기) 처치음을 **종류별로 한 번씩**, 최대 3종류까지 0.045초 간격으로 냅니다. 쓰러진 수가 많을수록 조금 더 크게(최대 1.5배) 나고, 골드 소리는 한 번만 납니다. 보스 처치음이 있으면 가장 먼저 납니다.
+- 공격음과 처치음은 매번 높이를 ±6% 정도 무작위로 바꿔서, 같은 소리가 반복돼도 덜 단조롭게 들립니다.
 
 ## 받은 뒤 제가 하는 작업
 

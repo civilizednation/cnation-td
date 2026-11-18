@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='0.4.7',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='0.4.8',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -120,23 +120,29 @@ function audioCtx(){if(!ac){try{ac=new (window.AudioContext||window.webkitAudioC
 // Effect files that exist: name → number of candidates (sfx/<name>_1.mp3 …). The player picks a candidate in 소리 설정
 // (settings.sfxPick) while we compare takes; every other name uses the synth fallback below.
 const SFX_FILES={hit_melee:2,hit_arrow:2,hit_magic:2,monster_die:2};
-const SFX_LABEL={hit_melee:'근접 공격',hit_arrow:'활 공격',hit_magic:'마법 공격',monster_die:'몬스터 처치'};
+const SFX_LABEL={hit_melee:'근접 공격',hit_arrow:'활 공격',hit_magic:'마법 공격',hit_holy:'빛 공격(사제)',monster_die:'몬스터 처치(기본)',die_slime:'슬라임 처치',die_beast:'짐승 처치',die_soldier:'병사 처치',die_spirit:'유령·정령 처치',die_stone:'골렘·나무 처치',die_boss:'보스 처치'};
 const sfxPick=n=>Math.min(SFX_FILES[n],Math.max(1,(settings.sfxPick||{})[n]||1));
 // Fallback blips: [start Hz, end Hz, seconds, gain, wave].
 const SFX_SYNTH={ui_tap:[600,500,.04,.05,'sine'],ui_confirm:[520,780,.12,.08,'triangle'],ui_error:[160,120,.12,.1,'square'],place_unit:[330,520,.12,.12,'sine'],rank_up:[440,880,.22,.12,'triangle'],coin:[880,1320,.08,.04,'sine'],
  hit_melee:[190,90,.05,.05,'triangle'],hit_arrow:[420,260,.05,.035,'triangle'],hit_magic:[700,380,.07,.035,'sine'],monster_die:[300,120,.12,.05,'triangle'],
  skill_fire:[260,120,.2,.06,'sawtooth'],skill_ice:[1200,700,.18,.05,'sine'],skill_wind:[500,900,.2,.04,'triangle'],skill_thunder:[180,60,.18,.07,'square'],skill_light:[880,1320,.2,.05,'sine'],skill_dark:[200,90,.22,.06,'sawtooth'],
+ hit_holy:[1100,820,.07,.035,'sine'],die_slime:[420,160,.12,.05,'sine'],die_beast:[520,180,.14,.05,'sawtooth'],die_soldier:[240,100,.14,.05,'square'],die_spirit:[900,300,.2,.04,'sine'],die_stone:[140,60,.2,.07,'square'],die_boss:[110,40,1.1,.2,'sawtooth'],
  heal:[660,990,.18,.06,'sine'],ult_ready:[740,1480,.28,.12,'triangle'],ult_cast:[120,640,.5,.16,'sawtooth'],ally_down:[220,70,.4,.16,'sawtooth'],crystal_hit:[220,70,.4,.2,'sawtooth'],
  battle_start:[440,880,.22,.12,'triangle'],wave_clear:[523,1046,.4,.12,'triangle'],boss_appear:[90,50,.7,.22,'sawtooth'],boss_attack:[110,55,.5,.18,'sawtooth'],blessing:[660,1320,.3,.1,'sine'],legacy:[392,1176,.5,.12,'triangle'],defeat:[330,110,.9,.14,'triangle']};
 // Minimum seconds between two plays of the same sound (busy battles would otherwise stack dozens).
-const SFX_GAP={hit_melee:.07,hit_arrow:.07,hit_magic:.07,coin:.05,monster_die:.05,skill_fire:.15,skill_ice:.15,skill_wind:.15,skill_thunder:.15,skill_light:.15,skill_dark:.15};
+const SFX_GAP={hit_melee:.07,hit_arrow:.07,hit_magic:.07,hit_holy:.07,coin:.05,monster_die:.05,die_slime:.05,die_beast:.05,die_soldier:.05,die_spirit:.05,die_stone:.05,skill_fire:.15,skill_ice:.15,skill_wind:.15,skill_thunder:.15,skill_light:.15,skill_dark:.15};
+// A sound without its own file borrows this one's file before falling back to its synth blip.
+const SFX_BORROW={hit_holy:'hit_magic',die_slime:'monster_die',die_beast:'monster_die',die_soldier:'monster_die',die_spirit:'monster_die',die_stone:'monster_die',die_boss:'monster_die'};
+// Which death sound each monster body uses.
+const DIE_SOUND={slime:'die_slime',wolf:'die_beast',spider:'die_beast',dragon:'die_beast',goblin:'die_soldier',knight:'die_soldier',archer:'die_soldier',ghost:'die_spirit',flameSpirit:'die_spirit',golem:'die_stone',treant:'die_stone',sentinel:'die_stone'};
 const sfxBuf={},sfxLast={};
 // Loads the chosen candidate of every effect file (again after the choice changes).
 function loadSfx(){const c=audioCtx();if(!c)return;for(const n in SFX_FILES){const file=`${n}_${sfxPick(n)}`;if(sfxBuf[n]&&sfxBuf[n].file===file)continue;const slot={file};sfxBuf[n]=slot;
  fetch(`sfx/${file}.mp3?v=${GAME_VERSION}`).then(r=>r.ok?r.arrayBuffer():Promise.reject()).then(b=>new Promise((ok,no)=>c.decodeAudioData(b,ok,no))).then(buf=>{if(sfxBuf[n]===slot)slot.buf=buf;}).catch(()=>{});}}
-function sfx(kind){if(!settings.sfx)return;const c=audioCtx();if(!c)return;const now=c.currentTime;if(now-(sfxLast[kind]??-9)<(SFX_GAP[kind]??.03))return;sfxLast[kind]=now;
- try{const buf=sfxBuf[kind]?.buf;if(buf){const src=c.createBufferSource(),g=c.createGain();src.buffer=buf;g.gain.value=.9;src.connect(g).connect(c.destination);src.start();return;}
-  const P=SFX_SYNTH[kind];if(!P)return;const o=c.createOscillator(),g=c.createGain();o.type=P[4];o.frequency.setValueAtTime(P[0],now);o.frequency.exponentialRampToValueAtTime(P[1],now+P[2]);g.gain.setValueAtTime(Math.min(.5,P[3]*2),now);g.gain.exponentialRampToValueAtTime(.001,now+P[2]);o.connect(g).connect(c.destination);o.start(now);o.stop(now+P[2]+.02);}catch(e){}}
+// opt: {gain: volume multiplier, delay: seconds from now, force: ignore the repeat gap}. Hits and deaths vary their pitch slightly.
+function sfx(kind,opt={}){if(!settings.sfx)return;const c=audioCtx();if(!c)return;const now=c.currentTime,at=now+(opt.delay||0),vol=opt.gain||1,rate=/^(hit_|die_|monster_die)/.test(kind)?.94+Math.random()*.12:1;if(!opt.force&&now-(sfxLast[kind]??-9)<(SFX_GAP[kind]??.03))return;sfxLast[kind]=now;
+ try{const buf=sfxBuf[kind]?.buf||(!SFX_FILES[kind]&&SFX_BORROW[kind]?sfxBuf[SFX_BORROW[kind]]?.buf:null);if(buf){const src=c.createBufferSource(),g=c.createGain();src.buffer=buf;src.playbackRate.value=rate;g.gain.value=.9*vol;src.connect(g).connect(c.destination);src.start(at);return;}
+  const P=SFX_SYNTH[kind];if(!P)return;const o=c.createOscillator(),g=c.createGain();o.type=P[4];o.frequency.setValueAtTime(P[0]*rate,at);o.frequency.exponentialRampToValueAtTime(P[1]*rate,at+P[2]);g.gain.setValueAtTime(Math.min(.6,P[3]*2*vol),at);g.gain.exponentialRampToValueAtTime(.001,at+P[2]);o.connect(g).connect(c.destination);o.start(at);o.stop(at+P[2]+.02);}catch(e){}}
 const BGM_FILES={1:'01. Title Theme',4:'04. Blades of the Young',5:'05. March of the Broken Banner',6:'06. When Kingdoms Fall',7:'07. Awakened Colossus',10:'10. Raise the Banner',12:'12. Where Our Journey Ends'};
 const BGM_FADE=1;   // seconds of crossfade between tracks
 const bgm={els:{},gains:{},cur:null,want:null,unlocked:false,duck:1,stops:{},
@@ -343,8 +349,14 @@ function startChapter(index,snapshot){clearObjects();closePanel();app.classList.
 function addFx(o){if(fx.length>160)fx.shift();o.t=0;if(o.k==='ultblast')o.life=o.dur+(o.delay||0);fx.push(o);}
 // A small visual knock-back for monsters hit in melee (the rules are untouched).
 function shove(id,power){const o=objs.get('e'+id);if(o)o.push=Math.min(1.8,Math.max(o.push||0,power));}
-function handleEvents(){for(const e of S.drain()){
- if(e.t==='attack'){const o=objs.get('u'+e.unit);if(o)o.lunge=1;if(e.melee){shove(e.target,1);addFx({k:'slash',x:e.to.x,y:e.to.y,dur:.26,color:'#fff6c8',r:.46,glow:'#ffd257'});addFx({k:'spark',x:e.to.x,y:e.to.y,dur:.22,color:'#fff3b0'});}else addFx({k:'shot',from:e.from,to:e.to,dur:.17,color:e.magic?'#e2c4ff':'#fff1c4',glow:e.magic?'#a66bff':'#ffb347',magic:e.magic});sfx(e.melee?'hit_melee':e.magic?'hit_magic':'hit_arrow');}
+// Several monsters falling in the same frame (an area spell): each kind of death sound plays once, louder the more fell,
+// up to three kinds staggered by 45 ms, with a single coin sound. Saves dozens of overlapping copies.
+let deaths=[];
+function playDeaths(){if(!deaths.length)return;const count={};for(const k of deaths)count[k]=(count[k]||0)+1;
+ Object.keys(count).sort((a,b)=>(b==='die_boss')-(a==='die_boss')||count[b]-count[a]).slice(0,3).forEach((k,i)=>sfx(k,{force:true,delay:i*.045,gain:Math.min(1.5,1+.15*(count[k]-1))}));
+ sfx('coin',{force:true,gain:Math.min(1.4,1+.1*(deaths.length-1))});deaths=[];}
+function handleEvents(){deaths=[];for(const e of S.drain()){
+ if(e.t==='attack'){const o=objs.get('u'+e.unit);if(o)o.lunge=1;if(e.melee){shove(e.target,1);addFx({k:'slash',x:e.to.x,y:e.to.y,dur:.26,color:'#fff6c8',r:.46,glow:'#ffd257'});addFx({k:'spark',x:e.to.x,y:e.to.y,dur:.22,color:'#fff3b0'});}else addFx({k:'shot',from:e.from,to:e.to,dur:.17,color:e.magic?'#e2c4ff':'#fff1c4',glow:e.magic?'#a66bff':'#ffb347',magic:e.magic});sfx(e.melee?'hit_melee':!e.magic?'hit_arrow':D.UNITS[S.units.find(v=>v.id===e.unit)?.def]?.element==='light'?'hit_holy':'hit_magic');}
  else if(e.t==='skill'&&D.SKILLS[e.skill]?.ult){const s=D.SKILLS[e.skill],color=EL_COLOR[e.element]||'#fff3b0',area=e.area||s.area||.8,heal=s.type==='heal',delay=e.fx==='meteor'?.5:0;
   const o=objs.get('u'+e.unit);if(o)o.lunge=1.6;addFx({k:'label',real:true,x:e.from.x,y:e.from.y,h:2,text:e.name,color,dur:1.4,size:18});
   if(e.fx==='meteor')addFx({k:'meteor',real:true,x:e.x,y:e.y,dur:.5,color,r:area,fallOnly:true});else if(e.fx==='bolt')addFx({k:'bolt',x:e.x,y:e.y,dur:.5,color,wide:true});else if(e.fx!=='nova')addFx({k:'shot',from:e.from,to:{x:e.x,y:e.y},dur:.2,color,glow:color,magic:true});
@@ -364,7 +376,7 @@ function handleEvents(){for(const e of S.drain()){
  else if(e.t==='cleanse')addFx({k:'num',x:e.x,y:e.y,h:1.6,text:'정화',color:'#fff3b0',size:13,dur:.8});
  else if(e.t==='dodge')addFx({k:'num',x:e.x,y:e.y,h:1.4,text:'회피',color:'#cfe3ff',size:12,dur:.6});
  else if(e.t==='ustatus')addFx({k:'num',x:e.x,y:e.y,h:1.7,text:ST_NAME[e.status],color:ST_COLOR[e.status],size:13,dur:.9});
- else if(e.t==='die'){const o=objs.get('e'+e.id);if(o){objs.delete('e'+e.id);dying.push({g:o.g,t:0});}addFx({k:'num',x:e.x,y:e.y,h:.5,text:'+'+e.gold+(e.steal?'↑':''),color:'#f2cf72',size:12,dur:.7});sfx('monster_die');sfx('coin');if(e.boss)banner('BOSS',S.chapter.boss.split?'갈라졌다!':'쓰러졌다!');}
+ else if(e.t==='die'){const o=objs.get('e'+e.id);if(o){objs.delete('e'+e.id);dying.push({g:o.g,t:0});}addFx({k:'num',x:e.x,y:e.y,h:.5,text:'+'+e.gold+(e.steal?'↑':''),color:'#f2cf72',size:12,dur:.7});deaths.push(e.boss?'die_boss':DIE_SOUND[e.model]||'monster_die');if(e.boss)banner('BOSS',S.chapter.boss.split?'갈라졌다!':'쓰러졌다!');}
  else if(e.t==='leak'){sfx('crystal_hit');addFx({k:'flash',dur:.35});toast(e.boss?'보스가 수정에 닿았습니다':`수정이 공격받았습니다 · 생명 −${e.cost}`);}
  else if(e.t==='down'){const o=objs.get('u'+e.id);if(o){objs.delete('u'+e.id);dying.push({g:o.g,t:0});}toast(`${D.UNITS[e.def].name} 쓰러짐${e.cd?` · ${e.cd}초 뒤 복귀 가능`:''}`);sfx('ally_down');if(selUnit===e.id)closePanel();}
  else if(e.t==='withdraw'){const o=objs.get('u'+e.id);if(o){objs.delete('u'+e.id);unitGroup.remove(o.g);}}
@@ -382,7 +394,8 @@ function handleEvents(){for(const e of S.drain()){
  else if(e.t==='bless')blessingModal();
  else if(e.t==='won'){bgm.play(D.CHAPTERS[S.chapterIndex+1]?10:12,!D.CHAPTERS[S.chapterIndex+1]);const index=S.chapterIndex,end=()=>legacyModal(index,l=>resultModal(true,l));if(S.chapter.outro)dialogue(S.chapter.outro,end);else end();}
  else if(e.t==='lost'){bgm.stop(1.5);sfx('defeat');resultModal(false);}
- hudKey='';}}
+ hudKey='';}
+ playDeaths();}
 function ellipse(x,y,r,h=0){const p=proj(x,y,h);ctx.beginPath();ctx.ellipse(p.x,p.y,r*pxU,r*pxU*SIN,0,0,Math.PI*2);}
 function tileQuad(c,r,h){const a=proj(c-.5,r-.5,h),b=proj(c+.5,r+.5,h);ctx.beginPath();ctx.rect(a.x+1,a.y+1,b.x-a.x-2,b.y-a.y-2);}
 function pill(x,y,text,bg,fg){ctx.font=`400 13px ${FONT}`;const w=ctx.measureText(text).width+16;x=Math.max(w/2+4,Math.min(vw-w/2-4,x));y=Math.max(14,Math.min(vh-14,y));ctx.fillStyle=bg;ctx.beginPath();ctx.roundRect(x-w/2,y-11,w,22,11);ctx.fill();ctx.fillStyle=fg;ctx.fillText(text,x,y+4.5);}
