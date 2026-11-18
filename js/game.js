@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='0.4.5',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='0.4.6',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -113,20 +113,45 @@ function makePortraits(){const size=160,pr=new THREE.WebGLRenderer({antialias:tr
  for(const id in D.UNITS){const g=M.figure(unitSpec(id));g.children.slice(1).forEach(c=>{c.visible=false;});g.rotation.y=.35;ps.add(g);pc.position.set(0,1.05,5);pc.lookAt(0,.72,0);pr.render(ps,pc);portraits[id]=pr.domElement.toDataURL('image/png');ps.remove(g);}
  pr.dispose();pr.forceContextLoss?.();}
 
-// ── Sound: synthesized effect blips, and the cnation TACTICS soundtrack ──
-let ac=null,lastHit=0;
-function sfx(kind){if(!settings.sfx)return;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();const now=ac.currentTime;if(kind==='hit'){if(now-lastHit<.07)return;lastHit=now;}
- const P={hit:[190,90,.05,.05,'triangle'],place:[330,520,.12,.12,'sine'],coin:[880,1320,.08,.04,'sine'],rank:[440,880,.22,.12,'triangle'],leak:[220,70,.4,.2,'sawtooth'],ult:[120,640,.5,.16,'sawtooth'],win:[523,1046,.6,.14,'triangle'],err:[160,120,.12,.1,'square'],tap:[600,500,.04,.05,'sine'],heal:[660,990,.18,.06,'sine'],boss:[90,50,.7,.22,'sawtooth'],ready:[740,1480,.28,.12,'triangle']}[kind];if(!P)return;
- const o=ac.createOscillator(),g=ac.createGain();o.type=P[4];o.frequency.setValueAtTime(P[0],now);o.frequency.exponentialRampToValueAtTime(P[1],now+P[2]);g.gain.setValueAtTime(Math.min(.5,P[3]*2),now);g.gain.exponentialRampToValueAtTime(.001,now+P[2]);o.connect(g).connect(ac.destination);o.start(now);o.stop(now+P[2]+.02);}catch(e){}}
+// ── Sound: effect sounds (sfx/<name>.mp3 once supplied, synthesized blips until then) and the cnation TACTICS soundtrack ──
+// Everything goes through one Web Audio context so volumes also work on iPhone, where <audio>.volume is ignored.
+let ac=null;
+function audioCtx(){if(!ac){try{ac=new (window.AudioContext||window.webkitAudioContext)();}catch(e){ac=null;}}if(ac&&ac.state==='suspended')ac.resume().catch(()=>{});return ac;}
+// Names whose sfx/<name>.mp3 file exists. Add a name here when its file is added; the rest use the synth fallback below.
+const SFX_READY=[];
+// Fallback blips: [start Hz, end Hz, seconds, gain, wave].
+const SFX_SYNTH={ui_tap:[600,500,.04,.05,'sine'],ui_confirm:[520,780,.12,.08,'triangle'],ui_error:[160,120,.12,.1,'square'],place_unit:[330,520,.12,.12,'sine'],rank_up:[440,880,.22,.12,'triangle'],coin:[880,1320,.08,.04,'sine'],
+ hit_melee:[190,90,.05,.05,'triangle'],hit_arrow:[420,260,.05,.035,'triangle'],hit_magic:[700,380,.07,.035,'sine'],monster_die:[300,120,.12,.05,'triangle'],
+ skill_fire:[260,120,.2,.06,'sawtooth'],skill_ice:[1200,700,.18,.05,'sine'],skill_wind:[500,900,.2,.04,'triangle'],skill_thunder:[180,60,.18,.07,'square'],skill_light:[880,1320,.2,.05,'sine'],skill_dark:[200,90,.22,.06,'sawtooth'],
+ heal:[660,990,.18,.06,'sine'],ult_ready:[740,1480,.28,.12,'triangle'],ult_cast:[120,640,.5,.16,'sawtooth'],ally_down:[220,70,.4,.16,'sawtooth'],crystal_hit:[220,70,.4,.2,'sawtooth'],
+ battle_start:[440,880,.22,.12,'triangle'],wave_clear:[523,1046,.4,.12,'triangle'],boss_appear:[90,50,.7,.22,'sawtooth'],boss_attack:[110,55,.5,.18,'sawtooth'],blessing:[660,1320,.3,.1,'sine'],legacy:[392,1176,.5,.12,'triangle'],defeat:[330,110,.9,.14,'triangle']};
+// Minimum seconds between two plays of the same sound (busy battles would otherwise stack dozens).
+const SFX_GAP={hit_melee:.07,hit_arrow:.07,hit_magic:.07,coin:.05,monster_die:.05,skill_fire:.15,skill_ice:.15,skill_wind:.15,skill_thunder:.15,skill_light:.15,skill_dark:.15};
+const sfxBuf={},sfxLast={};
+function loadSfx(){const c=audioCtx();if(!c)return;for(const n of SFX_READY){if(sfxBuf[n])continue;sfxBuf[n]='loading';
+ fetch(`sfx/${n}.mp3?v=${GAME_VERSION}`).then(r=>r.ok?r.arrayBuffer():Promise.reject()).then(b=>new Promise((ok,no)=>c.decodeAudioData(b,ok,no))).then(buf=>{sfxBuf[n]=buf;}).catch(()=>{delete sfxBuf[n];});}}
+function sfx(kind){if(!settings.sfx)return;const c=audioCtx();if(!c)return;const now=c.currentTime;if(now-(sfxLast[kind]??-9)<(SFX_GAP[kind]??.03))return;sfxLast[kind]=now;
+ try{const buf=sfxBuf[kind];if(buf&&buf!=='loading'){const src=c.createBufferSource(),g=c.createGain();src.buffer=buf;g.gain.value=.9;src.connect(g).connect(c.destination);src.start();return;}
+  const P=SFX_SYNTH[kind];if(!P)return;const o=c.createOscillator(),g=c.createGain();o.type=P[4];o.frequency.setValueAtTime(P[0],now);o.frequency.exponentialRampToValueAtTime(P[1],now+P[2]);g.gain.setValueAtTime(Math.min(.5,P[3]*2),now);g.gain.exponentialRampToValueAtTime(.001,now+P[2]);o.connect(g).connect(c.destination);o.start(now);o.stop(now+P[2]+.02);}catch(e){}}
 const BGM_FILES={1:'01. Title Theme',4:'04. Blades of the Young',5:'05. March of the Broken Banner',6:'06. When Kingdoms Fall',7:'07. Awakened Colossus',10:'10. Raise the Banner',12:'12. Where Our Journey Ends'};
-const bgm={els:{},cur:null,want:null,unlocked:false,
+const BGM_FADE=1;   // seconds of crossfade between tracks
+const bgm={els:{},gains:{},cur:null,want:null,unlocked:false,duck:1,stops:{},
  el(id){return this.els[id]||(this.els[id]=Object.assign(new Audio(`bgm/${encodeURIComponent(BGM_FILES[id])}_64k.webm`),{preload:'auto'}));},
+ level(){return settings.bgm*.25*this.duck;},
+ // Each track is routed through its own gain node (null = no Web Audio: fall back to <audio>.volume).
+ gain(id){if(id in this.gains)return this.gains[id];const c=audioCtx();let g=null;if(c&&c.createMediaElementSource){try{const src=c.createMediaElementSource(this.el(id));g=c.createGain();g.gain.value=0;src.connect(g).connect(c.destination);}catch(e){g=null;}}this.gains[id]=g;return g;},
+ ramp(id,v,t){const g=this.gain(id);if(g&&ac){const now=ac.currentTime;g.gain.cancelScheduledValues(now);g.gain.setValueAtTime(g.gain.value,now);if(t>0)g.gain.linearRampToValueAtTime(v,now+t);else g.gain.setValueAtTime(v,now);}else this.el(id).volume=Math.max(0,Math.min(1,v));},
+ fadeOut(id,t=BGM_FADE){if(!id||!this.els[id])return;this.ramp(id,0,t);clearTimeout(this.stops[id]);this.stops[id]=setTimeout(()=>{if(this.cur!==id)this.els[id].pause();},t*1000+60);},
  // Title music resumes where it stopped; battle and victory tracks start from the top.
- play(id,loop=true){this.want={id,loop};if(!this.unlocked||this.cur===id)return;const old=this.cur&&this.els[this.cur];if(old)old.pause();this.cur=id;const a=this.el(id);a.loop=loop;a.volume=settings.bgm*.25;if(id!==1)a.currentTime=0;a.onended=loop?null:()=>{if(this.cur===id){this.cur=null;this.play(1);}};const p=a.play();if(p)p.catch(()=>{this.cur=null;});},
- unlock(){if(this.unlocked)return;this.unlocked=true;if(this.want)this.play(this.want.id,this.want.loop);},
- volume(){for(const k in this.els)this.els[k].volume=settings.bgm*.25;if(this.cur){const a=this.els[this.cur];if(settings.bgm<=0)a.pause();else if(a.paused)a.play().catch(()=>{});}}};
-window.addEventListener('pointerdown',()=>bgm.unlock(),{capture:true});
-document.addEventListener('visibilitychange',()=>{const a=bgm.cur&&bgm.els[bgm.cur];if(a){if(document.hidden)a.pause();else if(settings.bgm>0)a.play().catch(()=>{});}if(document.hidden&&S&&S.phase==='battle'){paused=true;hudKey='';}});
+ play(id,loop=true){this.want={id,loop};if(!this.unlocked||this.cur===id)return;const old=this.cur;this.cur=id;this.fadeOut(old);clearTimeout(this.stops[id]);
+  const a=this.el(id);a.loop=loop;if(id!==1)a.currentTime=0;a.onended=loop?null:()=>{if(this.cur===id)this.play(1);};
+  this.ramp(id,0,0);if(settings.bgm>0){const p=a.play();if(p)p.catch(()=>{if(this.cur===id)this.cur=null;});}this.ramp(id,this.level(),BGM_FADE);},
+ stop(t=1.5){this.want=null;const old=this.cur;this.cur=null;this.fadeOut(old,t);},
+ setDuck(d){if(this.duck===d)return;this.duck=d;if(this.cur)this.ramp(this.cur,this.level(),.4);},
+ unlock(){if(this.unlocked)return;this.unlocked=true;audioCtx();loadSfx();if(this.want)this.play(this.want.id,this.want.loop);},
+ volume(){if(!this.cur)return;const a=this.els[this.cur];if(settings.bgm<=0){a.pause();return;}if(a.paused)a.play().catch(()=>{});this.ramp(this.cur,this.level(),.2);}};
+window.addEventListener('pointerdown',()=>{bgm.unlock();audioCtx();},{capture:true});
+document.addEventListener('visibilitychange',()=>{const a=bgm.cur&&bgm.els[bgm.cur];if(document.hidden){if(a)a.pause();}else{audioCtx();if(a&&settings.bgm>0)a.play().catch(()=>{});}if(document.hidden&&S&&S.phase==='battle'){paused=true;hudKey='';}});
 const battleTrack=()=>S.chapter.battles[S.battle]?.boss?7:[4,5,6][(S.chapterIndex+Math.floor(S.battle/3))%3];
 
 // ── HUD, strip, dock, panel ──
@@ -142,7 +167,7 @@ function updateHud(){const key=[S.units.map(u=>u.ult?Math.ceil(u.ultCd)+(ultRead
  refreshDock();if(selUnit)refreshPanel();}
 const chipText=p=>`${p.boss?'👑 ':''}${p.name} ×${p.count}${p.element?' '+D.ELEMENT_ICON[p.element]:''}${p.flying?' <i>비행</i>':''}${p.immunity==='physical'?' <i>물리↓</i>':p.immunity==='magic'?' <i>마법↓</i>':''}`;
 function showPreview(){const chips=$('#chips');chips.innerHTML=`<span class="chip info">ⓘ 적 정보</span>`+S.preview().map(p=>`<span class="chip${p.elite?' elite':''}${p.boss?' boss':''}">${chipText(p)}</span>`).join('');chips.scrollLeft=0;}
-$('#chips').addEventListener('click',()=>{if(!S||modalOpen||S.phase!=='prep')return;sfx('tap');const m=modal(`<p class="sub">전투 ${S.battle+1} · ${S.chapter.battles[S.battle].name}</p><h2>이번에 오는 적</h2><ul class="foes">`+S.preview().map(p=>`<li><b>${chipText(p)}</b><br>${p.note}</li>`).join('')+`</ul><button class="primary">닫기</button>`);m.querySelector('button').onclick=closeModal;});
+$('#chips').addEventListener('click',()=>{if(!S||modalOpen||S.phase!=='prep')return;sfx('ui_tap');const m=modal(`<p class="sub">전투 ${S.battle+1} · ${S.chapter.battles[S.battle].name}</p><h2>이번에 오는 적</h2><ul class="foes">`+S.preview().map(p=>`<li><b>${chipText(p)}</b><br>${p.note}</li>`).join('')+`</ul><button class="primary">닫기</button>`);m.querySelector('button').onclick=closeModal;});
 function buildDock(){const dock=$('#dock');dock.innerHTML='';const rows=[D.HERO_ORDER,D.SOLDIER_ORDER].map(order=>order.filter(id=>S.chapter.roster.includes(id)));
  for(const ids of rows){const row=document.createElement('div');row.className='row';for(const id of ids){const d=D.UNITS[id],el=document.createElement('div');el.className='card';el.dataset.id=id;
    el.innerHTML=`<img alt="" src="${portraits[id]}"><div class="nm">${d.name}</div><div class="ct"></div>`;el.addEventListener('pointerdown',e=>cardDown(e,id));row.appendChild(el);}dock.appendChild(row);}refreshDock();}
@@ -166,49 +191,49 @@ function refreshPanel(force){const u=S.units.find(v=>v.id===selUnit);if(!u){clos
 function openPanel(id){selUnit=id;selCard=null;aiming=null;validTiles=null;app.classList.add('unit-open');panelKey='';refreshPanel(true);}
 function closePanel(){selUnit=null;aiming=null;$('#aimHint').style.display='none';app.classList.remove('unit-open');}
 $('#panel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;const act=b.dataset.act,u=S.units.find(v=>v.id===selUnit);if(!u)return closePanel();
- if(act==='close'){sfx('tap');closePanel();}
- else if(act==='rank'){const err=S.rankUp(u.id,b.dataset.choice);if(err){toast(err);sfx('err');}else{sfx('rank');refreshPanel(true);}}
+ if(act==='close'){sfx('ui_tap');closePanel();}
+ else if(act==='rank'){const err=S.rankUp(u.id,b.dataset.choice);if(err){toast(err);sfx('ui_error');}else{sfx('rank_up');refreshPanel(true);}}
  else if(act==='withdraw'){S.withdraw(u.id);sfx('coin');closePanel();}
- else if(act==='ult'){const s=D.SKILLS[u.ult];if(s.aim){aiming=aiming===u.id?null:u.id;$('#aimHint').style.display=aiming?'block':'none';refreshPanel(true);}else{const err=S.ult(u.id);if(err){toast(err);sfx('err');}else closePanel();}}
+ else if(act==='ult'){const s=D.SKILLS[u.ult];if(s.aim){aiming=aiming===u.id?null:u.id;$('#aimHint').style.display=aiming?'block':'none';refreshPanel(true);}else{const err=S.ult(u.id);if(err){toast(err);sfx('ui_error');}else closePanel();}}
  hudKey='';});
 
 // ── Placing characters ──
 const ultReady=u=>!!(u&&u.ult&&u.ultCd<=0&&S.phase==='battle'&&!u.st.freeze&&!u.st.stun&&!u.st.silence);
 // Casts a hero's 필살기 at once (메테오 asks where to drop it first).
-function castUlt(u){if(D.SKILLS[u.ult].aim){openPanel(u.id);aiming=u.id;$('#aimHint').style.display='block';refreshPanel(true);return;}const err=S.ult(u.id);if(err){toast(err);sfx('err');}else closePanel();hudKey='';}
+function castUlt(u){if(D.SKILLS[u.ult].aim){openPanel(u.id);aiming=u.id;$('#aimHint').style.display='block';refreshPanel(true);return;}const err=S.ult(u.id);if(err){toast(err);sfx('ui_error');}else closePanel();hudKey='';}
 function selectCard(id){const out=D.UNITS[id].kind==='hero'&&S.units.find(u=>u.def===id);if(out){if(ultReady(out))castUlt(out);else openPanel(out.id);return;}closePanel();selCard=id;
  validTiles=S.map.tiles.filter(t=>{const e=S.canDeploy(id,t.c,t.r);return !e||e==='골드가 부족합니다';});
  // Road tiles a melee card may not use because another melee character stands too close.
  spacedTiles=D.UNITS[id].melee?S.map.tiles.filter(t=>t.road&&/떨어져야|적 출현 문/.test(S.canDeploy(id,t.c,t.r)||'')):[];refreshDock();}
 function clearCard(){selCard=null;validTiles=null;spacedTiles=[];hover=null;dragging=false;refreshDock();}
-function tryDeploy(c,r){const id=selCard,err=S.deploy(id,c,r);if(err){toast(err);sfx('err');return false;}sfx('place');const d=D.UNITS[id];if(d.kind==='soldier'&&S.gold>=S.deployCost(id)&&S.units.length<S.command)selectCard(id);else clearCard();hudKey='';return true;}
+function tryDeploy(c,r){const id=selCard,err=S.deploy(id,c,r);if(err){toast(err);sfx('ui_error');return false;}sfx('place_unit');const d=D.UNITS[id];if(d.kind==='soldier'&&S.gold>=S.deployCost(id)&&S.units.length<S.command)selectCard(id);else clearCard();hudKey='';return true;}
 const localPoint=e=>{const r=viewport.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top,inside:e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom};};
 const tileAt=p=>{const w=unproj(p.x,p.y),c=Math.round(w.x),r=Math.round(w.y);return S.map.tile(c,r)?{c,r}:null;};
 let down=null;
-function cardDown(e,id){if(modalOpen||!S)return;e.preventDefault();sfx('tap');selectCard(id);if(selCard!==id)return;down={x:e.clientX,y:e.clientY,card:true};dragging=false;}
+function cardDown(e,id){if(modalOpen||!S)return;e.preventDefault();sfx('ui_tap');selectCard(id);if(selCard!==id)return;down={x:e.clientX,y:e.clientY,card:true};dragging=false;}
 window.addEventListener('pointermove',e=>{if(!S||!selCard||!down||!down.card)return;if(!dragging&&Math.hypot(e.clientX-down.x,e.clientY-down.y)>10)dragging=true;if(dragging){const p=localPoint(e);hover=p.inside?tileAt({x:p.x,y:p.y-pxU*.6}):null;}});
 window.addEventListener('pointerup',e=>{if(!S||!down||!down.card)return;const wasDrag=dragging;down=null;if(wasDrag&&selCard){dragging=false;const p=localPoint(e),t=p.inside?tileAt({x:p.x,y:p.y-pxU*.6}):null;hover=null;if(t)tryDeploy(t.c,t.r);}});
 fxc.addEventListener('pointerdown',e=>{if(modalOpen||!S)return;const p=localPoint(e);
- if(aiming){const w=unproj(p.x,p.y),err=S.ult(aiming,w.x,w.y);if(err){toast(err);sfx('err');}aiming=null;$('#aimHint').style.display='none';closePanel();return;}
+ if(aiming){const w=unproj(p.x,p.y),err=S.ult(aiming,w.x,w.y);if(err){toast(err);sfx('ui_error');}aiming=null;$('#aimHint').style.display='none';closePanel();return;}
  if(selCard){const t=tileAt(p);if(t)tryDeploy(t.c,t.r);else clearCard();return;}
  // Tap a character: test the bodies first (they stand taller than their tile). Otherwise a monster, otherwise the tile.
  let best=null;for(const u of S.units){const s=proj(u.x,u.y,groundY(u.x,u.y)+.5),d=Math.hypot(s.x-p.x,s.y-p.y);if(d<pxU*.55&&(!best||d<best.d))best={u,d};}
- if(best){sfx('tap');openPanel(best.u.id);return;}closePanel();
+ if(best){sfx('ui_tap');openPanel(best.u.id);return;}closePanel();
  let foe=null;for(const en of S.enemies){const s=proj(en.x,en.y,.4*(en.scale||1)),d=Math.hypot(s.x-p.x,s.y-p.y);if(d<pxU*.5*(en.scale||1)&&(!foe||d<foe.d))foe={e:en,d};}
  if(foe){const en=foe.e,m=D.MONSTERS[en.kind],note=en.boss?S.chapter.boss.hint:(D.MODEL_TRAITS[en.model]||{}).note||'';toast(`${en.name} HP ${Math.ceil(en.hp)}/${Math.round(en.maxHp)}${en.element?' '+D.ELEMENT_ICON[en.element]:''} · ${note}`);return;}
  const t=tileAt(p),tt=t&&S.map.tile(t.c,t.r);if(tt&&tt.terrain!=='grass'&&tt.terrain!=='road')toast({high:'고지대: 원거리 사거리 +0.5칸',forest:'수풀: 사거리 −0.5칸, 적의 화살을 잘 피함',swamp:'늪: 지나는 몬스터가 30% 느려짐',sand:'모래: 지나는 몬스터가 18% 느려짐',bridge:'다리: 근접 캐릭터가 설 수 있는 길목',water:'물: 배치 불가',cliff:'절벽: 배치 불가',prop:'구조물: 배치 불가',rock:'바위: 배치 불가'}[tt.terrain]||TERRAIN_NAME[tt.terrain]);});
-$('#startBtn').addEventListener('click',()=>{if(S.phase!=='prep')return;if(!S.units.length){toast('먼저 동료를 한 명 이상 배치하세요');sfx('err');return;}S.startBattle();sfx('rank');});
-$('#speedBtn').addEventListener('click',()=>{speed=speed%3+1;hudKey='';sfx('tap');});
-$('#pauseBtn').addEventListener('click',()=>{paused=!paused;hudKey='';sfx('tap');});
-$('#menuBtn').addEventListener('click',()=>{if(S&&!modalOpen){sfx('tap');gameMenu();}});
+$('#startBtn').addEventListener('click',()=>{if(S.phase!=='prep')return;if(!S.units.length){toast('먼저 동료를 한 명 이상 배치하세요');sfx('ui_error');return;}S.startBattle();});
+$('#speedBtn').addEventListener('click',()=>{speed=speed%3+1;hudKey='';sfx('ui_tap');});
+$('#pauseBtn').addEventListener('click',()=>{paused=!paused;hudKey='';sfx('ui_tap');});
+$('#menuBtn').addEventListener('click',()=>{if(S&&!modalOpen){sfx('ui_tap');gameMenu();}});
 
 // ── Modals ──
 function modal(html,cls){const m=$('#modal');m.className=cls||'';m.innerHTML=`<div class="sheet">${html}</div>`;m.hidden=false;modalOpen=true;return m;}
 function closeModal(){$('#modal').hidden=true;modalOpen=false;}
 function dialogue(lines,done){let i=0;const show=()=>{const [who,text]=lines[i],m=modal(`<p class="sub">${S.chapter.label} · ${S.chapter.name}</p><p class="who">${who}</p><p class="line">${text}</p><button class="primary">${i<lines.length-1?'다음':'확인'}</button><button data-skip>건너뛰기</button>`);
-  m.querySelector('.primary').onclick=()=>{sfx('tap');if(++i<lines.length)show();else{closeModal();done&&done();}};m.querySelector('[data-skip]').onclick=()=>{closeModal();done&&done();};};show();}
+  m.querySelector('.primary').onclick=()=>{sfx('ui_tap');if(++i<lines.length)show();else{closeModal();done&&done();}};m.querySelector('[data-skip]').onclick=()=>{closeModal();done&&done();};};show();}
 function blessingModal(){const m=modal(`<p class="sub">에테르 축복</p><h2>하나를 고르세요</h2><p class="scope now">⏳ 이번 장에서만 효력 · 장이 끝나면 사라집니다</p>`+S.offer.map(id=>{const b=D.BLESSINGS.find(v=>v.id===id);return `<button data-id="${id}">✨ ${b.name}<small>${b.desc} (이번 장에서만)</small></button>`;}).join(''),'bless');
- m.querySelectorAll('button').forEach(b=>b.onclick=()=>{S.chooseBlessing(b.dataset.id);sfx('rank');closeModal();hudKey='';});}
+ m.querySelectorAll('button').forEach(b=>b.onclick=()=>{S.chooseBlessing(b.dataset.id);sfx('blessing');closeModal();hudKey='';});}
 const cleared=()=>loadJSON(CLEAR_KEY,{});
 // ── Arca legacies: permanent, one slot per chapter (picked after a clear; a replay may swap that chapter's pick) ──
 const legacyPicks=()=>loadJSON(LEGACY_KEY,{picks:{}}).picks||{};
@@ -220,11 +245,11 @@ function legacyListHTML(picks){const rows=D.CHAPTERS.map((c,i)=>{const l=picks[i
 function legacyModal(index,done){const picks=legacyPicks(),current=picks[index],others={...picks};delete others[index];
  const offer=D.legacyOffer(D.legacyCounts(others),index,Math.random);if(current&&!offer.includes(current))offer.push(current);
  const m=modal(`<p class="sub">${D.CHAPTERS[index].label} CLEAR</p><h2>아르카의 유산</h2><p class="scope keep">♾ 영구 효과 · 다음 장부터 계속 누적됩니다</p><p>이 장을 지켜낸 보답으로 하나를 고르세요.${current?`<br><small>이미 이 장의 유산이 있습니다. 다른 것을 고르면 바뀝니다.</small>`:''}</p>`+offer.map(id=>{const l=legacyInfo(id),n=D.legacyCounts(others)[id]||0;return `<button data-id="${id}" class="${id===current?'cur':''}">${l.icon} ${l.name}${id===current?' (현재)':''}<small>${l.desc}${n?` · 이미 ${n}번 보유 → ${n+1}번째`:''}${l.max>1?` · 최대 ${l.max}번`:''}</small></button>`;}).join(''),'legacy');
- m.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>{const all=loadJSON(LEGACY_KEY,{picks:{}});all.picks=all.picks||{};all.picks[index]=b.dataset.id;saveJSON(LEGACY_KEY,all);sfx('rank');done(legacyInfo(b.dataset.id));});}
+ m.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>{const all=loadJSON(LEGACY_KEY,{picks:{}});all.picks=all.picks||{};all.picks[index]=b.dataset.id;saveJSON(LEGACY_KEY,all);sfx('legacy');done(legacyInfo(b.dataset.id));});}
 function legacyView(back){const m=modal(`<h2>아르카의 유산</h2><p class="scope keep">♾ 장을 클리어할 때마다 하나씩 얻는 영구 효과</p><p><small>장마다 유산 칸이 하나씩 있어 최대 10개까지 모입니다. 클리어한 장을 다시 깨면 그 장의 유산을 바꿀 수 있습니다.</small></p>${legacyListHTML(legacyPicks())}<button class="primary" data-a="back">돌아가기</button><button class="dev" data-a="reset">유산 모두 초기화</button>`,'help');
  m.querySelector('[data-a=back]').onclick=back;m.querySelector('[data-a=reset]').onclick=()=>{const c=modal(`<h2>유산 초기화</h2><p>모아 둔 아르카의 유산을 모두 지웁니다. 되돌릴 수 없습니다.</p><button class="primary" data-a="n">취소</button><button class="dev" data-a="y">모두 지우기</button>`);c.querySelector('[data-a=n]').onclick=()=>legacyView(back);c.querySelector('[data-a=y]').onclick=()=>{saveJSON(LEGACY_KEY,{picks:{}});legacyView(back);};};}
 function resultModal(won,gained){const ch=S.chapter,index=S.chapterIndex;if(won){const n=S.leaksTotal===0?3:S.life>=Math.ceil(ch.life*.75)?2:1,best=cleared();best[ch.id]=Math.max(best[ch.id]||0,n);saveJSON(CLEAR_KEY,best);try{localStorage.removeItem(SAVE_KEY);}catch(e){}
-  const next=D.CHAPTERS[index+1];bgm.play(next?10:12,!next);sfx('win');
+  const next=D.CHAPTERS[index+1];
   const m=modal(`<p class="sub">${ch.label} CLEAR</p><h2>${ch.name}</h2><p class="stars">${'★'.repeat(n)}${'☆'.repeat(3-n)}</p><p>남은 생명 ${S.life} · 놓친 적 ${S.leaksTotal} · 처치 ${S.kills}</p>${gained?`<p class="scope keep">♾ 얻은 유산: ${gained.icon} ${gained.name} — ${gained.desc}</p>`:''}${next?`<button class="primary" data-a="next">다음 장으로<small>${next.label} · ${next.name}</small></button>`:`<p class="line">아르카 연대기 · 방어전<br>모든 장을 지켜냈습니다. 함께해 주셔서 고맙습니다.</p>`}<button data-a="title">타이틀로</button>`);
   if(next)m.querySelector('[data-a=next]').onclick=()=>{closeModal();startChapter(index+1,null);};m.querySelector('[data-a=title]').onclick=()=>{closeModal();showTitle();};}
  else{const m=modal(`<p class="sub">DEFEAT</p><h2>수정이 깨졌습니다</h2><p>전투 ${S.battle+1} 「${ch.battles[S.battle].name}」에서 막지 못했습니다.</p><button class="primary" data-a="retry">이 전투 다시 하기<small>전투를 시작했던 배치 그대로</small></button><button data-a="restart">장 처음부터</button><button data-a="title">타이틀로</button>`);
@@ -277,14 +302,14 @@ ${sec('💰 골드와 진행',`<ul><li>처치 골드는 몬스터 체력에 비�
 ${sec('♾ 아르카의 유산 (영구 효과)',`<ul><li>장을 클리어할 때마다 3개 중 하나를 고르고, 그 효과는 <b>이후 모든 장에 계속 적용</b>됩니다. 에테르 축복(이번 장에서만)과 다릅니다.</li><li>장마다 유산 칸이 하나 있어 최대 10개까지 모입니다. 같은 장을 다시 클리어하면 그 장의 유산을 다른 것으로 바꿀 수 있습니다.</li><li>같은 유산을 여러 장에서 고르면 효과가 겹칩니다(유산마다 최대 횟수가 있습니다).</li><li>타이틀의 「아르카의 유산」에서 모은 유산을 볼 수 있습니다.</li></ul><table><tr><th>유산</th><th>효과 · 최대</th></tr>`+D.LEGACIES.map(l=>`<tr><td>${l.icon} ${l.name}</td><td>${l.desc} · 최대 ${l.max}번${l.hero?` <small>(${D.UNITS[l.hero].name} 합류 후)</small>`:''}</td></tr>`).join('')+`</table><p><small>장 난이도는 앞 장들에서 유산을 모아 온 것을 기준으로 맞춰져 있습니다.</small></p>`)}
 ${sec('🎯 배치 공략',`<ul><li><b>굽이 안쪽이 명당</b>: 길이 꺾이는 안쪽 칸은 길 두세 구간을 동시에 사거리에 넣습니다. 리아·세라를 세우세요.</li><li><b>늦추고 → 모으고 → 터뜨린다</b>: 브란이 붙잡아 적이 뭉치면 리아의 범위 마법이 여러 마리를 한꺼번에 맞힙니다.</li><li><b>늪·모래 끝에 근접 캐릭터</b>: 느려진 구간과 붙잡기가 겹치면 적이 머무는 시간이 크게 늘어납니다.</li><li><b>네로는 벽 뒤에</b>: 브란을 지나친 적은 네로에게 등을 보여 암습 피해를 받고, 흘린 적도 마무리합니다.</li><li><b>세라는 길에서 한 칸 떨어진 고지대</b>: 바로 옆 칸을 쏘지 못하니 한 칸 띄우고, 고지대에서 사거리와 피해를 모두 챙기세요.</li><li><b>루나는 전선과 화력 사이</b>: 회복 사거리에 근접 캐릭터, 오라 범위에 화력 캐릭터가 함께 들어오는 칸이 좋습니다.</li><li><b>입구가 두 개인 장</b>(4장·8장): 두 길이 합쳐지는 곳에 화력을 모으면 한 번에 막을 수 있습니다.</li><li>배치나 캐릭터 메뉴를 여는 동안에는 시간이 1/4로 느려집니다. 급할 때는 일시정지(⏸)를 쓰세요.</li></ul>`)}`;}
 function settingsModal(back){const vols=[0,.25,.5,.75,1],m=modal(`<h2>소리 설정</h2><p>배경 음악</p><div class="seg">${vols.map(v=>`<button data-v="${v}" class="${settings.bgm===v?'primary':''}">${v?Math.round(v*100):'끔'}</button>`).join('')}</div><p>효과음</p><div class="seg"><button data-s="1" class="${settings.sfx?'primary':''}">켬</button><button data-s="0" class="${settings.sfx?'':'primary'}">끔</button></div><button class="primary" data-a="back">확인</button>`);
- m.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{settings.bgm=+b.dataset.v;saveJSON(SET_KEY,settings);bgm.volume();settingsModal(back);});m.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{settings.sfx=b.dataset.s==='1';saveJSON(SET_KEY,settings);sfx('tap');settingsModal(back);});m.querySelector('[data-a=back]').onclick=back;}
+ m.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{settings.bgm=+b.dataset.v;saveJSON(SET_KEY,settings);bgm.volume();settingsModal(back);});m.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{settings.sfx=b.dataset.s==='1';saveJSON(SET_KEY,settings);sfx('ui_tap');settingsModal(back);});m.querySelector('[data-a=back]').onclick=back;}
 // Save slots: each keeps the state at the start of a battle, like the automatic save.
 const slots=()=>{const a=loadJSON(SLOT_KEY,[]);return Array.from({length:SLOTS},(_,i)=>a[i]||null);};
 const slotLabel=s=>{const c=D.CHAPTERS[s.snap.chapter];return `${c.label} · 전투 ${s.snap.battle+1}/${c.battles.length}<small>${new Date(s.time).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})} · 생명 ${s.snap.life} · 골드 ${s.snap.gold} · 동료 ${s.snap.units.length}명</small>`;};
 function slotModal(mode,back){const list=slots(),auto=mode==='load'?loadSave():null;
  const m=modal(`<h2>${mode==='save'?'저장하기':'불러오기'}</h2>${mode==='save'?`<p>전투 ${lastSnap.battle+1}을 시작하는 시점의 상태가 저장됩니다.</p>`:''}${auto?`<button data-auto>자동 저장 · ${slotLabel({snap:auto,time:auto.time||Date.now()})}</button>`:''}`+list.map((s,i)=>`<button data-i="${i}" ${mode==='load'&&!s?'disabled':''}>슬롯 ${i+1} · ${s?slotLabel(s):'비어 있음'}</button>`).join('')+`<button class="primary" data-a="back">돌아가기</button>`);
  m.querySelector('[data-a=back]').onclick=back;const a=m.querySelector('[data-auto]');if(a)a.onclick=()=>{closeModal();startChapter(auto.chapter,auto);};
- m.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{const i=+b.dataset.i;if(mode==='save'){const go=()=>{const all=slots();all[i]={snap:lastSnap,time:Date.now()};saveJSON(SLOT_KEY,all);sfx('rank');slotModal('save',back);toast(`슬롯 ${i+1}에 저장했습니다`);};
+ m.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{const i=+b.dataset.i;if(mode==='save'){const go=()=>{const all=slots();all[i]={snap:lastSnap,time:Date.now()};saveJSON(SLOT_KEY,all);sfx('ui_confirm');slotModal('save',back);toast(`슬롯 ${i+1}에 저장했습니다`);};
    if(list[i]){const c=modal(`<h2>슬롯 ${i+1} 덮어쓰기</h2><p>이미 저장된 내용이 있습니다. 덮어쓸까요?</p><button class="primary" data-a="y">덮어쓰기</button><button data-a="n">취소</button>`);c.querySelector('[data-a=y]').onclick=go;c.querySelector('[data-a=n]').onclick=()=>slotModal('save',back);}else go();}
   else if(list[i]){closeModal();startChapter(list[i].snap.chapter,list[i].snap);}});}
 function gameMenu(){const m=modal(`<p class="sub">${S.chapter.label} · 전투 ${S.battle+1}</p><h2>메뉴</h2><button class="primary" data-a="resume">계속하기</button><button data-a="save">저장하기</button><button data-a="load">불러오기</button><button data-a="sound">소리 설정</button><button data-a="legacy">아르카의 유산 보기</button><button data-a="help">게임 방법</button>${devMode?'<button data-a="skip">[개발자] 이 전투 즉시 승리</button><button data-a="gold">[개발자] 골드 +500</button>':''}<button data-a="title">타이틀로<small>자동 저장된 전투부터 이어할 수 있습니다</small></button>`);
@@ -295,7 +320,7 @@ function chapterList(dev){const best=cleared(),m=modal(`<h2>${dev?'개발자 모
  m.querySelector('[data-a=back]').onclick=showTitle;m.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{closeModal();devMode=dev;startChapter(+b.dataset.i,null);});}
 function showTitle(){S=null;clearObjects();closePanel();disposeGroup(terrainGroup);water=null;animated=[];app.classList.add('title');bgm.play(1);const save=loadSave(),any=save||slots().some(Boolean);
  const m=modal(`<p class="sub">ARCA CHRONICLE</p><h1>cnation <em>TD</em></h1><p class="tag">아르카 방어전</p><p>탑을 짓지 않는다. 동료를 세운다.</p>${save?`<button class="primary" data-a="continue">이어하기<small>${D.CHAPTERS[save.chapter].label} · 전투 ${save.battle+1}</small></button>`:''}<button ${save?'':'class="primary"'} data-a="new">새 게임<small>PROLOGUE · 깨어난 빛</small></button><button data-a="chapters">장 선택</button><button data-a="legacy">아르카의 유산<small>${(()=>{const n=Object.values(legacyPicks()).filter(Boolean).length;return n?`${n}개 보유 · 모든 장에 적용 중`:'장을 클리어하면 영구 효과를 얻습니다';})()}</small></button><button data-a="load" ${any?'':'disabled'}>불러오기</button><button data-a="sound">소리 설정</button><button data-a="help">게임 방법</button><button class="dev" data-a="dev">개발자 모드 (베타 전용)</button><p class="ver">ver.${GAME_VERSION} beta</p>`,'title');
- const on=(a,f)=>{const b=m.querySelector(`[data-a=${a}]`);if(b)b.onclick=()=>{sfx('tap');f();};};
+ const on=(a,f)=>{const b=m.querySelector(`[data-a=${a}]`);if(b)b.onclick=()=>{sfx('ui_tap');f();};};
  on('new',()=>{closeModal();devMode=false;startChapter(0,null);});on('continue',()=>{closeModal();startChapter(save.chapter,save);});on('chapters',()=>chapterList(false));on('legacy',()=>legacyView(showTitle));on('dev',()=>chapterList(true));
  on('load',()=>slotModal('load',showTitle));on('sound',()=>settingsModal(showTitle));on('help',()=>{const h=modal(HELP+helpTips()+`<button class="primary">닫기</button>`,'help');h.querySelector('button').onclick=showTitle;});}
 
@@ -312,14 +337,14 @@ function addFx(o){if(fx.length>160)fx.shift();o.t=0;if(o.k==='ultblast')o.life=o
 // A small visual knock-back for monsters hit in melee (the rules are untouched).
 function shove(id,power){const o=objs.get('e'+id);if(o)o.push=Math.min(1.8,Math.max(o.push||0,power));}
 function handleEvents(){for(const e of S.drain()){
- if(e.t==='attack'){const o=objs.get('u'+e.unit);if(o)o.lunge=1;if(e.melee){shove(e.target,1);addFx({k:'slash',x:e.to.x,y:e.to.y,dur:.26,color:'#fff6c8',r:.46,glow:'#ffd257'});addFx({k:'spark',x:e.to.x,y:e.to.y,dur:.22,color:'#fff3b0'});}else addFx({k:'shot',from:e.from,to:e.to,dur:.17,color:e.magic?'#e2c4ff':'#fff1c4',glow:e.magic?'#a66bff':'#ffb347',magic:e.magic});sfx('hit');}
+ if(e.t==='attack'){const o=objs.get('u'+e.unit);if(o)o.lunge=1;if(e.melee){shove(e.target,1);addFx({k:'slash',x:e.to.x,y:e.to.y,dur:.26,color:'#fff6c8',r:.46,glow:'#ffd257'});addFx({k:'spark',x:e.to.x,y:e.to.y,dur:.22,color:'#fff3b0'});}else addFx({k:'shot',from:e.from,to:e.to,dur:.17,color:e.magic?'#e2c4ff':'#fff1c4',glow:e.magic?'#a66bff':'#ffb347',magic:e.magic});sfx(e.melee?'hit_melee':e.magic?'hit_magic':'hit_arrow');}
  else if(e.t==='skill'&&D.SKILLS[e.skill]?.ult){const s=D.SKILLS[e.skill],color=EL_COLOR[e.element]||'#fff3b0',area=e.area||s.area||.8,heal=s.type==='heal',delay=e.fx==='meteor'?.5:0;
   const o=objs.get('u'+e.unit);if(o)o.lunge=1.6;addFx({k:'label',real:true,x:e.from.x,y:e.from.y,h:2,text:e.name,color,dur:1.4,size:18});
   if(e.fx==='meteor')addFx({k:'meteor',real:true,x:e.x,y:e.y,dur:.5,color,r:area,fallOnly:true});else if(e.fx==='bolt')addFx({k:'bolt',x:e.x,y:e.y,dur:.5,color,wide:true});else if(e.fx!=='nova')addFx({k:'shot',from:e.from,to:{x:e.x,y:e.y},dur:.2,color,glow:color,magic:true});
   addFx({k:'ultblast',real:true,x:e.x,y:e.y,dur:1.2,delay,color:heal?'#9ff0c2':color,r:area*2,seed:Math.random()*6});
   if(!heal){const reach=(e.fx==='bolt'?.6:area)+.4;setTimeout(()=>{if(!S)return;for(const en of S.enemies)if(Math.hypot(en.x-e.x,en.y-e.y)<=reach){const ob=objs.get('e'+en.id);if(ob)ob.tremble=.5;}},delay*1000);}
   if(!heal)setTimeout(()=>{shakeT=.45;},delay*1000);}
- else if(e.t==='skill'){if(e.fx==='slash'||e.fx==='nova'){const r=(e.area||.6)+.35;for(const en of S.enemies)if(Math.hypot(en.x-e.x,en.y-e.y)<=r)shove(en.id,e.fx==='nova'?1.6:1.3);}const o=objs.get('u'+e.unit);if(o)o.lunge=1.4;const color=EL_COLOR[e.element]||'#fff';addFx({k:'label',x:e.from.x,y:e.from.y,h:1.5,text:e.name,color,dur:.9,size:13});
+ else if(e.t==='skill'){if(e.fx!=='heal')sfx('skill_'+({ice:'ice',water:'ice',fire:'fire',wind:'wind',thunder:'thunder',light:'light',dark:'dark'}[e.element]||'fire'));if(e.fx==='slash'||e.fx==='nova'){const r=(e.area||.6)+.35;for(const en of S.enemies)if(Math.hypot(en.x-e.x,en.y-e.y)<=r)shove(en.id,e.fx==='nova'?1.6:1.3);}const o=objs.get('u'+e.unit);if(o)o.lunge=1.4;const color=EL_COLOR[e.element]||'#fff';addFx({k:'label',x:e.from.x,y:e.from.y,h:1.5,text:e.name,color,dur:.9,size:13});
   if(e.fx==='slash')addFx({k:'slash',x:e.x,y:e.y,dur:.3,color,r:e.area?e.area:.55});else if(e.fx==='bolt'){addFx({k:'bolt',x:e.x,y:e.y,dur:.28,color});}
   else if(e.fx==='meteor'){addFx({k:'meteor',x:e.x,y:e.y,dur:.45,color,r:e.area});}else if(e.fx==='heal'){addFx({k:'ring',x:e.x,y:e.y,dur:.5,color:'#8fe5b4',r:.6,fill:true});sfx('heal');}else addFx({k:'ring',x:e.x,y:e.y,dur:.42,color,r:e.area||.6,fill:true});
   if(e.fx==='blast'||e.fx==='shot'||e.fx==='bolt')addFx({k:'shot',from:e.from,to:{x:e.x,y:e.y},dur:.14,color,magic:true});}
@@ -332,24 +357,24 @@ function handleEvents(){for(const e of S.drain()){
  else if(e.t==='cleanse')addFx({k:'num',x:e.x,y:e.y,h:1.6,text:'정화',color:'#fff3b0',size:13,dur:.8});
  else if(e.t==='dodge')addFx({k:'num',x:e.x,y:e.y,h:1.4,text:'회피',color:'#cfe3ff',size:12,dur:.6});
  else if(e.t==='ustatus')addFx({k:'num',x:e.x,y:e.y,h:1.7,text:ST_NAME[e.status],color:ST_COLOR[e.status],size:13,dur:.9});
- else if(e.t==='die'){const o=objs.get('e'+e.id);if(o){objs.delete('e'+e.id);dying.push({g:o.g,t:0});}addFx({k:'num',x:e.x,y:e.y,h:.5,text:'+'+e.gold+(e.steal?'↑':''),color:'#f2cf72',size:12,dur:.7});sfx('coin');if(e.boss)banner('BOSS',S.chapter.boss.split?'갈라졌다!':'쓰러졌다!');}
- else if(e.t==='leak'){sfx('leak');addFx({k:'flash',dur:.35});toast(e.boss?'보스가 수정에 닿았습니다':`수정이 공격받았습니다 · 생명 −${e.cost}`);}
- else if(e.t==='down'){const o=objs.get('u'+e.id);if(o){objs.delete('u'+e.id);dying.push({g:o.g,t:0});}toast(`${D.UNITS[e.def].name} 쓰러짐${e.cd?` · ${e.cd}초 뒤 복귀 가능`:''}`);sfx('leak');if(selUnit===e.id)closePanel();}
+ else if(e.t==='die'){const o=objs.get('e'+e.id);if(o){objs.delete('e'+e.id);dying.push({g:o.g,t:0});}addFx({k:'num',x:e.x,y:e.y,h:.5,text:'+'+e.gold+(e.steal?'↑':''),color:'#f2cf72',size:12,dur:.7});sfx('monster_die');sfx('coin');if(e.boss)banner('BOSS',S.chapter.boss.split?'갈라졌다!':'쓰러졌다!');}
+ else if(e.t==='leak'){sfx('crystal_hit');addFx({k:'flash',dur:.35});toast(e.boss?'보스가 수정에 닿았습니다':`수정이 공격받았습니다 · 생명 −${e.cost}`);}
+ else if(e.t==='down'){const o=objs.get('u'+e.id);if(o){objs.delete('u'+e.id);dying.push({g:o.g,t:0});}toast(`${D.UNITS[e.def].name} 쓰러짐${e.cd?` · ${e.cd}초 뒤 복귀 가능`:''}`);sfx('ally_down');if(selUnit===e.id)closePanel();}
  else if(e.t==='withdraw'){const o=objs.get('u'+e.id);if(o){objs.delete('u'+e.id);unitGroup.remove(o.g);}}
- else if(e.t==='ult'){sfx('ult');banner('필살기',e.name);}
- else if(e.t==='bossWave'){addFx({k:'ring',x:e.x,y:e.y,dur:.7,color:EL_COLOR[e.element]||'#ff6b5a',r:e.r,fill:true});addFx({k:'label',x:e.x,y:e.y,h:2.4,text:e.name,color:'#ff9d8a',dur:1.1,size:15});sfx('boss');}
+ else if(e.t==='ult'){sfx('ult_cast');banner('필살기',e.name);}
+ else if(e.t==='bossWave'){addFx({k:'ring',x:e.x,y:e.y,dur:.7,color:EL_COLOR[e.element]||'#ff6b5a',r:e.r,fill:true});addFx({k:'label',x:e.x,y:e.y,h:2.4,text:e.name,color:'#ff9d8a',dur:1.1,size:15});sfx('boss_attack');}
  else if(e.t==='bossSummon')addFx({k:'label',x:e.x,y:e.y,h:2.2,text:'소환!',color:'#ffb3a3',dur:.9,size:14});
- else if(e.t==='bossPhase'){banner('BOSS',e.name);sfx('boss');addFx({k:'ring',x:e.x,y:e.y,dur:.8,color:'#fff3b0',r:3,fill:false});}
+ else if(e.t==='bossPhase'){banner('BOSS',e.name);sfx('boss_appear');addFx({k:'ring',x:e.x,y:e.y,dur:.8,color:'#fff3b0',r:3,fill:false});}
  else if(e.t==='bossFly'){addFx({k:'label',x:e.x,y:e.y,h:2.4,text:e.flying?'날아오른다':'내려앉았다!',color:'#c7a3ff',dur:1.1,size:15});}
- else if(e.t==='beamWarn'){warns.set(e.unit,{t:e.delay,boss:e.id});toast(`${e.name}: 조준당한 동료를 지키거나 철수하세요`);sfx('boss');}
+ else if(e.t==='beamWarn'){warns.set(e.unit,{t:e.delay,boss:e.id});toast(`${e.name}: 조준당한 동료를 지키거나 철수하세요`);sfx('boss_attack');}
  else if(e.t==='beam'){warns.delete(e.unit);if(e.to)addFx({k:'beam',from:e.from,to:e.to,dur:.35});}
  else if(e.t==='bonus')toast(`${e.why} 보너스 +${e.gold}💰`);
- else if(e.t==='battleStart'){saveGame();const b=S.chapter.battles[e.battle];banner(`전투 ${e.battle+1}`,b.name);clearCard();bgm.play(battleTrack());if(b.boss){paused=true;sfx('boss');dialogue(S.chapter.bossIntro,()=>{paused=false;hudKey='';});}}
- else if(e.t==='cleared'){toast(`전투 ${e.battle+1} 승리 +${e.gold}💰${e.clean?' (무누수 보너스)':''}`);}
+ else if(e.t==='battleStart'){saveGame();const b=S.chapter.battles[e.battle];banner(`전투 ${e.battle+1}`,b.name);clearCard();bgm.play(battleTrack());sfx(b.boss?'boss_appear':'battle_start');if(b.boss){paused=true;dialogue(S.chapter.bossIntro,()=>{paused=false;hudKey='';});}}
+ else if(e.t==='cleared'){if(S.phase!=='won')sfx('wave_clear');toast(`전투 ${e.battle+1} 승리 +${e.gold}💰${e.clean?' (무누수 보너스)':''}`);}
  else if(e.t==='prep'){saveGame();showPreview();}
  else if(e.t==='bless')blessingModal();
- else if(e.t==='won'){const index=S.chapterIndex,end=()=>legacyModal(index,l=>resultModal(true,l));if(S.chapter.outro)dialogue(S.chapter.outro,end);else end();}
- else if(e.t==='lost')resultModal(false);
+ else if(e.t==='won'){bgm.play(D.CHAPTERS[S.chapterIndex+1]?10:12,!D.CHAPTERS[S.chapterIndex+1]);const index=S.chapterIndex,end=()=>legacyModal(index,l=>resultModal(true,l));if(S.chapter.outro)dialogue(S.chapter.outro,end);else end();}
+ else if(e.t==='lost'){bgm.stop(1.5);sfx('defeat');resultModal(false);}
  hudKey='';}}
 function ellipse(x,y,r,h=0){const p=proj(x,y,h);ctx.beginPath();ctx.ellipse(p.x,p.y,r*pxU,r*pxU*SIN,0,0,Math.PI*2);}
 function tileQuad(c,r,h){const a=proj(c-.5,r-.5,h),b=proj(c+.5,r+.5,h);ctx.beginPath();ctx.rect(a.x+1,a.y+1,b.x-a.x-2,b.y-a.y-2);}
@@ -384,7 +409,7 @@ function drawOverlay(dt,time,realDt=dt){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.cl
   ctx.font=`400 10px ${FONT}`;ctx.fillStyle='#f2cf72';ctx.strokeStyle='rgba(12,22,26,.9)';ctx.lineWidth=3;const s='★'.repeat(u.rank);ctx.strokeText(s,p.x,p.y-3);ctx.fillText(s,p.x,p.y-3);
   if(ultReady(u)){const g=proj(u.x,u.y,gy),pulse=.5+.5*Math.sin(time*7);ctx.beginPath();ctx.ellipse(g.x,g.y,pxU*(.5+pulse*.12),pxU*(.5+pulse*.12)*SIN,0,0,7);ctx.strokeStyle=`rgba(255,170,80,${.6+.4*pulse})`;ctx.lineWidth=3.5;ctx.stroke();
    const b=proj(u.x,u.y,gy+2.05);ctx.font=`400 ${15+pulse*3}px ${FONT}`;ctx.lineWidth=4;ctx.strokeStyle='rgba(70,30,10,.95)';ctx.strokeText('⚡필살기',b.x,b.y);ctx.fillStyle='#ffd257';ctx.fillText('⚡필살기',b.x,b.y);
-   if(!ultSeen.has(u.id)){ultSeen.add(u.id);sfx('ready');}}else ultSeen.delete(u.id);
+   if(!ultSeen.has(u.id)){ultSeen.add(u.id);sfx('ult_ready');}}else ultSeen.delete(u.id);
   if(S.fortress>0){const g=proj(u.x,u.y,gy+.6);ctx.beginPath();ctx.arc(g.x,g.y,pxU*.55,0,7);ctx.strokeStyle='rgba(255,243,176,.8)';ctx.lineWidth=2.5;ctx.stroke();}
   let i=0;for(const k in u.st){ctx.fillStyle=ST_COLOR[k]||'#fff';ctx.beginPath();ctx.arc(p.x-w/2+4+i*8,p.y+11,3.5,0,7);ctx.fill();i++;}
   if(u.buff>1||u.defBuff>1||u.hasteBuff>1){const g=proj(u.x,u.y,gy+1.78);ctx.font=`400 11px ${FONT}`;ctx.fillStyle='#f2cf72';ctx.fillText((u.buff>1?'⚔':'')+(u.defBuff>1?'🛡':'')+(u.hasteBuff>1?'»':''),g.x,g.y);}
@@ -437,8 +462,9 @@ function syncObjects(dt,time){
  for(let i=dying.length-1;i>=0;i--){const d=dying[i];d.t+=dt;const k=1-d.t/.25;if(k<=0){unitGroup.remove(d.g);dying.splice(i,1);}else d.g.scale.setScalar(Math.max(.01,k));}}
 
 let lastTime=0;
-function frame(now){requestAnimationFrame(frame);const real=Math.min(.05,(now-lastTime)/1000||0);lastTime=now;if(!S){ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,fxc.width,fxc.height);renderer.render(scene,camera);return;}
+function frame(now){requestAnimationFrame(frame);const real=Math.min(.05,(now-lastTime)/1000||0);lastTime=now;if(!S){bgm.setDuck(1);ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,fxc.width,fxc.height);renderer.render(scene,camera);return;}
  const busy=S.phase==='battle'&&(selCard||selUnit||aiming),scale=paused||modalOpen?0:speed*(busy?.25:1);
+ bgm.setDuck((S.phase==='prep'||S.phase==='battle'||S.phase==='bless')&&(paused||modalOpen)?.4:1);
  if(scale>0)S.step(real*scale);handleEvents();if(!S)return;
  const t=now/1000;syncObjects(real*(scale>0?Math.max(1,scale):1),t);if(water)water.material.uniforms.uTime.value=t;for(const f of animated)f(t);
  if(shakeT>0){shakeT=Math.max(0,shakeT-real);const m=shakeT*14;viewport.style.transform=`translate(${(Math.random()-.5)*m}px,${(Math.random()-.5)*m}px)`;}else if(viewport.style.transform)viewport.style.transform='';
@@ -446,5 +472,5 @@ function frame(now){requestAnimationFrame(frame);const real=Math.min(.05,(now-la
 
 makePortraits();resize();showTitle();requestAnimationFrame(frame);
 if(document.fonts&&document.fonts.load){document.fonts.load('16px "Stylish"');document.fonts.load('16px "Gowun Dodum"');}
-window.TD={get sim(){return S;},startChapter,version:GAME_VERSION,proj:(x,y,h)=>proj(x,y,h)};
+window.TD={bgm,get sim(){return S;},startChapter,version:GAME_VERSION,proj:(x,y,h)=>proj(x,y,h)};
 })();
