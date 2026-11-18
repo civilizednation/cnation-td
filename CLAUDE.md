@@ -32,11 +32,11 @@ Always write every message to the user in Korean (한국어).
 - Waves use half as many monsters with twice the HP and twice the gold each (`buildChapter`, `spawn`).
 - Sound: one Web Audio context (`audioCtx`). Music `<audio>` tracks are routed through gain nodes (volume works on iPhone), crossfade 1 s,
   duck to 40% while a battle is paused or a window is open, victory track at the clear, fade to silence on defeat. Music volume = setting × 0.25.
-  Effects are named (`SFX_SYNTH`); `SFX_FILES` maps a name to its number of candidate files `sfx/<name>_<n>.mp3` (picked in 소리 설정,
-  `settings.sfxPick`); other names use the synth blip. `docs/SFX.md` lists all 35 names with Suno prompts; a name with no file
-  borrows another's (`SFX_BORROW`: die_* → monster_die, hit_holy → hit_magic); deaths pick by monster body (`DIE_SOUND`). When the owner sends files, cut each one
-  from just before its first clear sound to the target length (0.45–0.6 s for hits), fade the tail, level RMS (−17…−19 dBFS, peak ≤ −1 dBFS), save mono 96k mp3. The owner may send an iPhone screen recording of Suno instead: extract the audio, find each sound's segment
-  (read the Suno titles from video frames to name them), start ~0.1 s before it nears full loudness (slow fade-ins), then cut the same way. Developer mode applies `D.typicalLegacy(chapter)` instead of the player's legacies.
+  Effects: 35 names, each with a recorded file `sfx/<name>.mp3` listed in `SFX_FILES` (final takes chosen by the owner); `SFX_SYNTH` blips are only a
+  fallback. Deaths pick by monster body (`DIE_SOUND`); deaths in one frame are batched (`playDeaths`). `docs/SFX.md` has every name, prompt and length.
+  To replace a sound: cut from just before its first clear sound to the target length, fade the tail, level RMS (−16…−20 dBFS, peak ≤ −1 dBFS),
+  save mono 96k mp3 as `sfx/<name>.mp3`. The owner may send an iPhone screen recording of Suno: extract the audio, split on silence, read the Suno
+  titles from video frames to name each part, start ~0.1 s (≤10% of the clip) before it nears full loudness, then cut the same way. Developer mode applies `D.typicalLegacy(chapter)` instead of the player's legacies.
 - `bgm/` and `fonts/` come from cnation TACTICS. After adding or changing in-game text run `python3 tools/subset-fonts.py`
   and bump the `?v=` on the font URLs in index.html, or new characters fall back to the system font.
 - Saves: auto save `cnation-td-save-v2` (taken at each battle start), slots `cnation-td-slots-v1` (3), clears `cnation-td-clear-v1`,
