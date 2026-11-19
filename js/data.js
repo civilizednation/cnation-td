@@ -355,7 +355,7 @@ const MAP_ART={
  city:{file:'art/city.webp',rect:[-0.0042,0.0023,0.9958,0.9929],bg:'#a5562e'},
  plain:{file:'art/plain.webp',rect:[-0.0042,-0.0164,1.0058,0.9841],bg:'#cf914a'},
  ruins:{file:'art/ruins.webp',rect:[0.0000,-0.0023,1.0000,0.9982],bg:'#314c24'},
- tower:{file:'art/tower.webp',rect:[-0.0042,-0.0258,0.9958,0.9747],bg:'#433334'}
+ tower:{file:'art/tower.webp',rect:[-0.0042,-0.0258,0.9958,0.9747],bg:'#443334'}
 };
 const TDData={MAP_ART,RANGED_INTERVAL,RANGED_POWER,MELEE_INTERVAL,MELEE_POWER,GATE_GAP:3,seeded,LEGACIES,legacyOffer,legacyCounts,typicalLegacy,MELEE_GAP:3,SKILLS,UNITS,HERO_ORDER,SOLDIER_ORDER,RANK_COST,RANK_STAT,RANK_GUARD,REFUND,WITHDRAW_CD,DOWN_CD,ENGAGE_SLOW,MONSTERS,MODEL_TRAITS,MOVE_SPEED,ELEMENT_ICON,SCENES,MAPS,CHAPTERS,BOSSES,BLESSINGS};
 if(typeof module!=='undefined'&&module.exports)module.exports=TDData;else root.TDData=TDData;
