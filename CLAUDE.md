@@ -74,8 +74,9 @@ Always write every message to the user in Korean (한국어).
 - World map chapter select (`showWorld`/`chapterInfo` in game.js, `#world` z15 under the modal): `WORLD_MAP` in data.js = painting file
   (null → placeholder gradient + dotted path) and the ten stops as [x%,y%]. Stops show number, stars, lock, the chapter's legacy badge
   and Kyle on the current chapter; cleared segments glow. Developer mode keeps the plain list (`chapterList(true)`).
-  Legacy view (`legacyView`): effect totals from `D.legacyTotal(id,n)` + ten chapter slots. Prompts for the world map and an altar
-  background (not yet used) are in docs/ART.md.
+  Painted: `art/world.webp` (stops measured from its pedestals; cleared segments are not drawn over a painting).
+  Legacy view: with `ALTAR.file` (`art/altar.webp`) a full-screen `altarView` (`#altar` z16) puts each chapter's legacy in its socket
+  (`ALTAR.sockets` [x%,y%]) and the totals (`D.legacyTotal(id,n)`) on the floor panel; without it the old modal list. Prompts in docs/ART.md.
 - Two bonus kinds, keep them visibly apart: **에테르 축복** (`BLESSINGS`, chosen mid-chapter, this chapter only) and
   **아르카의 유산** (`LEGACIES`, one slot per chapter picked after a clear, permanent and stacking; passed to `createSim` as `legacy` counts).
   The bot (`D.typicalLegacy`) plays each chapter with the legacies an ordinary player would hold, and `diff` is calibrated with them.
