@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.1.0',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.2.0',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -10,7 +10,7 @@ const ST_COLOR={burn:'#ff8a3d',freeze:'#a9ecff',slow:'#6fa8ff',stun:'#ffe66b',de
 const ST_NAME={burn:'화상',freeze:'빙결',slow:'둔화',stun:'기절',defdown:'방어↓',poison:'독',sleep:'수면',silence:'침묵',root:'속박'};
 const FONT='"Stylish",system-ui,sans-serif';
 
-let shakeT=0,spacedTiles=[],ultSeen=new Set(),S=null,speed=1,paused=false,selCard=null,selUnit=null,aiming=null,hover=null,dragging=false,validTiles=null,modalOpen=false,devMode=false,lastSnap=null;
+let shakeT=0,hitStop=0,ultImpact=0,spacedTiles=[],ultSeen=new Set(),S=null,speed=1,paused=false,selCard=null,selUnit=null,aiming=null,hover=null,dragging=false,validTiles=null,modalOpen=false,devMode=false,lastSnap=null;
 let vw=1,vh=1,pxU=40,tz=.25,dpr=1;
 const objs=new Map(),dying=[],fx=[],warns=new Map();
 const loadJSON=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k)||'null');return v??d;}catch(e){return d;}},saveJSON=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
@@ -446,16 +446,23 @@ function playDeaths(){if(!deaths.length)return;const count={};for(const k of dea
  sfx('coin',{force:true,gain:Math.min(1.4,1+.1*(deaths.length-1))});deaths=[];}
 function handleEvents(){deaths=[];for(const e of S.drain()){
  if(e.t==='attack'){const o=objs.get('u'+e.unit);if(o)o.lunge=1;if(e.melee){shove(e.target,1);addFx({k:'slash',x:e.to.x,y:e.to.y,dur:.26,color:'#fff6c8',r:.46,glow:'#ffd257'});addFx({k:'spark',x:e.to.x,y:e.to.y,dur:.22,color:'#fff3b0'});}else addFx({k:'shot',from:e.from,to:e.to,dur:.17,color:e.magic?'#e2c4ff':'#fff1c4',glow:e.magic?'#a66bff':'#ffb347',magic:e.magic});sfx(e.melee?'hit_melee':!e.magic?'hit_arrow':D.UNITS[S.units.find(v=>v.id===e.unit)?.def]?.element==='light'?'hit_holy':'hit_magic');}
- else if(e.t==='skill'&&D.SKILLS[e.skill]?.ult){const s=D.SKILLS[e.skill],color=EL_COLOR[e.element]||'#fff3b0',area=e.area||s.area||.8,heal=s.type==='heal',delay=e.fx==='meteor'?.5:0;
+ else if(e.t==='skill'&&D.SKILLS[e.skill]?.ult){const s=D.SKILLS[e.skill],color=EL_COLOR[e.element]||'#fff3b0',area=e.area||s.area||.8,heal=s.type==='heal',delay=e.fx==='meteor'?.5:e.fx==='bolt'?.12:0;ultImpact=delay;
+  if(!heal){const R=e.fx==='bolt'?.75:area+.2;addFx({k:'target',real:true,x:e.x,y:e.y,dur:Math.max(.35,delay+.1),color,r:R});
+   addFx({k:'impact',real:true,x:e.x,y:e.y,dur:.75,delay,color,r:R,seed:Math.random()*6,life:delay+.75});
+   setTimeout(()=>{if(!S)return;hitStop=.16;addFx({k:'flash2',real:true,dur:.28,color});},delay*1000);}
   const o=objs.get('u'+e.unit);if(o)o.lunge=1.6;addFx({k:'label',real:true,x:e.from.x,y:e.from.y,h:2,text:e.name,color,dur:1.4,size:18});
   if(e.fx==='meteor')addFx({k:'meteor',real:true,x:e.x,y:e.y,dur:.5,color,r:area,fallOnly:true});else if(e.fx==='bolt')addFx({k:'bolt',x:e.x,y:e.y,dur:.5,color,wide:true});else if(e.fx!=='nova')addFx({k:'shot',from:e.from,to:{x:e.x,y:e.y},dur:.2,color,glow:color,magic:true});
   addFx({k:'ultblast',real:true,x:e.x,y:e.y,dur:1.2,delay,color:heal?'#9ff0c2':color,r:area*2,seed:Math.random()*6});
   if(!heal){const reach=(e.fx==='bolt'?.6:area)+.4;setTimeout(()=>{if(!S)return;for(const en of S.enemies)if(Math.hypot(en.x-e.x,en.y-e.y)<=reach){const ob=objs.get('e'+en.id);if(ob)ob.tremble=.5;}},delay*1000);}
-  if(!heal)setTimeout(()=>{shakeT=.45;},delay*1000);}
+  if(!heal)setTimeout(()=>{shakeT=.6;},delay*1000);}
  else if(e.t==='skill'){if(e.fx!=='heal')sfx('skill_'+({ice:'ice',water:'ice',fire:'fire',wind:'wind',thunder:'thunder',light:'light',dark:'dark'}[e.element]||'fire'));if(e.fx==='slash'||e.fx==='nova'){const r=(e.area||.6)+.35;for(const en of S.enemies)if(Math.hypot(en.x-e.x,en.y-e.y)<=r)shove(en.id,e.fx==='nova'?1.6:1.3);}const o=objs.get('u'+e.unit);if(o)o.lunge=1.4;const color=EL_COLOR[e.element]||'#fff';addFx({k:'label',x:e.from.x,y:e.from.y,h:1.5,text:e.name,color,dur:.9,size:13});
   if(e.fx==='slash')addFx({k:'slash',x:e.x,y:e.y,dur:.3,color,r:e.area?e.area:.55});else if(e.fx==='bolt'){addFx({k:'bolt',x:e.x,y:e.y,dur:.28,color});}
   else if(e.fx==='meteor'){addFx({k:'meteor',x:e.x,y:e.y,dur:.45,color,r:e.area});}else if(e.fx==='heal'){addFx({k:'ring',x:e.x,y:e.y,dur:.5,color:'#8fe5b4',r:.6,fill:true});sfx('heal');}else addFx({k:'ring',x:e.x,y:e.y,dur:.42,color,r:e.area||.6,fill:true});
   if(e.fx==='blast'||e.fx==='shot'||e.fx==='bolt')addFx({k:'shot',from:e.from,to:{x:e.x,y:e.y},dur:.14,color,magic:true});}
+ else if(e.t==='dmg'&&e.ult&&e.v>0){const ev=e,go=()=>{if(!S)return;const o=objs.get('e'+ev.id);const heavy=ev.pct>=.35;
+   addFx({k:'burst',real:true,x:ev.x,y:ev.y,dur:.5,color:ev.tag==='weak'?'#ffd257':'#fff2c9',seed:Math.random()*6,big:heavy});
+   addFx({k:'num',real:true,pop:true,x:ev.x+(Math.random()-.5)*.25,y:ev.y,h:1.1,text:ev.v+(ev.crit?'!!':'!'),color:ev.tag==='resist'?'#cfd8da':heavy?'#ffcf4a':'#ffe9a8',size:heavy?24:19,dur:1.1});
+   if(o){o.flash=.32;o.tremble=Math.max(o.tremble||0,.75);o.push=1.8;}};ultImpact>0?setTimeout(go,ultImpact*1000):go();continue;}
  else if(e.t==='dmg'){if(e.tag==='miss'){addFx({k:'num',x:e.x,y:e.y,h:.9,text:'빗나감',color:'#9fb0b6',size:11,dur:.6});continue;}const big=e.crit||e.tag==='weak'||e.combo;if(e.v>0&&fx.length<120)addFx({k:'hit',x:e.x,y:e.y,dur:.16,color:e.tag==='weak'?'#ffd257':'#ffffff'});addFx({k:'num',x:e.x+(Math.random()-.5)*.3,y:e.y,h:.9,text:(e.combo?e.combo+' ':'')+e.v+(e.crit?'!':''),color:e.tag==='weak'?'#ffd257':e.tag==='resist'?'#9fb0b6':e.crit?'#ffb199':'#fff',size:big?15:11,dur:.6});const o=objs.get('e'+e.id);if(o)o.flash=.12;}
  else if(e.t==='combo')addFx({k:'num',x:e.x,y:e.y,h:1.3,text:e.name,color:'#ffd257',size:15,dur:.8});
  else if(e.t==='hurt'){addFx({k:'num',x:e.x,y:e.y,h:1.3,text:'-'+e.v,color:'#ff9d8a',size:12,dur:.6});}
@@ -546,8 +553,25 @@ function drawOverlay(dt,time,realDt=dt){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.cl
   else if(f.k==='bolt'){const p=proj(f.x,f.y,.2);ctx.strokeStyle=f.color;ctx.globalAlpha=1-k;ctx.lineWidth=f.wide?9:4;if(f.wide){ctx.shadowColor=f.color;ctx.shadowBlur=16;}ctx.beginPath();let x=p.x,y=p.y-pxU*3.2;ctx.moveTo(x,y);for(let j=1;j<=5;j++){x=p.x+(j<5?(Math.sin(j*7.3+f.x*5)*pxU*.25):0);y=p.y-pxU*3.2*(1-j/5);ctx.lineTo(x,y);}ctx.stroke();ctx.globalAlpha=1;}
   else if(f.k==='meteor'&&f.fallOnly){const p=proj(f.x,f.y,7*(1-k)),q=pxU*(.32+.12*k);ctx.shadowColor=f.color;ctx.shadowBlur=18;ctx.fillStyle='#ffd27a';ctx.beginPath();ctx.arc(p.x+pxU*1.8*(1-k),p.y,q,0,7);ctx.fill();ctx.strokeStyle='rgba(255,140,60,.7)';ctx.lineWidth=q*.9;ctx.beginPath();ctx.moveTo(p.x+pxU*1.8*(1-k),p.y);ctx.lineTo(p.x+pxU*1.8*(1-k)+pxU*.9,p.y-pxU*1.4);ctx.stroke();ctx.shadowBlur=0;}
   else if(f.k==='meteor'){if(k<.6){const q=k/.6,p=proj(f.x,f.y,6*(1-q));ctx.fillStyle='#ffb35c';ctx.beginPath();ctx.arc(p.x+pxU*1.5*(1-q),p.y,pxU*.34,0,7);ctx.fill();}else{const q=(k-.6)/.4;ellipse(f.x,f.y,f.r*(.4+.6*q));ctx.fillStyle=f.color;ctx.globalAlpha=(1-q)*.6;ctx.fill();ctx.globalAlpha=1;}}
-  else if(f.k==='num'||f.k==='label'){const p=proj(f.x,f.y,(f.h||1)+k*.5);ctx.font=`400 ${(f.size||13)+2}px ${FONT}`;ctx.globalAlpha=k<.7?1:1-(k-.7)/.3;ctx.strokeStyle='rgba(12,22,26,.9)';ctx.lineWidth=3;ctx.strokeText(f.text,p.x,p.y);ctx.fillStyle=f.color;ctx.fillText(f.text,p.x,p.y);ctx.globalAlpha=1;}
-  else if(f.k==='flash'){ctx.fillStyle=`rgba(240,90,70,${(1-k)*.3})`;ctx.fillRect(0,0,vw,vh);}}}
+  else if(f.k==='num'||f.k==='label'){const p=proj(f.x,f.y,(f.h||1)+k*.5),pop=f.pop?(k<.12?.6+k/.12*.9:k<.25?1.5-(k-.12)/.13*.5:1):1;ctx.font=`400 ${Math.round(((f.size||13)+2)*pop)}px ${FONT}`;ctx.globalAlpha=k<.7?1:1-(k-.7)/.3;ctx.strokeStyle='rgba(12,22,26,.9)';ctx.lineWidth=f.pop?4:3;ctx.strokeText(f.text,p.x,p.y);ctx.fillStyle=f.color;ctx.fillText(f.text,p.x,p.y);ctx.globalAlpha=1;}
+  else if(f.k==='flash'){ctx.fillStyle=`rgba(240,90,70,${(1-k)*.3})`;ctx.fillRect(0,0,vw,vh);}
+  else if(f.k==='flash2'){ctx.globalAlpha=(1-k)*.32;ctx.fillStyle=f.color;ctx.fillRect(0,0,vw,vh);ctx.globalAlpha=1;}
+  // Where the 필살기 will land: a pulsing reticle that closes in until the impact.
+  else if(f.k==='target'){const q=k,R=f.r*(1.35-.35*q),p=proj(f.x,f.y,0);ctx.save();ctx.globalAlpha=.55+.45*Math.sin(f.t*28)*.5;ellipse(f.x,f.y,R);ctx.fillStyle=f.color;ctx.globalAlpha*=.18;ctx.fill();ctx.globalAlpha=.9*(1-q*.3);
+   ctx.setLineDash([pxU*.22,pxU*.14]);ctx.lineDashOffset=-f.t*pxU*2;ctx.lineWidth=3;ctx.strokeStyle=f.color;ellipse(f.x,f.y,R);ctx.stroke();ctx.setLineDash([]);
+   ctx.lineWidth=2;ctx.strokeStyle='#fff';for(const a of [0,1,2,3]){const an=a*Math.PI/2+f.t*3,x=Math.cos(an)*R*pxU,y=Math.sin(an)*R*pxU*SIN;ctx.beginPath();ctx.moveTo(p.x+x*.7,p.y+y*.7);ctx.lineTo(p.x+x*1.08,p.y+y*1.08);ctx.stroke();}ctx.restore();}
+  // The moment it lands: white core flash, a ground shock ring, cracks and flying debris.
+  else if(f.k==='impact'){if(f.t<(f.delay||0))continue;const q=Math.min(1,(f.t-(f.delay||0))/f.dur),p=proj(f.x,f.y,0),R=f.r*pxU;ctx.save();
+   if(q<.25){const c=1-q/.25;ctx.globalAlpha=c;const g=ctx.createRadialGradient(p.x,p.y-pxU*.3,0,p.x,p.y-pxU*.3,R*1.2);g.addColorStop(0,'#ffffff');g.addColorStop(.4,f.color);g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y-pxU*.3,R*1.2,0,7);ctx.fill();}
+   ctx.globalAlpha=(1-q)*.9;ctx.lineWidth=5*(1-q)+1;ctx.strokeStyle='#fff';ellipse(f.x,f.y,f.r*(.3+1.1*q));ctx.stroke();
+   ctx.globalAlpha=(1-q)*.8;ctx.strokeStyle='rgba(30,20,15,.85)';ctx.lineWidth=2.2;for(let i=0;i<7;i++){const an=f.seed+i*.9,len=R*(.55+.35*Math.sin(i*2.3+f.seed));ctx.beginPath();ctx.moveTo(p.x,p.y);
+    ctx.lineTo(p.x+Math.cos(an)*len*.5+Math.sin(i)*4,p.y+Math.sin(an)*len*.5*SIN);ctx.lineTo(p.x+Math.cos(an)*len,p.y+Math.sin(an)*len*SIN);ctx.stroke();}
+   ctx.globalAlpha=1-q;for(let i=0;i<14;i++){const an=f.seed*3+i*.45,sp=.6+((i*37)%10)/10,d=R*sp*q*1.2,up=pxU*(1.3*sp)*Math.sin(Math.min(1,q*1.6)*Math.PI);ctx.fillStyle=i%3?f.color:'#fff';
+    ctx.fillRect(p.x+Math.cos(an)*d-2,p.y+Math.sin(an)*d*SIN-up-2,4+(i%3),4+(i%3));}ctx.restore();}
+  // A monster struck by a 필살기: rays and sparks bursting from it.
+  else if(f.k==='burst'){const p=proj(f.x,f.y,.6),R=pxU*(f.big?.95:.7)*(.35+.65*(1-Math.pow(1-k,3)));ctx.save();ctx.globalAlpha=1-k;ctx.strokeStyle=f.color;ctx.lineWidth=f.big?4:3;ctx.lineCap='round';
+   for(let i=0;i<8;i++){const an=f.seed+i*Math.PI/4;ctx.beginPath();ctx.moveTo(p.x+Math.cos(an)*R*.35,p.y+Math.sin(an)*R*.35);ctx.lineTo(p.x+Math.cos(an)*R,p.y+Math.sin(an)*R);ctx.stroke();}
+   ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(p.x,p.y,pxU*.2*(1-k),0,7);ctx.fill();ctx.restore();}}}
 fxc.addEventListener('pointermove',e=>{if(!S)return;const p=localPoint(e);if(aiming)hover=unproj(p.x,p.y);else if(selCard&&!dragging)hover=tileAt(p);});
 
 // ── 3D objects follow the simulation ──
@@ -579,7 +603,7 @@ function syncObjects(dt,time){
 
 let lastTime=0;
 function frame(now){requestAnimationFrame(frame);const real=Math.min(.05,(now-lastTime)/1000||0);lastTime=now;if(!S){bgm.setDuck(1);ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,fxc.width,fxc.height);renderer.render(scene,camera);return;}
- const busy=S.phase==='battle'&&(selCard||selUnit||aiming),scale=paused||modalOpen?0:speed*(busy?.25:1);
+ if(hitStop>0)hitStop=Math.max(0,hitStop-real);const busy=S.phase==='battle'&&(selCard||selUnit||aiming),scale=paused||modalOpen?0:speed*(busy?.25:1)*(hitStop>0?.12:1);
  bgm.setDuck((S.phase==='prep'||S.phase==='battle'||S.phase==='bless')&&(paused||modalOpen)?.4:1);
  if(scale>0)S.step(real*scale);handleEvents();if(!S)return;
  const t=now/1000;syncObjects(real*(scale>0?Math.max(1,scale):1),t);if(water)water.material.uniforms.uTime.value=t;for(const f of animated)f(t);

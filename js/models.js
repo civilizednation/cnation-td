@@ -1,5 +1,6 @@
 // Character, monster and terrain models, taken from cnation TACTICS (cnation-ft game.js) so both games share one look.
-// Copied from its lines for bake…figure and makeWaterSurface, with three small hooks added: u.pal (helmet soldier colours), u.hpal (hero palette), u.scale.
+// Copied from its lines for bake…figure and makeWaterSurface, with small hooks added: u.pal (helmet soldier colours), u.hpal (hero palette), u.scale,
+// and u.soldierId → soldierParts (TD-only allied soldier models, written for TD).
 (function(){
 const THREE=CNATION3D;const {mergeGeometries}=CNATION3D;
 const geo={box:new THREE.BoxGeometry(1,1,1),ball:new THREE.SphereGeometry(1,8,6),cone:new THREE.ConeGeometry(1,1,7),cyl:new THREE.CylinderGeometry(1,1,1,7),rock:new THREE.DodecahedronGeometry(1,0),torus:new THREE.TorusGeometry(1,.16,5,12)};
@@ -62,6 +63,49 @@ function helmetEnemyParts(u,add){
  else{add('box',[-.38,.49,.17],[.32,.44,.075],armor);add('box',[-.38,.49,.22],[.06,.35,.025],rustRed);add('cyl',[.39,.67,.11],[.045,.90,.045],0x7f817a);add('cone',[.39,1.20,.11],[.085,.25,.075],0xb9bec1);}
 }
 
+// ── TD-only: allied soldier models (not from TACTICS). Plain army folk, simpler than the heroes and each with its own outfit:
+// 민병 leather cap + spear, 방패병 iron helm + tower shield, 사냥꾼 hood + bow and quiver, 수습 마도사 cone hat + book and wand,
+// 수습 사제 white cowl + sun staff. All wear the allied tabard (teal with a gold crest) so they read as one army.
+function soldierParts(u,add){const id=u.soldierId,skin=0xeec9a0,ally=0x2f7f86,allyDark=0x1f565c,crest=0xe8c46d,iron=0x9aa5ab,ironDark=0x5d666c,wood=0x7a5636,leather=0x7b5a3c;
+ const cfg={militia:{shirt:0x9a7a55,pants:0x5a4a3a,boot:0x4a3526,hair:0x5a3d27},shield:{shirt:0x7f8a90,pants:0x4b5258,boot:0x3c3a38,hair:0x3c2a1e},
+  hunter:{shirt:0x5f7a45,pants:0x5a4a35,boot:0x4b3a28,hair:0x8a5a35},apprentice:{shirt:0x3f5f9c,pants:0x2f3e63,boot:0x2c2a35,hair:0x2f2a33},
+  acolyte:{shirt:0xece5d2,pants:0xd6ccb5,boot:0x8a7a62,hair:0xb98a55}}[id]||{shirt:0x888888,pants:0x555555,boot:0x333333,hair:0x444444};
+ const robe=id==='apprentice'||id==='acolyte',stout=id==='shield';
+ // legs and boots (robes cover the legs)
+ for(const x of [-.1,.1]){if(!robe)add('cyl',[x*(stout?1.15:1),.2,0],[stout?.085:.07,.3,.08],cfg.pants);add('box',[x*(stout?1.15:1),.05,.04],[stout?.13:.11,.1,.18],cfg.boot);}
+ if(robe){add('cone',[0,.3,0],[.29,.56,.25],cfg.shirt);add('torus',[0,.07,0],[.27,.05,.23],id==='acolyte'?crest:0x8fb4e8,0,Math.PI/2);}
+ // body, tabard, belt
+ add('cyl',[0,.52,0],[stout?.23:.19,.34,stout?.18:.155],cfg.shirt);
+ if(!robe){add('box',[0,.43,.16],[.2,.4,.03],ally);add('box',[0,.43,.18],[.05,.32,.012],allyDark);add('ball',[0,.55,.185],[.045,.045,.015],crest);}
+ else add('box',[0,.5,.17],[.08,.42,.02],id==='acolyte'?crest:0xbcd2f2);
+ add('cyl',[0,.37,0],[stout?.24:.2,.05,stout?.19:.165],leather);add('box',[0,.37,.17],[.06,.05,.02],crest);
+ // arms and hands
+ for(const sx of [-1,1]){const x=sx*(stout?.29:.25);add('ball',[x,.64,0],[stout?.11:.085,.085,.095],stout?iron:cfg.shirt);add('cyl',[x*1.05,.52,.03],[.055,.2,.055],cfg.shirt,sx*.12);add('ball',[x*1.12,.4,.08],[.048,.05,.048],stout?ironDark:skin);}
+ // head and face (round, plainer than the heroes: dot eyes, rosy cheeks)
+ add('cyl',[0,.72,0],[.07,.08,.07],skin);add('ball',[0,.88,0],[.215,.225,.205],skin);
+ for(const sx of [-1,1]){add('ball',[sx*.075,.885,.185],[.03,.04,.014],0x2a2522).eye=true;add('ball',[sx*.07,.9,.196],[.009,.011,.006],0xffffff).eye=true;add('ball',[sx*.13,.83,.17],[.03,.016,.008],0xeaa08f);add('ball',[sx*.21,.88,0],[.035,.05,.03],skin);}
+ add('box',[0,.815,.198],[.05,.012,.01],0xa0614f);
+ if(id==='militia'){
+  add('ball',[0,.98,-.02],[.225,.13,.215],leather);add('cyl',[0,.95,0],[.235,.04,.225],0x5e432c);for(const sx of [-1,1])add('box',[sx*.14,.91,.17],[.08,.03,.02],cfg.hair);
+  add('box',[0,.6,0],[.3,.12,.24],0x8a6a45);  // padded jerkin collar
+  add('cyl',[.31,.62,.1],[.024,1.05,.024],wood);add('cone',[.31,1.2,.1],[.05,.17,.04],iron);add('box',[.31,1.1,.1],[.1,.025,.025],ironDark);
+ }else if(id==='shield'){
+  add('ball',[0,.97,-.01],[.235,.15,.225],iron);add('cyl',[0,.93,0],[.245,.035,.235],ironDark);add('box',[0,.9,.2],[.035,.1,.02],ironDark);add('cone',[0,1.11,-.01],[.05,.08,.05],crest);
+  add('box',[-.34,.48,.18],[.34,.56,.06],ally);add('box',[-.34,.48,.215],[.3,.52,.02],allyDark);add('box',[-.34,.48,.23],[.05,.42,.015],crest);add('box',[-.34,.56,.23],[.24,.05,.015],crest);add('torus',[-.34,.48,.215],[.17,.27,.12],ironDark);
+  add('cyl',[.31,.42,.12],[.025,.12,.025],leather);add('box',[.31,.49,.12],[.13,.025,.04],crest);add('box',[.31,.65,.12],[.05,.3,.02],iron);
+ }else if(id==='hunter'){
+  add('cone',[0,1.04,-.04],[.27,.33,.26],cfg.shirt,0,-.18);add('cyl',[0,.95,-.02],[.24,.07,.23],0x4b6338);add('cone',[0,.98,-.27],[.06,.3,.05],0xd94a3d,0,1.1);  // hood with a red feather
+  add('box',[0,.62,-.15],[.13,.42,.11],leather,0,0,.3);for(const x of [-.03,.03,.0])add('cyl',[x,.92,-.18],[.012,.18,.012],0xd9d0b8,0,.3);  // quiver and arrows
+  add('ball',[0,.96,-.06],[.235,.19,.215],cfg.shirt);add('torus',[.33,.6,.1],[.16,.34,.08],wood,0,0,Math.PI/2);add('cyl',[.33,.6,.1],[.006,.66,.006],0xeee6d0);
+ }else if(id==='apprentice'){
+  add('cyl',[0,.97,0],[.27,.03,.25],cfg.shirt);add('cone',[0,1.15,-.02],[.17,.36,.16],cfg.shirt,.18);add('ball',[.06,1.33,-.02],[.035,.035,.035],0xf2d36b);add('cyl',[0,1.0,0],[.175,.04,.165],0xbcd2f2);
+  add('box',[-.3,.42,.14],[.18,.22,.06],0x7a3b2e);add('box',[-.3,.42,.175],[.15,.19,.01],0xf0e6c8);  // open book
+  add('cyl',[.3,.5,.12],[.018,.42,.018],wood);add('ball',[.3,.73,.12],[.05,.05,.05],0x6fd0ff);
+ }else if(id==='acolyte'){
+  add('ball',[0,.94,-.1],[.26,.26,.22],cfg.shirt);add('torus',[0,.89,.1],[.215,.235,.16],cfg.shirt);add('box',[0,1.1,.12],[.16,.03,.03],crest);add('cone',[0,.66,0],[.3,.16,.26],cfg.shirt);  // white cowl framing the face
+  add('cyl',[.31,.6,.1],[.02,.95,.02],0xc9a66b);add('torus',[.31,1.1,.1],[.1,.1,.08],crest);add('ball',[.31,1.1,.1],[.05,.05,.05],0xfff3b0);
+ }
+}
 function figure(u){const weaponGear=u.heroId&&u.equipped?GEAR.find(g=>g.id===save.inventory.find(r=>r.uid===u.equipped[0])?.gearId):null;const p=[],add=(type,pos,scale,col,rot=0,rotX=0,rotY=0)=>{const part=[type,pos,scale,col,rot,rotX,rotY];p.push(part);return part;};const c=u.color||0x6c9ba0,skin=0xeac69d,hair=u.hair||0x464956;
 if(u.model==='slime'){add('ball',[0,.27,0],[.44,.34,.41],c);add('ball',[0,.22,.2],[.28,.16,.25],0x476b55);add('box',[0,.23,.38],[.24,.055,.025],0x243b35);for(const x of [-.2,0,.2])add('cone',[x,.36,.32],[.035,.12,.035],0xe7e4b0);for(const x of [-.15,.15]){add('ball',[x,.4,.32],[.065,.075,.04],0xffdf83);add('ball',[x,.4,.355],[.025,.035,.015],0x222b26);}for(const x of [-.27,.27])add('cone',[x,.59,-.04],[.1,.27,.1],0x6da675);}
 else if(u.model==='flameSpirit'){add('cone',[0,.4,0],[.35,.78,.32],0xb6463a);add('ball',[0,.49,.05],[.25,.31,.25],c);for(const x of [-.28,.28]){add('cone',[x,.47,0],[.17,.58,.16],0xffa24d,x<0?-.35:.35);add('ball',[x*.55,.55,.24],[.05,.07,.04],0xffef9b);}add('cone',[0,.92,-.05],[.18,.42,.18],0xffd36d);add('box',[0,.34,.25],[.18,.05,.03],0x3b2729);}
@@ -83,6 +127,7 @@ else if(u.model==='voidheart'){add('ball',[-.13,.86,.02],[.22,.24,.2],c);add('ba
  for(let i=0;i<4;i++){const a=i*Math.PI/2+Math.PI/4,x=Math.cos(a),z=Math.sin(a);for(let j=0;j<4;j++)add('torus',[x*(.34+j*.1),.55-j*.13,z*(.34+j*.1)],[.05,.05,.05],0x5d5867,0,j%2?Math.PI/2:0,a);}
  add('cyl',[0,.04,0],[.42,.02,.42],0x3c1426);for(let i=0;i<6;i++){const a=i*1.05;add('ball',[Math.cos(a)*.3,.08,Math.sin(a)*.3],[.05,.04,.05],0x7a1f3a);}}
 else if(u.model==='arcacore'){add('rock',[0,.78,0],[.34,.44,.34],0x426e76);add('rock',[0,.79,0],[.25,.34,.25],0x96e5d8);add('rock',[0,.8,.29],[.12,.17,.07],0xf7e9b3);add('cone',[0,1.28,0],[.17,.43,.17],0xd7f4dd);add('cone',[0,.27,0],[.17,.43,.17],0x6bbdb8,Math.PI);for(let i=0;i<8;i++){const a=i*Math.PI/4,x=Math.cos(a)*.54,z=Math.sin(a)*.54;add('rock',[x,.78,z],[.09,.14,.09],i%2?0x98ced0:0xdac993);}for(const x of [-.56,.56]){add('cone',[x,.49,0],[.13,.43,.13],0x658e9a);add('rock',[x,1.05,0],[.1,.19,.1],0xc3f0e2);}for(const z of [-.56,.56])add('cone',[0,.74,z],[.11,.31,.11],0x7cb1ab);}
+else if(u.soldierId){soldierParts(u,add);}
 else if(u.heroId){detailedHeroParts(u,add,weaponGear);
 if(u.heroId&&u.equipped){const worn=u.equipped.map(uid=>GEAR.find(g=>g.id===save.inventory.find(r=>r.uid===uid)?.gearId)),accent=[0x779b8a,0x82c5d4,0xc5a4df,0xf2dc9c];if(worn[0]){const hue=gearAura(worn[0]);add('rock',[.35,.72,.13],[.08,.11,.06],hue);add('box',[.35,.58,.19],[.045,.23,.035],hue);}if(worn[1]){const hue=gearAura(worn[1]);add('box',[0,.62,.3],[.27,.21,.045],hue);for(const x of [-.3,.3])add('rock',[x,.74,.03],[.11,.1,.14],hue);}for(const index of [2,3])if(worn[index])add('rock',[index===2?-.08:.08,.56,.35],[.06,.09,.04],gearAura(worn[index]));}
 if((u.classLevel||0)>0){for(const x of [-.24,.24])add('box',[x,.65,0],[.18,.15,.27],0xe0c982);}if((u.classLevel||0)>1)add('cone',[0,1.21,0],[.12,.22,.12],0xf4da94);

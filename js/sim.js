@@ -148,7 +148,7 @@ function createSim(opts){
   if(o.skill&&!magic&&(e.st.freeze||e.st.slow)){dmg*=1.3;combo='파쇄';}
   if(e.st.sleep){dmg*=2;delete e.st.sleep;combo='기습';}
   const crit=S.rand()<(sd.crit||0);if(crit)dmg*=1.5;
-  dmg=Math.max(1,Math.round(dmg));e.hp-=dmg;S.stats.dealt[src.def]=(S.stats.dealt[src.def]||0)+dmg;emit({t:'dmg',id:e.id,x:e.x,y:e.y,v:dmg,crit,tag,combo});
+  dmg=Math.max(1,Math.round(dmg));e.hp-=dmg;S.stats.dealt[src.def]=(S.stats.dealt[src.def]||0)+dmg;emit({t:'dmg',id:e.id,x:e.x,y:e.y,v:dmg,crit,tag,combo,ult:!!o.ult,pct:Math.min(1,dmg/e.maxHp)});
   if(e.hp<=0)killEnemy(e,src);return dmg;}
  function pickTarget(u,range,canFly,strong){let best=null;const reach=range+.35,min=defOf(u).minRange||0;
   for(const e of S.enemies){if(e.dead)continue;if(e.flying&&!canFly)continue;const d=dist(u,e);if(e.engagedBy!==u.id&&d>reach)continue;if(d<min&&e.engagedBy!==u.id)continue;const score=strong?e.hp:(e.engagedBy===u.id?1000:0)+(e.boss?400:0)+(e.st.sleep?-500:0)+e.dist;if(!best||score>best.score)best={e,score};}
@@ -164,7 +164,7 @@ function createSim(opts){
   const target=s.self||point?null:pickTarget(u,range,s.type==='magic'||!def.melee||!!s.range,s.pick==='strong');
   if(!s.self&&!point&&!target)return false;
   if(s.self&&!forced&&!S.enemies.some(e=>!e.dead&&dist(u,e)<=s.area+.2&&(!e.flying||s.ult)))return false;
-  const centre=s.self?{x:u.x,y:u.y}:point||{x:target.x,y:target.y},o={type:s.type,power:s.power*pm,element:s.element,skill:true,ignore:s.ignore};
+  const centre=s.self?{x:u.x,y:u.y}:point||{x:target.x,y:target.y},o={type:s.type,power:s.power*pm,element:s.element,skill:true,ignore:s.ignore,ult:!!s.ult};
   const victims=s.area?S.enemies.filter(e=>!e.dead&&Math.hypot(e.x-centre.x,e.y-centre.y)<=s.area+.2&&(s.type==='magic'||!e.flying||s.ult||!def.melee)):[target];
   fx(centre.x,centre.y);
   for(const e of victims){const burning=!!e.st.burn;hit(u,e,o);if(e.dead)continue;

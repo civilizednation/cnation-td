@@ -33,6 +33,10 @@ Always write every message to the user in Korean (한국어).
   around the road by `sim.buildMap` from each map's seed, so the same map always comes out the same.
 - Melee characters do not stop monsters: a monster inside a melee unit's tile (up to `block` at once) moves at `ENGAGE_SLOW` (2/3) and hits it.
   Melee units on the road must stand at least `MELEE_GAP` (3) tiles apart (`canDeploy`); the screen shows the forbidden zone while placing.
+- 필살기 power (1.2.0): arcaslash 5, meteor 4.5, eclipse 6, hawk 12 — area 필살기 take over half a normal monster's HP, hawk one-shots it;
+  bosses take full damage and boss HP is calibrated for that. Ult damage events carry `ult`/`pct`; the screen shows a landing reticle
+  (`target`), impact flash/cracks/debris (`impact`, `flash2`), a short hit stop (`hitStop`) and bursts with big popping numbers on struck monsters.
+- Soldiers use their own models (`model:{soldierId}` → `soldierParts` in models.js, a TD-only hook), not recoloured heroes.
 - Every hero has a 필살기 (`UNITS[id].ult`) from ★1, ~18–24 s cooldown, starting half charged; ★5 is `ultBoost` (+30% power, −15% cooldown).
   A ready hero's dock card glows and casts on tap. Call it 필살기 in all player-facing text.
 - Maps have their own size (`MAPS[id].w/h`): early chapters are smaller (9×9 … 9×12), 9×14 from chapter 4.
