@@ -13,8 +13,8 @@
 <meta name="apple-mobile-web-app-title" content="cnation TD">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
-@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=22") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:118%}
-@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=22") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:104%}
+@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=23") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:118%}
+@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=23") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:104%}
 :root{--font-display:"Stylish",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--font-body:"Gowun Dodum",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--bg:#16282d;--panel:#1f373d;--panel2:#284850;--line:#3c636b;--ink:#eef4ea;--dim:#a9c0bb;--gold:#f2cf72;--good:#8fe5b4;--bad:#f08f7c;--accent:#8be1bf}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--ink);font-family:var(--font-display);overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -91,6 +91,29 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
 #panel button.x{flex:none;width:34px}
 #modal{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(8,16,19,.72)}
 #modal[hidden]{display:none}
+#titleView{position:absolute;inset:0;z-index:14;overflow:hidden;background:#0b1024}#titleView[hidden]{display:none}
+#titleView .tbg{position:absolute;inset:-6%;width:112%;height:112%;object-fit:cover;filter:blur(18px) brightness(.55)}
+#titleView .tbox{position:absolute}#titleView .tart{position:absolute;inset:0;width:100%;height:100%}#titleView canvas{position:absolute;inset:0;width:100%;height:100%}
+#titleView .tglow{position:absolute;width:46%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(150,255,240,.45),rgba(90,220,230,.12) 45%,transparent 70%);mix-blend-mode:screen;animation:tPulse 3s ease-in-out infinite;pointer-events:none}
+@keyframes tPulse{50%{opacity:.45;transform:translate(-50%,-50%) scale(1.12)}}
+#titleView .tmotes i{position:absolute;width:5px;height:5px;border-radius:50%;background:#bff;box-shadow:0 0 8px #7ff;opacity:0;animation:tMote linear infinite}
+@keyframes tMote{0%{opacity:0;transform:translateY(0)}15%{opacity:.9}100%{opacity:0;transform:translateY(-34vh)}}
+#app #modal.title{background:none;padding:0;align-items:stretch}
+#modal.title .sheet{max-width:none;max-height:none;height:100%;border:0;border-radius:0;background:none;padding:calc(30px + env(safe-area-inset-top)) 22px calc(30px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;overflow:hidden}
+#modal.title .logo{text-align:center;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6))}
+#modal.title .logo .sub{margin:0;color:#9ff0e0;letter-spacing:.35em;font-size:12px;text-shadow:0 0 8px rgba(120,255,230,.8)}
+#modal.title .logo h1{margin:2px 0 0;font-size:54px;line-height:1.05;letter-spacing:.02em;color:#fff3cf;-webkit-text-stroke:2px #3a2a12;paint-order:stroke fill;text-shadow:0 0 18px rgba(255,210,120,.65)}
+#modal.title .logo h1 em{font-style:normal;background:linear-gradient(#fff6c9,#f2cf72 45%,#d98a2b);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:0;filter:drop-shadow(0 0 2px #3a2a12) drop-shadow(0 2px 0 #3a2a12)}
+#modal.title .logo .tag{margin:4px 0 0;font-size:26px;color:#fff;-webkit-text-stroke:1.5px #1a2a3a;paint-order:stroke fill;letter-spacing:.12em}
+#modal.title .logo .line{margin:6px 0 0;min-height:0;font-size:13px;color:#d6e7ff;text-shadow:0 1px 4px #000}
+#modal.title .tmenu{margin-top:auto;width:100%;max-width:380px;display:flex;flex-direction:column;gap:8px}
+#modal.title .tmenu button{margin:0;min-height:50px;background:rgba(14,30,48,.72);border:1px solid rgba(160,230,255,.35);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+#modal.title .tmenu button.primary{min-height:62px;font-size:20px;background:linear-gradient(#ffe7a3,#f2c45a);border:2px solid #fff3c4;color:#2b2410;box-shadow:0 0 0 3px rgba(242,207,114,.25),0 0 22px rgba(255,214,120,.55);animation:tStart 2.2s ease-in-out infinite}
+@keyframes tStart{50%{box-shadow:0 0 0 5px rgba(242,207,114,.18),0 0 34px rgba(255,214,120,.8)}}
+#modal.title .tmenu button.primary small{color:#6b5524}
+#modal.title .trow{display:flex;gap:8px}#modal.title .trow button{flex:1;min-height:46px;font-size:13px;padding:4px}#modal.title .trow button b{display:block;font-weight:400;font-size:18px}
+#modal.title .tmenu button.dev{min-height:30px;background:none;border:0;font-size:12px;opacity:.75;backdrop-filter:none}
+#modal.title .verbar{position:static;margin-top:6px;color:#b9c9d9;text-shadow:0 1px 3px #000}
 #altar{position:absolute;inset:0;z-index:16;display:flex;flex-direction:column;background:#0b1620}#altar[hidden]{display:none}
 #world{position:absolute;inset:0;z-index:15;display:flex;flex-direction:column;background:#0d1a1e}#world[hidden]{display:none}
 .whead{flex:none;display:flex;align-items:center;gap:8px;height:calc(48px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 10px 0;background:var(--panel);border-bottom:1px solid var(--line);font-size:16px}
@@ -197,15 +220,16 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
  <div id="panel"></div>
  <div id="dock"></div>
  </aside>
+ <div id="titleView" hidden><img class="tbg" alt=""><div class="tbox"><img class="tart" alt=""><canvas class="theroes"></canvas><i class="tglow"></i><div class="tmotes"></div></div></div>
  <div id="world" hidden></div>
  <div id="altar" hidden></div>
  <div id="modal" hidden></div>
 </div>
 <script src="vendor/three-r170.js"></script>
-<script src="js/data.js?v=1.4.0"></script>
-<script src="js/sim.js?v=1.4.0"></script>
-<script src="js/models.js?v=1.4.0"></script>
-<script src="js/game.js?v=1.4.0"></script>
+<script src="js/data.js?v=1.5.0"></script>
+<script src="js/sim.js?v=1.5.0"></script>
+<script src="js/models.js?v=1.5.0"></script>
+<script src="js/game.js?v=1.5.0"></script>
 <script>if('serviceWorker' in navigator&&location.protocol!=='file:')window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 </body>
 </html>

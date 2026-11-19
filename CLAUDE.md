@@ -71,6 +71,9 @@ Always write every message to the user in Korean (한국어).
 - Chapter clear (`clearFlow` in game.js): pages 결산 → 유산 (`legacyModal`) → 다음 장 준비 → 마무리 (3 pages on FINAL). Uses `S.stats`
   (dealt/healedBy per unit, ults, goldEarned/goldSpent, battle time; kept in the snapshot) and `D.unitStats`/`D.legacyScale` (the same
   legacy formula sim.refresh uses). Best record per chapter: `cnation-td-records-v1` = {chapterId:{stars,life,time,kills}}.
+- Title scene (`titleScene` in game.js, `#titleView` z14): `TITLE_ART` painting (cover on phones, contain + blurred sides when wide),
+  the joined heroes of the current chapter as 3D models on the rune circle (`feet` %), a pulsing crystal glow and rising motes;
+  the title modal is transparent over it (`#app #modal.title`). Hidden when a chapter starts.
 - Title menu: 이어하기 (if a save), 게임 시작 → world map, 불러오기, 소리 설정, 게임 방법, 개발자 모드. Clear wrap-up, defeat and the
   in-game menu have 지도로 (`toWorld`). The altar view pauses a running battle (sets `modalOpen`).
 - World map chapter select (`showWorld`/`chapterInfo` in game.js, `#world` z15 under the modal): `WORLD_MAP` in data.js = painting file

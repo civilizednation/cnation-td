@@ -271,3 +271,11 @@ DO NOT include: any text, letters, numbers, icons or symbols inside the sockets,
 Keep this image exactly as it is, but make sure the altar has exactly ten empty round sockets with gold rims,
 in two rows of five, evenly spaced and all the same size, with nothing inside them. Change nothing else.
 ```
+
+
+---
+
+# 타이틀 화면 배경
+
+`art/title.webp` (9:16). 위 28%는 로고 자리(하늘), 가운데 빛나는 수정, 그 아래 룬 원 광장(영웅이 서는 자리, `TITLE_ART.feet`),
+아래 38%는 메뉴 자리. 영웅은 그림에 넣지 않고 게임이 3D 모델로 세웁니다. 프롬프트는 대화 기록의 「배경 프롬프트」와 같습니다.
