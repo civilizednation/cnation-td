@@ -12,8 +12,8 @@
    밑그림의 색과 나무는 무시하고 **배치(길·발판·물·문·수정 위치)만** 따르면 됩니다. 테마는 아래 표대로 자유롭게 바꿉니다.
 3. **맞추기·확인**: `python3 tools/fit-art.py <맵> <그림 파일>`
    - 그림 속 어디가 게임 화면인지 자동으로 찾고, `art/check/<맵>.png` 에 칸 표시를 겹친 확인용 그림을 만듭니다.
-   - 주황 = 길, **하늘색 = 고지대(원거리 발판)**, 보라 = 늪·모래, 파랑 = 물, 빨간 원 = 적 출현 문, 초록 원 = 아르카 수정.
-   - **하늘색 칸마다 올라온 발판이 그려져 있는지**, 길이 주황 칸을 따라가는지 봅니다. 어긋나면 수정 프롬프트로 고칩니다.
+   - 주황 = 길, **하늘색 = 고지대(원거리 발판)**, 보라 = 늪·모래, 파랑 = 물, **빨간 X = 바위·절벽·건물(아무도 설 수 없는 칸)**, 빨간 원 = 적 출현 문, 초록 원 = 아르카 수정.
+   - **하늘색 칸마다 올라온 발판이 그려져 있는지**, 빨간 X 칸에 발판처럼 보이는 게 없는지, 길이 주황 칸을 따라가는지 봅니다. 어긋나면 수정 프롬프트로 고칩니다.
 4. **넣기**: 맞으면 `--apply` 를 붙여 실행 → `art/<맵>.webp` 저장 + `js/data.js` 의 `MAP_ART` 에 자동 등록.
 
 | 맵 id | 장 | 스토리 장소 | 크기 | 밑그림 |
@@ -42,6 +42,8 @@ LAYOUT — must match the reference exactly:
 - Every raised square platform stays on exactly the same cell — same number of platforms, none added, none removed,
   none moved. Paint each one as a clearly raised stone platform: light flat top, visible darker front face on its lower side,
   a soft shadow to the lower right. These are the spots where archers and mages stand, so they must read instantly.
+- Tall blocks with rocks on them in the reference are CLIFFS, not platforms: paint them as rough natural rock outcrops
+  or boulders with no flat walkable top, clearly different from the platforms.
 - Water cells stay in the same cells (paint them as the theme says: sea, oasis, frozen river, ether pool...).
   Trees, rocks and props may change freely, but never on the road or on a raised platform.
 - The monster gate (dark stone arch with red banners) and the glowing crystal on a stepped round dais stay in the same place.

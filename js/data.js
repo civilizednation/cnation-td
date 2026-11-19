@@ -348,7 +348,8 @@ const legacyCounts=picks=>{const c={};for(const k in picks||{})if(picks[k])c[pic
 // inside the painting, as fractions [left, top, right, bottom] (tools/fit-art.py measures it). bg = colour beyond the painting.
 // Maps without a painting keep the three.js terrain.
 const MAP_ART={
- prologue:{file:'art/prologue.webp',rect:[0.0000,-0.0023,1.0000,0.9982],bg:'#66832b'}
+ prologue:{file:'art/prologue.webp',rect:[0.0000,-0.0023,1.0000,0.9982],bg:'#66832b'},
+ fort:{file:'art/fort.webp',rect:[-0.0083,0.0023,1.0017,1.0129],bg:'#618048'}
 };
 const TDData={MAP_ART,RANGED_INTERVAL,RANGED_POWER,MELEE_INTERVAL,MELEE_POWER,GATE_GAP:3,seeded,LEGACIES,legacyOffer,legacyCounts,typicalLegacy,MELEE_GAP:3,SKILLS,UNITS,HERO_ORDER,SOLDIER_ORDER,RANK_COST,RANK_STAT,RANK_GUARD,REFUND,WITHDRAW_CD,DOWN_CD,ENGAGE_SLOW,MONSTERS,MODEL_TRAITS,MOVE_SPEED,ELEMENT_ICON,SCENES,MAPS,CHAPTERS,BOSSES,BLESSINGS};
 if(typeof module!=='undefined'&&module.exports)module.exports=TDData;else root.TDData=TDData;

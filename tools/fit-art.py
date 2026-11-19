@@ -6,7 +6,8 @@
 1. Finds where the guide frame (art/guides/<map>.png, from tools/make-guides.js) lies inside the painting:
    a separate horizontal and vertical scale plus an offset, by matching edge maps.
 2. Writes art/check/<map>.png: the painting with the game's tiles outlined
-   (orange = road, cyan = high ground for ranged characters, purple = swamp/sand, blue = water, red = gate, green = crystal)
+   (orange = road, cyan = high ground for ranged characters, purple = swamp/sand, blue = water,
+   red cross = rock/cliff/building where nobody may stand, red circle = gate, green = crystal)
    so you can see at a glance whether the road and the platforms are where the game expects them.
 3. With --apply: saves art/<map>.webp and writes the MAP_ART entry in js/data.js.
 """
@@ -100,6 +101,12 @@ def overlay(art, info, kx, ky, x0, y0):
         q = [to(c - .5, r - .5, h), to(c + .5, r - .5, h), to(c + .5, r + .5, h), to(c - .5, r + .5, h)]
         fill = col[k] + (70 if k == 'high' else 35,)
         dr.polygon(q, fill=fill, outline=col[k] + (255,), width=lw * (2 if k == 'high' else 1))
+    # cells where nobody may stand (rock, cliff, building/prop): a red cross, so a painted 'platform' there is caught
+    for c, r, terrain, h, road in info['cells']:
+        if terrain in ('rock', 'cliff', 'prop'):
+            q = [to(c - .5, r - .5, h), to(c + .5, r - .5, h), to(c + .5, r + .5, h), to(c - .5, r + .5, h)]
+            dr.line([q[0], q[2]], fill=(255, 40, 40, 230), width=lw * 2)
+            dr.line([q[1], q[3]], fill=(255, 40, 40, 230), width=lw * 2)
     for g in info['gates']:
         cx, cy = to(g['x'], g['y'], 0); rr = art.size[0] / info['fw'] * .35
         dr.ellipse([cx - rr, cy - rr, cx + rr, cy + rr], outline=(255, 40, 40, 255), width=lw * 2)
