@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.0.0',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.0.1',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -511,10 +511,16 @@ function syncObjects(dt,time){
   o.g.position.set(wx(u.x)+u.face.dx/len*l,gy,wz(u.y)+u.face.dy/len*l);const f=lookOf(u),want=Math.atan2(f.dx,f.dy);let d=want-o.g.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));o.g.rotation.y+=d*Math.min(1,dt*14);}
  for(const e of S.enemies){const key='e'+e.id;let o=objs.get(key);if(!o){o={g:modelFor(`e:${e.kind}:${e.model}:${e.elite?1:0}:${e.scale||0}:${e.bossId??''}`,enemySpec(e)),lunge:0,flash:0,seed:e.id*1.7,air:e.flying?1:0};unitGroup.add(o.g);objs.set(key,o);}
   const moving=!e.st.freeze&&!e.st.stun&&!e.st.sleep&&!e.st.root;o.lunge=Math.max(0,o.lunge-dt*6);o.push=Math.max(0,(o.push||0)-dt*5.5);const kb=e.flying?0:Math.sin(Math.min(1,o.push)*Math.PI/2)*.17*(o.push>1?o.push:1)/(e.boss?2.2:1);o.air+=((e.flying?1:0)-o.air)*Math.min(1,dt*3);
-  const hop=moving?Math.abs(Math.sin(time*(e.engagedBy?3.5:7)+o.seed))*.07:0,l=Math.sin(o.lunge*Math.PI)*.14;
+  // Walking: the step bob follows the distance actually walked (about 2.4 steps per tile), so slow and held monsters step slowly
+  // and nothing slides. Bigger bodies bob higher; each step also rolls the body a little to the side. Slimes bounce and squash.
+  // Ghosts and flame spirits float instead, and flyers keep their flight motion.
+  const floaty=e.model==='ghost'||e.model==='flameSpirit',size=Math.min(1.6,e.scale||1),walked=o.px==null?0:Math.hypot(e.x-o.px,e.y-o.py);o.px=e.x;o.py=e.y;
+  if(walked<.5)o.ph=(o.ph||o.seed)+walked*Math.PI*2.4;o.amp=(o.amp||0)+((moving&&walked>1e-4?1:0)-(o.amp||0))*Math.min(1,dt*8);
+  const slime=e.model==='slime',step=Math.abs(Math.sin(o.ph||0)),hop=e.flying?0:floaty?.22+Math.sin(time*2.2+o.seed)*.07:step*o.amp*(slime?.17:.12)*size,l=Math.sin(o.lunge*Math.PI)*.14;
+  o.g.rotation.z=e.flying||slime?0:floaty?Math.sin(time*1.6+o.seed)*.05:Math.sin(o.ph||0)*.09*o.amp;
   o.tremble=Math.max(0,(o.tremble||0)-dt);const tr=o.tremble>0?o.tremble*.14:0,jx=tr?Math.sin(time*95+o.seed)*tr:0,jz=tr?Math.cos(time*83+o.seed)*tr:0;
   o.g.position.set(wx(e.x)+e.dx*(l-kb)+jx,groundY(e.x,e.y)+.02+hop*(1-o.air)+o.air*(.8+Math.sin(time*3+o.seed)*.08),wz(e.y)+e.dy*(l-kb)+jz);{const want=Math.atan2(e.dx,e.dy);let d=want-o.g.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));o.g.rotation.y+=d*Math.min(1,dt*9);}
-  if(o.flash>0){o.flash-=dt;const s=1+o.flash*1.2;o.g.scale.set(s,1/s,s);}else o.g.scale.setScalar(1);}
+  if(o.flash>0){o.flash-=dt;const s=1+o.flash*1.2;o.g.scale.set(s,1/s,s);}else if(slime&&o.amp>.05){const q=1+(1-step)*.14*o.amp;o.g.scale.set(Math.sqrt(q),1/q,Math.sqrt(q));}else o.g.scale.setScalar(1);}
  for(const [key,o] of objs){const id=+key.slice(1),alive=key[0]==='u'?S.units.some(u=>u.id===id):S.enemies.some(e=>e.id===id);if(!alive){objs.delete(key);unitGroup.remove(o.g);}}
  for(let i=dying.length-1;i>=0;i--){const d=dying[i];d.t+=dt;const k=1-d.t/.25;if(k<=0){unitGroup.remove(d.g);dying.splice(i,1);}else d.g.scale.setScalar(Math.max(.01,k));}}
 
@@ -535,5 +541,5 @@ function showRevisions(){if($('#revisionsView'))return;const view=document.creat
  const close=()=>{view.remove();window.removeEventListener('message',onMessage);document.removeEventListener('keydown',onKey);},onKey=e=>{if(e.key==='Escape')close();},
   onMessage=e=>{if(e.origin===location.origin&&e.data==='td:close-revisions')close();};
  document.addEventListener('keydown',onKey);window.addEventListener('message',onMessage);$('#closeRevisions').onclick=close;}
-window.TD={bgm,get sim(){return S;},startChapter,renderGuide,version:GAME_VERSION,proj:(x,y,h)=>proj(x,y,h)};
+window.TD={bgm,get sim(){return S;},get objs(){return objs;},startChapter,renderGuide,version:GAME_VERSION,proj:(x,y,h)=>proj(x,y,h)};
 })();
