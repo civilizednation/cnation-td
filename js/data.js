@@ -360,8 +360,6 @@ const WORLD_MAP={file:'art/world.webp',stops:[[48.9,88.3],[70.8,80.4],[29,72.5],
  tint:['#7fbf6a','#4fb3c4','#e7f0f5','#3f7f4f','#e08a3c','#e6c06a','#2f9f6f','#7a2a22','#4a4f78','#3fd0c8']};
 // Legacy altar (legacy view background, art/altar.webp, 9:16): the ten sockets' centres [x%,y%], chapter order (two rows of five).
 const ALTAR={file:'art/altar.webp',size:12.6,sockets:[[18.3,36.7],[34.3,36.7],[50,36.7],[65.7,36.7],[81.6,36.7],[18.3,46.4],[34.3,46.4],[50,46.4],[65.7,46.4],[81.6,46.4]]};
-// Title screen painting (art/title.webp, 9:16): where the heroes stand (feet line, as % of the image height) and the crystal centre.
-const TITLE_ART={file:'art/title.webp',feet:61.5,crystal:[50,28],spread:62};
 // What a legacy adds up to when taken `n` times (for the legacy summary).
 function legacyTotal(id,n){const l=LEGACIES.find(v=>v.id===id);if(!l)return '';
  const t={heroPower:`영웅 공격·마법 +${8*n}%`,heroHp:`영웅 최대 HP +${12*n}%`,soldierPower:`병사 공격·마법·HP +${12*n}%`,startGold:`장 시작 골드 +${60*n}`,life:`수정 생명 +${3*n}`,
@@ -380,6 +378,6 @@ const MAP_ART={
  capital:{file:'art/capital.webp',rect:[-0.0083,-0.0399,1.0017,0.9707],bg:'#593c35'},
  core:{file:'art/core.webp',rect:[0.0000,0.0000,1.0000,1.0005],bg:'#272d43'}
 };
-const TDData={TITLE_ART,WORLD_MAP,ALTAR,legacyTotal,SOLDIER_POWER,MAP_ART,legacyScale,unitStats,RANGED_INTERVAL,RANGED_POWER,MELEE_INTERVAL,MELEE_POWER,GATE_GAP:3,seeded,LEGACIES,legacyOffer,legacyCounts,typicalLegacy,MELEE_GAP:3,SKILLS,UNITS,HERO_ORDER,SOLDIER_ORDER,RANK_COST,RANK_STAT,RANK_GUARD,REFUND,WITHDRAW_CD,DOWN_CD,ENGAGE_SLOW,MONSTERS,MODEL_TRAITS,MOVE_SPEED,ELEMENT_ICON,SCENES,MAPS,CHAPTERS,BOSSES,BLESSINGS};
+const TDData={WORLD_MAP,ALTAR,legacyTotal,SOLDIER_POWER,MAP_ART,legacyScale,unitStats,RANGED_INTERVAL,RANGED_POWER,MELEE_INTERVAL,MELEE_POWER,GATE_GAP:3,seeded,LEGACIES,legacyOffer,legacyCounts,typicalLegacy,MELEE_GAP:3,SKILLS,UNITS,HERO_ORDER,SOLDIER_ORDER,RANK_COST,RANK_STAT,RANK_GUARD,REFUND,WITHDRAW_CD,DOWN_CD,ENGAGE_SLOW,MONSTERS,MODEL_TRAITS,MOVE_SPEED,ELEMENT_ICON,SCENES,MAPS,CHAPTERS,BOSSES,BLESSINGS};
 if(typeof module!=='undefined'&&module.exports)module.exports=TDData;else root.TDData=TDData;
 })(typeof window!=='undefined'?window:globalThis);

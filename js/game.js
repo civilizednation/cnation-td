@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.5.0',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.6.0',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -167,7 +167,7 @@ const sfxBuf={},sfxLast={};
 function loadSfx(){const c=audioCtx();if(!c)return;for(const n of SFX_FILES){if(sfxBuf[n])continue;const slot={};sfxBuf[n]=slot;
  fetch(`sfx/${n}.mp3?v=${GAME_VERSION}`).then(r=>r.ok?r.arrayBuffer():Promise.reject()).then(b=>new Promise((ok,no)=>c.decodeAudioData(b,ok,no))).then(buf=>{slot.buf=buf;}).catch(()=>{delete sfxBuf[n];});}}
 // opt: {gain: volume multiplier, delay: seconds from now, force: ignore the repeat gap}. Hits and deaths vary their pitch slightly.
-function sfx(kind,opt={}){if(!(settings.sfxVol>0))return;const c=audioCtx();if(!c)return;const now=c.currentTime,at=now+(opt.delay||0),vol=(opt.gain||1)*settings.sfxVol,rate=/^(hit_|die_|monster_die)/.test(kind)?.94+Math.random()*.12:1;if(!opt.force&&now-(sfxLast[kind]??-9)<(SFX_GAP[kind]??.03))return;sfxLast[kind]=now;
+function sfx(kind,opt={}){if(!(settings.sfxVol>0)||(demo.on&&!/^ui_/.test(kind)))return;const c=audioCtx();if(!c)return;const now=c.currentTime,at=now+(opt.delay||0),vol=(opt.gain||1)*settings.sfxVol,rate=/^(hit_|die_|monster_die)/.test(kind)?.94+Math.random()*.12:1;if(!opt.force&&now-(sfxLast[kind]??-9)<(SFX_GAP[kind]??.03))return;sfxLast[kind]=now;
  try{const buf=sfxBuf[kind]?.buf;if(buf){const src=c.createBufferSource(),g=c.createGain();src.buffer=buf;src.playbackRate.value=rate;g.gain.value=.9*vol;src.connect(g).connect(c.destination);src.start(at);return;}
   const P=SFX_SYNTH[kind];if(!P)return;const o=c.createOscillator(),g=c.createGain();o.type=P[4];o.frequency.setValueAtTime(P[0]*rate,at);o.frequency.exponentialRampToValueAtTime(P[1]*rate,at+P[2]);g.gain.setValueAtTime(Math.min(.6,P[3]*2*vol),at);g.gain.exponentialRampToValueAtTime(.001,at+P[2]);o.connect(g).connect(c.destination);o.start(at);o.stop(at+P[2]+.02);}catch(e){}}
 const BGM_FILES={1:'01. Title Theme',4:'04. Blades of the Young',5:'05. March of the Broken Banner',6:'06. When Kingdoms Fall',7:'07. Awakened Colossus',10:'10. Raise the Banner',12:'12. Where Our Journey Ends'};
@@ -211,8 +211,8 @@ document.addEventListener('visibilitychange',()=>{const el=bgm.node&&bgm.node.el
 const battleTrack=()=>S.chapter.battles[S.battle]?.boss?7:[4,5,6][(S.chapterIndex+Math.floor(S.battle/3))%3];
 
 // ── HUD, strip, dock, panel ──
-let toastTimer=0;function toast(text){const t=$('#toast');t.textContent=text;t.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('on'),2000);}
-let bannerTimer=0;function banner(small,strong){const b=$('#banner');b.children[0].textContent=small;b.children[1].textContent=strong;b.classList.add('on');clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>b.classList.remove('on'),1700);}
+let toastTimer=0;function toast(text){if(demo.on)return;const t=$('#toast');t.textContent=text;t.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('on'),2000);}
+let bannerTimer=0;function banner(small,strong){if(demo.on)return;const b=$('#banner');b.children[0].textContent=small;b.children[1].textContent=strong;b.classList.add('on');clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>b.classList.remove('on'),1700);}
 let hudKey='';
 function updateHud(){const key=[S.units.map(u=>u.ult?Math.ceil(u.ultCd)+(ultReady(u)?'!':''):'').join(),S.life,S.gold,S.units.length,S.battle,S.phase,Math.ceil(S.prep),S.enemies.length+S.queue.length,speed,paused].join('|');if(key===hudKey)return;hudKey=key;
  $('#hudLife').textContent=S.life;$('#hudGold').textContent=S.gold;const heroes=Object.keys(S.hero).length;$('#hudHeroes').textContent=`${S.units.length-S.soldierCount()}/${heroes}`;$('#hudSoldiers').textContent=`${S.soldierCount()}/${S.soldierCap}`;
@@ -444,28 +444,29 @@ function altarView(back){closeModal();modalOpen=true;const A=D.ALTAR,picks=legac
  altarEl.hidden=false;fitWorld();window.addEventListener('resize',fitWorld);
  altarEl.querySelector('[data-a=back]').onclick=()=>{sfx('ui_tap');closeAltar();back();};
  altarEl.querySelector('[data-a=reset]').onclick=()=>{const c=modal(`<h2>유산 초기화</h2><p>모아 둔 아르카의 유산을 모두 지웁니다. 되돌릴 수 없습니다.</p><button class="primary" data-a="n">취소</button><button class="dev" data-a="y">모두 지우기</button>`);c.querySelector('[data-a=n]').onclick=closeModal;c.querySelector('[data-a=y]').onclick=()=>{saveJSON(LEGACY_KEY,{picks:{}});closeModal();altarView(back);};};}
-// ── Title scene: the painting with the joined heroes standing on the rune circle, a pulsing crystal and rising motes ──
-const titleScene=(()=>{const el=$('#titleView'),box=el.querySelector('.tbox'),cv=el.querySelector('.theroes'),A=D.TITLE_ART;let r=null,sc=null,cam=null,heroes=[],raf=0,shown='';
- const motes=el.querySelector('.tmotes');for(let i=0;i<16;i++){const m=document.createElement('i');m.style.left=(8+Math.random()*84)+'%';m.style.top=(30+Math.random()*55)+'%';m.style.animationDuration=(4+Math.random()*5)+'s';m.style.animationDelay=(-Math.random()*8)+'s';motes.appendChild(m);}
- function fit(){const W=el.clientWidth,H=el.clientHeight;if(!W||!H)return;const cover=W/H<=.75,k=cover?Math.max(W/9,H/16):Math.min(W/9,H/16),w=9*k,h=16*k;
-  Object.assign(box.style,{width:w+'px',height:h+'px',left:(W-w)/2+'px',top:(cover?(H-h)*.35:(H-h)/2)+'px'});
-  const g=el.querySelector('.tglow');g.style.left=A.crystal[0]+'%';g.style.top=A.crystal[1]+'%';
-  if(r){const d=Math.min(2,window.devicePixelRatio||1);r.setPixelRatio(d);r.setSize(w,h,false);}}
- function joined(){const best=cleared();let cur=D.CHAPTERS.findIndex((c,i)=>(i===0||best[D.CHAPTERS[i-1].id])&&!best[c.id]);if(cur<0)cur=D.CHAPTERS.length-1;return D.HERO_ORDER.filter(id=>D.CHAPTERS[cur].roster.includes(id));}
- function build(){const ids=joined(),key=ids.join();if(key===shown)return;shown=key;for(const h of heroes)sc.remove(h.g);heroes=[];
-  // Kyle in the middle, the others alternating outwards in a shallow arc.
-  const order=[];ids.forEach((id,i)=>{i%2?order.push(id):order.unshift(id);});const n=order.length,span=Math.min(A.spread/100*9,1.15*n);
-  order.forEach((id,i)=>{const g=modelFor('t:'+id,unitSpec(id)),t=n>1?i/(n-1)-.5:0;g.position.set(t*span,0,-Math.abs(t)*1.2);g.rotation.y=-t*.5;g.scale.setScalar(1.55);sc.add(g);heroes.push({g,seed:i*1.7,hop:0,next:2+Math.random()*4});});}
- function init(){if(r)return;try{r=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});}catch(e){r=null;return;}r.outputColorSpace=THREE.SRGBColorSpace;r.setClearColor(0,0);
-  sc=new THREE.Scene();sc.add(new THREE.HemisphereLight(0xcfe8ff,0x2a2050,2.1));const key=new THREE.DirectionalLight(0xbff8ff,2.2);key.position.set(0,6,-4);const fill=new THREE.DirectionalLight(0xfff0d8,1.7);fill.position.set(-3,4,6);sc.add(key,fill);
-  cam=new THREE.OrthographicCamera(-4.5,4.5,8,-8,.1,100);cam.position.set(0,3,20);cam.lookAt(0,1.5,0);cam.updateProjectionMatrix();
-  // move the camera so the heroes' feet land on the rune circle
-  cam.updateMatrixWorld();const v=new THREE.Vector3(0,0,0).project(cam),want=1-2*A.feet/100;cam.position.y-=(want-v.y)*8;cam.updateMatrixWorld();}
- function loop(t){raf=requestAnimationFrame(loop);const s=t/1000;for(const h of heroes){h.next-=1/60;if(h.next<=0){h.hop=1;h.next=3+Math.random()*5;}h.hop=Math.max(0,h.hop-1/30);
-   const breathe=1+Math.sin(s*2.2+h.seed)*.015,jump=Math.sin(h.hop*Math.PI)*.35;h.g.position.y=jump;h.g.scale.set(1.55,1.55*breathe,1.55);}
-  r.render(sc,cam);}
- return {show(){if(!A||!A.file){el.hidden=true;return;}const src=A.file+'?v='+GAME_VERSION;el.querySelector('.tart').src=src;el.querySelector('.tbg').src=src;el.hidden=false;init();fit();if(r){build();if(!raf)raf=requestAnimationFrame(loop);}window.addEventListener('resize',fit);},
-  hide(){el.hidden=true;if(raf){cancelAnimationFrame(raf);raf=0;}window.removeEventListener('resize',fit);}};})();
+// ── Title attract mode: a real battle plays by itself behind the title (same camera, painted map and models as the game).
+// No sounds, toasts, saves or result screens; when it ends it starts again on another map.
+const DEMO_SKIP=new Set(['leak','down','withdraw','ult','bonus','battleStart','cleared','prep','bless','won','lost','deploy','rank','bossWave','bossPhase']);
+const demo=(()=>{let on=false,think=0,ultT=0,round=0;
+ function pickTile(def){const d=D.UNITS[def],map=S.map,roads=map.tiles.filter(t=>t.road);let best=null;
+  for(const t of map.tiles){if(S.canDeploy(def,t.c,t.r))continue;let score=Math.random()*.5;
+   if(d.melee){if(!t.road)continue;const at=Object.values(t.pd)[0],total=map.paths[Object.keys(t.pd)[0]].total;score-=Math.abs(at/total-.45)*4;for(const u of S.units)if(D.UNITS[u.def].melee&&Math.hypot(u.x-t.c,u.y-t.r)<2.5)score-=3;}
+   else{const range=d.range+(t.terrain==='high'?.5:0);for(const q of roads)if(Math.hypot(q.c-t.c,q.r-t.r)<=range+.35)score+=1;}
+   if(!best||score>best.score)best={t,score};}return best&&best.t;}
+ function setup(){const best=cleared(),open=D.CHAPTERS.map((c,i)=>i===0||!!best[D.CHAPTERS[i-1].id]),choices=D.CHAPTERS.map((c,i)=>i).filter(i=>open[i]&&D.MAP_ART[D.CHAPTERS[i].map]),
+   index=choices[(round++ +Math.floor(Math.random()*choices.length))%choices.length]||0;
+  clearObjects();S=createSim({chapter:index,seed:Math.floor(Math.random()*1e6),legacy:D.typicalLegacy(index)});S.gold=1e6;S.life=S.maxLife=999;
+  resize();buildTerrain();
+  const heroes=D.HERO_ORDER.filter(id=>S.chapter.roster.includes(id)),soldiers=D.SOLDIER_ORDER.filter(id=>S.chapter.roster.includes(id));
+  for(const id of [...heroes,...soldiers.slice(0,S.soldierCap)]){const t=pickTile(id);if(t)S.deploy(id,t.c,t.r);}
+  for(const u of S.units){let k=0;while(k++<4&&u.rank<Math.min(D.UNITS[u.def].maxRank,3)){const ch=S.needsChoice(u)?Object.keys(D.UNITS[u.def].ranks[u.rank].choice)[0]:undefined;if(S.rankUp(u.id,ch))break;}}
+  S.battle=Math.floor(Math.random()*Math.max(1,S.chapter.battles.length-1));S.startBattle();S.drain();}
+ return {get on(){return on;},start(){on=true;round=Math.floor(Math.random()*10);setup();},stop(){if(!on)return;on=false;clearObjects();S=null;},
+  // called every frame while the title is up: keep the battle going, cast 필살기 now and then, restart when it ends
+  tick(dt){if(!on||!S)return;if(S.phase==='bless')S.chooseBlessing(S.offer[0]);if(S.phase==='prep')S.startBattle();
+   if(S.phase==='won'||S.phase==='lost'||(S.phase==='battle'&&!S.enemies.length&&!S.queue.length&&(think+=dt)>2)){think=0;setup();return;}
+   if((ultT-=dt)<=0){ultT=2.5+Math.random()*2.5;const ready=S.units.filter(u=>u.ult&&u.ultCd<=0&&D.SKILLS[u.ult].type!=='heal'&&D.SKILLS[u.ult].type!=='fortress');
+    const u=ready[Math.floor(Math.random()*ready.length)];if(u&&S.enemies.length>=2){const e=S.enemies.slice().sort((a,b)=>b.dist-a.dist)[0];S.ult(u.id,e.x,e.y);}}}};})();
 function toWorld(){closeModal();showTitle();showWorld();}
 function showWorld(){closeModal();const W=D.WORLD_MAP,best=cleared(),picks=legacyPicks(),stars=Object.values(best).reduce((a,b)=>a+b,0),nLeg=Object.values(picks).filter(Boolean).length;
  const open=i=>i===0||!!best[D.CHAPTERS[i-1].id];let cur=D.CHAPTERS.findIndex((c,i)=>open(i)&&!best[c.id]);if(cur<0)cur=D.CHAPTERS.length-1;
@@ -490,8 +491,15 @@ function chapterInfo(i,ok){const c=D.CHAPTERS[i],st=cleared()[c.id]||0,rec=loadJ
   ${l?`<p class="scope keep">♾ 이 장의 유산: ${l.icon} ${l.name} — ${l.desc}<br><small>다시 클리어하면 바꿀 수 있습니다</small></p>`:''}
   ${ok?`<button class="primary" data-a="go">${st?'다시 도전':'출발'}<small>병사 자리 ${c.soldiers+(legacyNow().command||0)}칸 · 시작 골드 ${c.startGold+60*(legacyNow().startGold||0)}</small></button>`:'<p class="small">🔒 이전 장을 클리어하면 열립니다</p>'}<button data-a="close">닫기</button>`);
  if(ok)m.querySelector('[data-a=go]').onclick=()=>{closeModal();closeWorld();devMode=false;startChapter(i,null);};m.querySelector('[data-a=close]').onclick=closeModal;}
-function showTitle(){closeWorld();closeAltar();titleScene.show();S=null;clearObjects();closePanel();disposeGroup(terrainGroup);water=null;animated=[];art=null;artImg.removeAttribute('src');artBlur.removeAttribute('src');delete artImg.dataset.file;app.classList.add('title');bgm.play(1);const save=loadSave(),any=save||slots().some(Boolean);
- const m=modal(`<div class="logo"><p class="sub">ARCA CHRONICLE</p><h1>cnation <em>TD</em></h1><p class="tag">아르카 방어전</p><p class="line">탑을 짓지 않는다. 동료를 세운다.</p></div><div class="tmenu">${save?`<button class="primary" data-a="continue">이어하기<small>${D.CHAPTERS[save.chapter].label} · 전투 ${save.battle+1}</small></button>`:''}<button ${save?'':'class="primary"'} data-a="start">게임 시작<small>${(()=>{const best=cleared(),stars=Object.values(best).reduce((a,b)=>a+b,0),next=D.CHAPTERS.find((c,i)=>(i===0||best[D.CHAPTERS[i-1].id])&&!best[c.id]);return next?`다음: ${next.label} · ${next.name}${stars?` · ★ ${stars}/${D.CHAPTERS.length*3}`:''}`:`모든 장 클리어 · ★ ${stars}/${D.CHAPTERS.length*3}`;})()}</small></button><div class="trow"><button data-a="load" ${any?'':'disabled'}><b>📂</b>불러오기</button><button data-a="sound"><b>🔊</b>소리 설정</button><button data-a="help"><b>📖</b>게임 방법</button></div><button class="dev" data-a="dev">개발자 모드 (테스트용)</button></div><div class="verbar">ver.${GAME_VERSION} (<a href="revisions.html">rev. history</a>)</div>`,'title');const rv=m.querySelector('.verbar a');if(rv)rv.onclick=e=>{if(e.button||e.metaKey||e.ctrlKey||e.shiftKey)return;e.preventDefault();sfx('ui_tap');showRevisions();};
+function showTitle(){closeWorld();closeAltar();demo.stop();S=null;clearObjects();closePanel();disposeGroup(terrainGroup);water=null;animated=[];art=null;artImg.removeAttribute('src');artBlur.removeAttribute('src');delete artImg.dataset.file;app.classList.add('title');bgm.play(1);demo.start();const save=loadSave(),any=save||slots().some(Boolean);
+ const best=cleared(),stars=Object.values(best).reduce((a,b)=>a+b,0),next=D.CHAPTERS.find((c,i)=>(i===0||best[D.CHAPTERS[i-1].id])&&!best[c.id]),
+  ICON={load:'<path d="M3 7h6l2 2h10v10H3z"/>',sound:'<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>',help:'<path d="M4 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-4a2 2 0 0 0-2 2"/><path d="M20 5v13h-6"/>'},
+  icon=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>`;
+ const m=modal(`<div class="logo"><p class="sub">ARCA CHRONICLE</p><h1>cnation <em>TD</em></h1><p class="tag">아르카 방어전</p></div>
+  <div class="tmenu">${save?`<button class="tbtn alt" data-a="continue">이어하기<small>${D.CHAPTERS[save.chapter].label} · 전투 ${save.battle+1}</small></button>`:''}
+   <button class="tbtn main" data-a="start">게임 시작<small>${next?`다음 · ${next.label} ${next.name}`:'모든 장 클리어'}${stars?` · ★ ${stars}/${D.CHAPTERS.length*3}`:''}</small></button>
+   <div class="trow"><button data-a="load" ${any?'':'disabled'}>${icon('load')}<span>불러오기</span></button><button data-a="sound">${icon('sound')}<span>소리</span></button><button data-a="help">${icon('help')}<span>게임 방법</span></button></div>
+   <div class="tfoot"><button class="dev" data-a="dev">개발자 모드</button><span class="verbar">ver.${GAME_VERSION} (<a href="revisions.html">rev. history</a>)</span></div></div>`,'title');const rv=m.querySelector('.verbar a');if(rv)rv.onclick=e=>{if(e.button||e.metaKey||e.ctrlKey||e.shiftKey)return;e.preventDefault();sfx('ui_tap');showRevisions();};
  const on=(a,f)=>{const b=m.querySelector(`[data-a=${a}]`);if(b)b.onclick=()=>{sfx('ui_tap');f();};};
  on('start',showWorld);on('continue',()=>{closeModal();startChapter(save.chapter,save);});on('dev',()=>chapterList(true));
  on('load',()=>slotModal('load',showTitle));on('sound',()=>settingsModal(showTitle));on('help',()=>{const h=modal(HELP+helpTips()+`<button class="primary">닫기</button>`,'help');h.querySelector('button').onclick=showTitle;});}
@@ -499,7 +507,7 @@ function showTitle(){closeWorld();closeAltar();titleScene.show();S=null;clearObj
 // ── Saves ──
 function saveGame(){lastSnap=S.snapshot();lastSnap.time=Date.now();saveJSON(SAVE_KEY,lastSnap);}
 function loadSave(){const s=loadJSON(SAVE_KEY,null);return s&&s.v===2&&D.CHAPTERS[s.chapter]?s:null;}
-function startChapter(index,snapshot){titleScene.hide();clearObjects();closePanel();app.classList.remove('title');selCard=null;validTiles=null;const legacy=devMode?D.typicalLegacy(index):legacyNow();S=createSim({chapter:index,snapshot,seed:(Date.now()&0xffff)+index*101,legacy});ultSeen=new Set();speed=1;paused=false;hudKey='';
+function startChapter(index,snapshot){demo.stop();clearObjects();closePanel();app.classList.remove('title');selCard=null;validTiles=null;const legacy=devMode?D.typicalLegacy(index):legacyNow();S=createSim({chapter:index,snapshot,seed:(Date.now()&0xffff)+index*101,legacy});ultSeen=new Set();speed=1;paused=false;hudKey='';
  resize();buildTerrain();buildDock();showPreview();saveGame();bgm.play(battleTrack());
  if(!snapshot)dialogue(S.chapter.intro,()=>toast('동료를 배치하고 「전투 시작」을 누르세요'));else toast(`${S.chapter.label} · 전투 ${S.battle+1} 준비`);
  if(devMode){const n=Object.values(legacy).reduce((a,b)=>a+b,0);setTimeout(()=>toast(`개발자 모드 · 평균 유산 ${n}개 적용`),2200);}}
@@ -514,7 +522,7 @@ let deaths=[];
 function playDeaths(){if(!deaths.length)return;const count={};for(const k of deaths)count[k]=(count[k]||0)+1;
  Object.keys(count).sort((a,b)=>(b==='die_boss')-(a==='die_boss')||count[b]-count[a]).slice(0,3).forEach((k,i)=>sfx(k,{force:true,delay:i*.045,gain:Math.min(1.5,1+.15*(count[k]-1))}));
  sfx('coin',{force:true,gain:Math.min(1.4,1+.1*(deaths.length-1))});deaths=[];}
-function handleEvents(){deaths=[];for(const e of S.drain()){
+function handleEvents(){deaths=[];for(const e of S.drain()){if(demo.on&&DEMO_SKIP.has(e.t))continue;
  if(e.t==='attack'){const o=objs.get('u'+e.unit);if(o)o.lunge=1;if(e.melee){shove(e.target,1);addFx({k:'slash',x:e.to.x,y:e.to.y,dur:.26,color:'#fff6c8',r:.46,glow:'#ffd257'});addFx({k:'spark',x:e.to.x,y:e.to.y,dur:.22,color:'#fff3b0'});}else addFx({k:'shot',from:e.from,to:e.to,dur:.17,color:e.magic?'#e2c4ff':'#fff1c4',glow:e.magic?'#a66bff':'#ffb347',magic:e.magic});sfx(e.melee?'hit_melee':!e.magic?'hit_arrow':D.UNITS[S.units.find(v=>v.id===e.unit)?.def]?.element==='light'?'hit_holy':'hit_magic');}
  else if(e.t==='skill'&&D.SKILLS[e.skill]?.ult){const s=D.SKILLS[e.skill],color=EL_COLOR[e.element]||'#fff3b0',area=e.area||s.area||.8,heal=s.type==='heal',delay=e.fx==='meteor'?.5:e.fx==='bolt'?.12:0;ultImpact=delay;
   if(!heal){const R=e.fx==='bolt'?.75:area+.2;addFx({k:'target',real:true,x:e.x,y:e.y,dur:Math.max(.35,delay+.1),color,r:R});
@@ -570,9 +578,9 @@ function drawMarkers(time){const map=S.map,prep=S.phase==='prep';
  map.paths.forEach((path,pi)=>{const flow=(time*1.2)%1;
   // Red arrows pour out of each gate; during preparation they run the whole road so the route is easy to read.
   const upto=prep?path.total-1.2:3.2;for(let d=.2+flow;d<upto;d+=prep?1.5:1){const p=map.posAt(pi,d),fade=prep?(d<3.2?.9:.38):Math.max(0,.95-d/3.6);chevron(p.x,p.y,p.dx,p.dy,.2,d<3.2?'#ff5a45':'#fff',fade);}
-  const [fc,fr]=path.wp[0],seg=path.segs[0],g=proj(fc+seg.dx*.5,fr+seg.dy*.5,2.5);if(pi===0||path.wp[0][0]!==map.paths[0].wp[0][0]||path.wp[0][1]!==map.paths[0].wp[0][1])pill(g.x,g.y,map.paths.length>1?`▼ 적 출현 ${pi+1}`:'▼ 적 출현','rgba(170,40,30,.92)','#fff');
+  const [fc,fr]=path.wp[0],seg=path.segs[0],g=proj(fc+seg.dx*.5,fr+seg.dy*.5,2.5);if(pi===0||path.wp[0][0]!==map.paths[0].wp[0][0]||path.wp[0][1]!==map.paths[0].wp[0][1])if(!demo.on)pill(g.x,g.y,map.paths.length>1?`▼ 적 출현 ${pi+1}`:'▼ 적 출현','rgba(170,40,30,.92)','#fff');
   for(let d=path.total-2.6+flow*.8;d<path.total-.5;d+=.8){const p=map.posAt(pi,d);chevron(p.x,p.y,p.dx,p.dy,.18,'#7ff0d2',.75);}});
- const last=map.paths[0].wp[map.paths[0].wp.length-1],c=proj(last[0],Math.min(last[1],S.map.h-1)+.6,2.6),low=S.life<=S.maxLife*.35;pill(c.x,c.y,`아르카 수정 ♥${S.life}`,low?'rgba(170,40,30,.92)':'rgba(20,90,80,.92)','#fff');}
+ const last=map.paths[0].wp[map.paths[0].wp.length-1],c=proj(last[0],Math.min(last[1],S.map.h-1)+.6,2.6),low=S.life<=S.maxLife*.35;if(!demo.on)pill(c.x,c.y,`아르카 수정 ♥${S.life}`,low?'rgba(170,40,30,.92)':'rgba(20,90,80,.92)','#fff');}
 function drawOverlay(dt,time,realDt=dt){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,vw,vh);ctx.textAlign='center';ctx.lineJoin='round';
  drawMarkers(time);
  // Where the selected card may go
@@ -673,8 +681,8 @@ function syncObjects(dt,time){
 
 let lastTime=0;
 function frame(now){requestAnimationFrame(frame);const real=Math.min(.05,(now-lastTime)/1000||0);lastTime=now;if(!S){bgm.setDuck(1);ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,fxc.width,fxc.height);renderer.render(scene,camera);return;}
- if(hitStop>0)hitStop=Math.max(0,hitStop-real);const busy=S.phase==='battle'&&(selCard||selUnit||aiming),scale=paused||modalOpen?0:speed*(busy?.25:1)*(hitStop>0?.12:1);
- bgm.setDuck((S.phase==='prep'||S.phase==='battle'||S.phase==='bless')&&(paused||modalOpen)?.4:1);
+ if(hitStop>0)hitStop=Math.max(0,hitStop-real);const busy=S.phase==='battle'&&(selCard||selUnit||aiming),scale=demo.on?(hitStop>0?.12:1):paused||modalOpen?0:speed*(busy?.25:1)*(hitStop>0?.12:1);if(demo.on)demo.tick(real);if(!S)return;
+ bgm.setDuck(!demo.on&&(S.phase==='prep'||S.phase==='battle'||S.phase==='bless')&&(paused||modalOpen)?.4:1);
  if(scale>0)S.step(real*scale);handleEvents();if(!S)return;
  const t=now/1000;syncObjects(real*(scale>0?Math.max(1,scale):1),t);if(water)water.material.uniforms.uTime.value=t;for(const f of animated)f(t);
  if(shakeT>0){shakeT=Math.max(0,shakeT-real);const m=shakeT*14;viewport.style.transform=`translate(${(Math.random()-.5)*m}px,${(Math.random()-.5)*m}px)`;}else if(viewport.style.transform)viewport.style.transform='';

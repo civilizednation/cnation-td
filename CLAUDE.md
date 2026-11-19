@@ -71,9 +71,12 @@ Always write every message to the user in Korean (한국어).
 - Chapter clear (`clearFlow` in game.js): pages 결산 → 유산 (`legacyModal`) → 다음 장 준비 → 마무리 (3 pages on FINAL). Uses `S.stats`
   (dealt/healedBy per unit, ults, goldEarned/goldSpent, battle time; kept in the snapshot) and `D.unitStats`/`D.legacyScale` (the same
   legacy formula sim.refresh uses). Best record per chapter: `cnation-td-records-v1` = {chapterId:{stars,life,time,kills}}.
-- Title scene (`titleScene` in game.js, `#titleView` z14): `TITLE_ART` painting (cover on phones, contain + blurred sides when wide),
-  the joined heroes of the current chapter as 3D models on the rune circle (`feet` %), a pulsing crystal glow and rising motes;
-  the title modal is transparent over it (`#app #modal.title`). Hidden when a chapter starts.
+- Title (1.6.0): attract mode (`demo` in game.js) — a real battle on a painted map of an opened chapter plays behind the transparent
+  title modal (`#app.title #viewport` fills the screen), auto-deployed with ranks 3, 필살기 now and then, restarted when it ends.
+  While `demo.on`: no sfx except ui_*, no toast/banner, events in `DEMO_SKIP` ignored (no saves/results), gate and crystal labels hidden.
+  Title type scale: logo 40, tagline 18, buttons 16, small 12; menu = 게임 시작 (gold) / 이어하기, three round SVG icon buttons, footer.
+  `art/title.webp` (ruins + crystal) is no longer used on the title; kept for a future loading/ending screen.
+- iOS home-screen apps: `@media (display-mode:standalone){#app{height:100lvh}}` — bottom:0 left a status-bar-sized gap there.
 - Title menu: 이어하기 (if a save), 게임 시작 → world map, 불러오기, 소리 설정, 게임 방법, 개발자 모드. Clear wrap-up, defeat and the
   in-game menu have 지도로 (`toWorld`). The altar view pauses a running battle (sets `modalOpen`).
 - World map chapter select (`showWorld`/`chapterInfo` in game.js, `#world` z15 under the modal): `WORLD_MAP` in data.js = painting file

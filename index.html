@@ -13,8 +13,8 @@
 <meta name="apple-mobile-web-app-title" content="cnation TD">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
-@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=23") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:118%}
-@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=23") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:104%}
+@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=24") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:118%}
+@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=24") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:104%}
 :root{--font-display:"Stylish",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--font-body:"Gowun Dodum",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--bg:#16282d;--panel:#1f373d;--panel2:#284850;--line:#3c636b;--ink:#eef4ea;--dim:#a9c0bb;--gold:#f2cf72;--good:#8fe5b4;--bad:#f08f7c;--accent:#8be1bf}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--ink);font-family:var(--font-display);overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -31,6 +31,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
 #artBlur{position:absolute;inset:-6%;width:112%;height:112%;object-fit:cover;filter:blur(16px) brightness(.55) saturate(.9);pointer-events:none}#artBlur:not([src]){display:none}
 #side{display:contents}
 /* Landscape tablets and laptops: the battlefield uses the full height on the left, the controls sit in a column on the right. */
+@media (display-mode:standalone){#app{bottom:auto;height:100vh;height:100lvh}}
 @media (orientation:landscape) and (min-width:640px){
  #app{max-width:1400px;display:grid;grid-template-columns:minmax(0,1fr) clamp(300px,30vw,380px);grid-template-rows:auto minmax(0,1fr);grid-template-areas:"hud hud" "view side"}
  #app #hud{grid-area:hud}#viewport{grid-area:view}
@@ -91,41 +92,27 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
 #panel button.x{flex:none;width:34px}
 #modal{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(8,16,19,.72)}
 #modal[hidden]{display:none}
-#titleView{position:absolute;inset:0;z-index:14;overflow:hidden;background:#0b1024}#titleView[hidden]{display:none}
-#titleView .tbg{position:absolute;inset:-6%;width:112%;height:112%;object-fit:cover;filter:blur(18px) brightness(.55)}
-#titleView .tbox{position:absolute}#titleView .tart{position:absolute;inset:0;width:100%;height:100%}#titleView canvas{position:absolute;inset:0;width:100%;height:100%}
-#titleView .tglow{position:absolute;width:46%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(150,255,240,.45),rgba(90,220,230,.12) 45%,transparent 70%);mix-blend-mode:screen;animation:tPulse 3s ease-in-out infinite;pointer-events:none}
-@keyframes tPulse{50%{opacity:.45;transform:translate(-50%,-50%) scale(1.12)}}
-#titleView .tmotes i{position:absolute;width:5px;height:5px;border-radius:50%;background:#bff;box-shadow:0 0 8px #7ff;opacity:0;animation:tMote linear infinite}
-@keyframes tMote{0%{opacity:0;transform:translateY(0)}15%{opacity:.9}100%{opacity:0;transform:translateY(-34vh)}}
-#app #modal.title{background:none;padding:0;align-items:stretch}
-#modal.title .sheet{max-width:none;max-height:none;height:100%;border:0;border-radius:0;background:none;padding:calc(30px + env(safe-area-inset-top)) 22px calc(30px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;overflow:hidden}
-#modal.title .logo{text-align:center;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6))}
-#modal.title .logo .sub{margin:0;color:#9ff0e0;letter-spacing:.35em;font-size:12px;text-shadow:0 0 8px rgba(120,255,230,.8)}
-#modal.title .logo h1{margin:2px 0 0;font-size:54px;line-height:1.05;letter-spacing:.02em;color:#fff3cf;-webkit-text-stroke:2px #3a2a12;paint-order:stroke fill;text-shadow:0 0 18px rgba(255,210,120,.65)}
-#modal.title .logo h1 em{font-style:normal;background:linear-gradient(#fff6c9,#f2cf72 45%,#d98a2b);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:0;filter:drop-shadow(0 0 2px #3a2a12) drop-shadow(0 2px 0 #3a2a12)}
-#modal.title .logo .tag{margin:4px 0 0;font-size:26px;color:#fff;-webkit-text-stroke:1.5px #1a2a3a;paint-order:stroke fill;letter-spacing:.12em}
-#modal.title .logo .line{margin:6px 0 0;min-height:0;font-size:13px;color:#d6e7ff;text-shadow:0 1px 4px #000}
-#modal.title .tmenu{margin-top:auto;width:100%;max-width:380px;display:flex;flex-direction:column;gap:8px}
-#modal.title .tmenu button{position:relative;overflow:hidden;margin:0;min-height:50px;color:#f2f8ff;text-shadow:0 1px 2px rgba(0,0,0,.55);
- background:linear-gradient(180deg,rgba(255,255,255,.26) 0%,rgba(255,255,255,.08) 48%,rgba(255,255,255,.02) 52%,rgba(160,220,255,.1) 100%);
- border:1px solid rgba(255,255,255,.38);border-radius:16px;backdrop-filter:blur(10px) saturate(150%);-webkit-backdrop-filter:blur(10px) saturate(150%);
- box-shadow:inset 0 1px 0 rgba(255,255,255,.55),inset 0 -1px 0 rgba(120,200,255,.25),inset 0 0 18px rgba(170,230,255,.12),0 6px 18px rgba(0,0,0,.35)}
-#modal.title .tmenu button::before{content:'';position:absolute;left:6%;right:6%;top:3px;height:42%;border-radius:12px 12px 40% 40%/12px 12px 18px 18px;background:linear-gradient(rgba(255,255,255,.38),rgba(255,255,255,0));pointer-events:none}
-#modal.title .tmenu button::after{content:'';position:absolute;top:-30%;bottom:-30%;width:28%;left:-40%;transform:skewX(-20deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);pointer-events:none;animation:glassSweep 5.5s ease-in-out infinite}
-@keyframes glassSweep{0%,70%{left:-40%}100%{left:130%}}
-#modal.title .tmenu button:active{transform:scale(.98);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 3px 10px rgba(0,0,0,.35)}
-#modal.title .tmenu button:disabled{opacity:.5}#modal.title .tmenu button:disabled::after{display:none}
-#modal.title .tmenu button small{color:rgba(230,242,255,.8)}
-#modal.title .tmenu button.primary{min-height:64px;font-size:21px;color:#3a2408;text-shadow:0 1px 0 rgba(255,250,220,.7);
- background:linear-gradient(180deg,rgba(255,240,180,.92) 0%,rgba(255,212,110,.78) 48%,rgba(240,168,50,.72) 52%,rgba(255,206,110,.85) 100%);
- border:1.5px solid rgba(255,240,190,.85);box-shadow:inset 0 1px 0 rgba(255,255,255,.75),inset 0 0 22px rgba(255,220,140,.35),0 0 24px rgba(255,200,100,.55),0 8px 22px rgba(0,0,0,.4);animation:tStart 2.4s ease-in-out infinite}
-#modal.title .tmenu button.primary::after{animation-duration:3.2s}
-@keyframes tStart{50%{box-shadow:inset 0 1px 0 rgba(255,255,255,.75),inset 0 0 26px rgba(255,220,140,.45),0 0 38px rgba(255,205,110,.8),0 8px 22px rgba(0,0,0,.4)}}
-#modal.title .tmenu button.primary small{color:#5e4317;text-shadow:none}
-#modal.title .trow{display:flex;gap:8px}#modal.title .trow button{flex:1;min-height:52px;font-size:13px;padding:4px}#modal.title .trow button b{display:block;font-weight:400;font-size:19px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
-#modal.title .tmenu button.dev{min-height:30px;background:none;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;font-size:12px;opacity:.8;color:#ff9d8a}#modal.title .tmenu button.dev::before,#modal.title .tmenu button.dev::after{display:none}
-#modal.title .verbar{position:static;margin-top:6px;color:#b9c9d9;text-shadow:0 1px 3px #000}
+/* Title: the attract-mode battle fills the screen; logo on top, a compact menu at the bottom. One display font, four sizes (40/18/16/12). */
+#app.title #viewport{position:absolute;inset:0}
+#app #modal.title{background:linear-gradient(rgba(6,12,22,.82) 0%,rgba(6,12,22,.25) 22%,rgba(6,12,22,0) 34%,rgba(6,12,22,0) 58%,rgba(6,12,22,.7) 76%,rgba(6,12,22,.92) 100%);padding:0;align-items:stretch}
+#modal.title .sheet{max-width:none;max-height:none;height:100%;border:0;border-radius:0;background:none;padding:calc(26px + env(safe-area-inset-top)) 24px calc(16px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;overflow:hidden}
+#modal.title .logo{text-align:center}
+#modal.title .logo .sub{margin:0;color:#9fe3d6;letter-spacing:.32em;font-size:12px}
+#modal.title .logo h1{margin:2px 0 0;font-size:40px;line-height:1.1;color:#fbf3dc;text-shadow:0 2px 0 #1b2a33,0 0 14px rgba(255,214,140,.35)}
+#modal.title .logo h1 em{font-style:normal;color:var(--gold)}
+#modal.title .logo .tag{margin:2px 0 0;font-size:18px;color:#e9f1f4;letter-spacing:.18em;text-shadow:0 1px 3px #000}
+#modal.title .tmenu{margin-top:auto;width:100%;max-width:330px;display:flex;flex-direction:column;align-items:center;gap:10px}
+#modal.title .tbtn{width:100%;min-height:48px;margin:0;padding:6px 10px;border-radius:14px;font-size:16px;line-height:1.2;color:#fdf6e3;
+ background:linear-gradient(rgba(255,255,255,.14),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 4px 14px rgba(0,0,0,.35)}
+#modal.title .tbtn.main{color:#2a1d07;background:linear-gradient(#ffe6a0,#f0c25a);border:1px solid #fff0c0;box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 16px rgba(255,205,110,.45),0 4px 14px rgba(0,0,0,.35)}
+#modal.title .tbtn small{display:block;margin-top:1px;font-family:var(--font-body);font-size:12px;color:rgba(240,246,250,.75)}#modal.title .tbtn.main small{color:#6a5220}
+#modal.title .trow{display:flex;justify-content:center;gap:22px;margin-top:2px}
+#modal.title .trow button{display:flex;flex-direction:column;align-items:center;gap:3px;width:auto;min-height:0;margin:0;padding:0;background:none;border:0;color:#e9f1f4;font-size:12px;font-family:var(--font-body)}
+#modal.title .trow svg{width:44px;height:44px;padding:11px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+#modal.title .trow button:disabled{opacity:.4}
+#modal.title .tfoot{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:4px;font-size:12px}
+#modal.title .tfoot .dev{width:auto;min-height:0;margin:0;padding:0;background:none;border:0;color:#ff9d8a;font-family:var(--font-body);font-size:12px;opacity:.8}
+#modal.title .verbar{position:static;margin:0;color:#aebccb;font-family:var(--font-body);font-size:12px}
 #altar{position:absolute;inset:0;z-index:16;display:flex;flex-direction:column;background:#0b1620}#altar[hidden]{display:none}
 #world{position:absolute;inset:0;z-index:15;display:flex;flex-direction:column;background:#0d1a1e}#world[hidden]{display:none}
 .whead{flex:none;display:flex;align-items:center;gap:8px;height:calc(48px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 10px 0;background:var(--panel);border-bottom:1px solid var(--line);font-size:16px}
@@ -232,16 +219,15 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
  <div id="panel"></div>
  <div id="dock"></div>
  </aside>
- <div id="titleView" hidden><img class="tbg" alt=""><div class="tbox"><img class="tart" alt=""><canvas class="theroes"></canvas><i class="tglow"></i><div class="tmotes"></div></div></div>
  <div id="world" hidden></div>
  <div id="altar" hidden></div>
  <div id="modal" hidden></div>
 </div>
 <script src="vendor/three-r170.js"></script>
-<script src="js/data.js?v=1.5.0"></script>
-<script src="js/sim.js?v=1.5.0"></script>
-<script src="js/models.js?v=1.5.0"></script>
-<script src="js/game.js?v=1.5.0"></script>
+<script src="js/data.js?v=1.6.0"></script>
+<script src="js/sim.js?v=1.6.0"></script>
+<script src="js/models.js?v=1.6.0"></script>
+<script src="js/game.js?v=1.6.0"></script>
 <script>if('serviceWorker' in navigator&&location.protocol!=='file:')window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 </body>
 </html>
