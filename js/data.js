@@ -213,7 +213,7 @@ const MAPS={
  ruins:{scene:'crystal',seed:79,paths:[[[4,-1],[4,2],[7,2],[7,5],[1,5],[1,8],[4,8],[4,10],[7,10],[7,12],[2,12],[2,14]]],
   rivers:[{row:6,from:0,to:5},{row:11,from:5,to:8}],high:8,forest:6,cliff:3,prop:6,rock:4},
  tower:{scene:'tower',seed:83,paths:[[[-1,1],[7,1],[7,12],[1,12],[1,4],[5,4],[5,9],[3,9],[3,6]]],
-  slow:[{path:0,from:26,to:29,type:'swamp'}],high:8,forest:4,cliff:3,prop:4,rock:4},
+  slow:[{path:0,from:26,to:29,type:'swamp'}],high:8,noHigh:[[3,5]],forest:4,cliff:3,prop:4,rock:4},
  capital:{scene:'wall',seed:97,paths:[[[0,-1],[0,3],[3,3],[3,6],[6,6],[6,9],[2,9],[2,12],[6,12],[6,14]],[[8,-1],[8,3],[6,3],[6,6],[6,9],[2,9],[2,12],[6,12],[6,14]]],
   rivers:[{row:10,from:4,to:8}],high:8,forest:4,cliff:3,prop:7,rock:3},
  core:{scene:'core',seed:101,paths:[[[4,-1],[4,1],[1,1],[1,3],[7,3],[7,6],[1,6],[1,9],[7,9],[7,12],[4,12],[4,14]]],
@@ -268,7 +268,7 @@ const CHAPTER_DEFS=[
   names:['강철의 기억','무너진 수로','에테르 수로','불씨의 통로','물안개 회랑','잠든 골렘','파수꾼의 길','수정 정원','봉인의 문'],
   intro:[['리아','나는 병기가 아니야. 병기를 멈추기 위한 열쇠였어.'],['루나','그렇다면 이번에도 멈출 수 있어요.'],['카일','과거가 널 정하게 두지 마. 지금의 선택은 네 거야.']],
   outro:[['리아','감시자가 꺼졌어. 문이 열려.'],['네로','그리고 나쁜 소식. 우리 좌표가 새고 있었어.']]},
- {id:'c7',label:'CHAPTER 07',name:'배신자',place:'검은 첨탑',map:'tower',battles:10,soldiers:1,bless:[3,6,9],diff:[1.18,1,.17],
+ {id:'c7',label:'CHAPTER 07',name:'배신자',place:'검은 첨탑',map:'tower',battles:10,soldiers:1,bless:[3,6,9],diff:[1.12,1,.17],
   names:['부서진 맹세','배신자의 흔적','거짓된 명령','나선 계단','폭풍의 층','망령의 층','검은 숲의 그림자','첨탑의 진실','대공의 날개'],
   intro:[['네로','연합군의 좌표를 넘긴 건 왕의 고문이었어.'],['브란','우리를 미끼로 썼다는 건가.'],['리아','코어가 모든 전장의 에테르를 흡수하고 있어. 전쟁 자체가 함정이야.']],
   outro:[['카일','대공이 떨어졌다. 남은 건 수도뿐이야.'],['세라','성문이 보여. 이젠 물러설 곳이 없어.']]},
@@ -354,7 +354,8 @@ const MAP_ART={
  forest:{file:'art/forest.webp',rect:[-0.0125,-0.0352,0.9975,0.9450],bg:'#314720'},
  city:{file:'art/city.webp',rect:[-0.0042,0.0023,0.9958,0.9929],bg:'#a5562e'},
  plain:{file:'art/plain.webp',rect:[-0.0042,-0.0164,1.0058,0.9841],bg:'#cf914a'},
- ruins:{file:'art/ruins.webp',rect:[0.0000,-0.0023,1.0000,0.9982],bg:'#314c24'}
+ ruins:{file:'art/ruins.webp',rect:[0.0000,-0.0023,1.0000,0.9982],bg:'#314c24'},
+ tower:{file:'art/tower.webp',rect:[-0.0042,-0.0258,0.9958,0.9747],bg:'#433334'}
 };
 const TDData={MAP_ART,RANGED_INTERVAL,RANGED_POWER,MELEE_INTERVAL,MELEE_POWER,GATE_GAP:3,seeded,LEGACIES,legacyOffer,legacyCounts,typicalLegacy,MELEE_GAP:3,SKILLS,UNITS,HERO_ORDER,SOLDIER_ORDER,RANK_COST,RANK_STAT,RANK_GUARD,REFUND,WITHDRAW_CD,DOWN_CD,ENGAGE_SLOW,MONSTERS,MODEL_TRAITS,MOVE_SPEED,ELEMENT_ICON,SCENES,MAPS,CHAPTERS,BOSSES,BLESSINGS};
 if(typeof module!=='undefined'&&module.exports)module.exports=TDData;else root.TDData=TDData;
