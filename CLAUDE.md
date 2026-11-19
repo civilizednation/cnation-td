@@ -8,6 +8,8 @@ Always write every message to the user in Korean (한국어).
 
 ## Files
 - `index.html` — shell, all CSS, script tags with `?v=` cache-busting.
+  `#app` is `position:fixed` to all four edges (not `100dvh`) and the page is pinned at 0,0 (`pinPage`/`settle` in game.js): iOS
+  home-screen apps could leave the page offset by the status bar, pushing the dock off screen.
 - Versioning (from 1.0.0, the first complete release): a big change bumps the second digit (1.1.0), a small change or fix bumps the
   third (1.0.1). On every release update together: `GAME_VERSION` (js/game.js), the `?v=` tags in index.html, `VERSION` in `sw.js`,
   README, and `revisions.html` — add a new `<section class="rev" id="vX.Y.Z">` at the top (date, 수정/변경/밸런스 bullets in Korean,

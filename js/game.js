@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.0.1',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.0.2',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -43,6 +43,13 @@ function resize(){const r=viewport.getBoundingClientRect();vw=Math.max(1,r.width
  const w=S?S.map.w:9,h=S?S.map.h:14,land=matchMedia('(orientation:landscape) and (min-width:640px)').matches;pxU=Math.min(vw/(w+.25),vh/(h*SIN+(land?3.4:2.6)));const hw=vw/(2*pxU),hh=vh/(2*pxU);
  camera.left=-hw;camera.right=hw;camera.top=hh;camera.bottom=-hh;camera.position.set(0,60*SIN,tz+60*COS);camera.lookAt(0,0,tz);camera.updateProjectionMatrix();placeArt();}
 window.addEventListener('resize',resize);
+// iOS home-screen apps can leave the page scrolled or offset by the status bar after returning from the background,
+// rotating or closing the keyboard, which pushes the bottom of the game off screen. Keep the page at 0,0 and re-measure.
+const pinPage=()=>{if(window.scrollX||window.scrollY)window.scrollTo(0,0);if(document.scrollingElement)document.scrollingElement.scrollTop=0;};
+const settle=()=>{pinPage();resize();setTimeout(()=>{pinPage();resize();},350);};
+window.addEventListener('scroll',pinPage,{passive:true});window.addEventListener('orientationchange',settle);window.addEventListener('pageshow',settle);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)settle();});
+if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>{pinPage();resize();});
 
 function disposeGroup(g){for(const c of [...g.children]){g.remove(c);c.traverse(o=>{if(o.userData.shared)return;if(o.geometry)o.geometry.dispose();if(o.material&&o.material!==M.sharedMat&&o.material!==M.ghostMat)o.material.dispose?.();});}}
 // Scenery pieces. Each returns bake() parts placed at world x,z on ground height y.
