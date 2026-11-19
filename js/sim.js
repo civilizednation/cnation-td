@@ -42,7 +42,7 @@ function createSim(opts){
  const chapter=D.CHAPTERS[opts.chapter||0],map=buildMap(chapter.map),snap=opts.snapshot||null;
  // Arca legacies: permanent bonuses earned by clearing chapters ({id: times taken}).
  const legacy=opts.legacy||{},L=k=>legacy[k]||0,freshLife=chapter.life+3*L('life');
- const S={chapter,chapterIndex:opts.chapter||0,map,time:0,phase:'prep',prep:0,battle:snap?snap.battle:0,gold:snap?snap.gold:chapter.startGold+60*L('startGold'),life:snap?snap.life:freshLife,maxLife:snap?snap.maxLife:freshLife,legacy,command:chapter.command+L('command'),
+ const S={chapter,chapterIndex:opts.chapter||0,map,time:0,phase:'prep',prep:0,battle:snap?snap.battle:0,gold:snap?snap.gold:chapter.startGold+60*L('startGold'),life:snap?snap.life:freshLife,maxLife:snap?snap.maxLife:freshLife,legacy,soldierCap:chapter.soldiers+L('command'),
   units:[],enemies:[],queue:[],events:[],mods:{burn:0,soldierCost:0,heroBlock:0,bounty:0,haste:0,range:0,cdr:0,rankCost:0,armor:0,grip:0},blessings:snap?snap.blessings.slice():[],offer:null,fortress:0,
   hero:{},nextId:1,leaks:0,leaksTotal:snap?snap.leaksTotal:0,kills:snap?snap.kills||0:0,rand:seeded((opts.seed??20261117)+(snap?snap.battle*7919:0)),acc:0,stats:{dealt:{},healed:0}};
  S.mods.rankCost+=.08*L('rankDisc');S.mods.bounty+=.1*L('bounty');
@@ -67,6 +67,9 @@ function createSim(opts){
  const costOf=(def,mult)=>{const d=D.UNITS[def];return Math.round(d.cost*mult*(1-(d.kind==='soldier'?S.mods.soldierCost:0)));};
  const deployCost=def=>S.hero[def]?.keep?0:costOf(def,D.RANK_COST[0]);
  function rankCost(u){const d=defOf(u);return u.rank>=d.maxRank?null:Math.round(costOf(u.def,D.RANK_COST[u.rank])*(1-S.mods.rankCost));}
+ // Heroes: every joined hero may stand on the field. Soldiers: limited slots per chapter.
+ const soldierCount=()=>S.units.filter(u=>defOf(u).kind==='soldier').length;
+ const slotFree=def=>D.UNITS[def]?.kind!=='soldier'||soldierCount()<S.soldierCap;
  function canDeploy(def,c,r){const d=D.UNITS[def],t=map.tile(c,r);if(!d||!t)return '배치할 수 없는 곳입니다';
   if(S.phase!=='prep'&&S.phase!=='battle')return '지금은 배치할 수 없습니다';
   if(BLOCKED[t.terrain])return `${TERRAIN_NAME[t.terrain]}에는 배치할 수 없습니다`;
@@ -79,7 +82,7 @@ function createSim(opts){
   if(d.melee&&t.road&&S.units.some(u=>defOf(u).melee&&map.tile(u.c,u.r).road&&Math.hypot(u.c-c,u.r-r)<D.MELEE_GAP))return `길 위의 근접 캐릭터끼리는 ${D.MELEE_GAP}칸 이상 떨어져야 합니다`;
   if(t.road)for(const p in t.pd){const first=map.paths[p].wp[0],inside=first[0]>=0&&first[1]>=0&&first[0]<map.w&&first[1]<map.h;if(t.pd[p]<(inside?1:2)||t.pd[p]>map.paths[p].total-1)return '적 출현 문과 수정 바로 앞은 비워 둬야 합니다';}
   if(d.kind==='hero'){if(S.units.some(u=>u.def===def))return `${d.name}은(는) 이미 전장에 있습니다`;if(S.hero[def].cd>0)return `${d.name} 재배치 대기 중`;}
-  if(S.units.length>=S.command)return `지휘력 한도(${S.command}명)입니다`;
+  if(!slotFree(def))return `병사 자리(${S.soldierCap}칸)가 모두 찼습니다`;
   if(S.gold<deployCost(def))return '골드가 부족합니다';
   return null;}
  function makeUnit(def,c,r,keep,cost){const u={id:S.nextId++,def,c,r,x:c,y:r,rank:keep?keep.rank:1,choice:keep?keep.choice:null,invested:keep?keep.invested:cost,cd:.4,ultCd:0,engaged:[],hp:0,maxHp:0,buff:1,defBuff:1,hasteBuff:1,st:{},taunt:0,calm:0,face:{dx:0,dy:1},faceT:-9};refresh(u);if(u.ult)u.ultCd=D.SKILLS[u.ult].cd*.5;u.hp=u.maxHp;S.units.push(u);return u;}
@@ -251,7 +254,7 @@ function createSim(opts){
  if(snap){for(const s of snap.units)if(D.UNITS[s.def]&&map.tile(s.c,s.r))makeUnit(s.def,s.c,s.r,{rank:s.rank,choice:s.choice,invested:s.invested},0).ultCd=0;
   for(const k in snap.hero||{})if(S.hero[k])S.hero[k].keep=snap.hero[k].keep;}
  S.prep=PREP_TIME;
- return Object.assign(S,{step,tick,deploy,canDeploy,deployCost,rankUp,rankCost,needsChoice,withdraw,ult,startBattle,chooseBlessing,preview,snapshot,defOf,
+ return Object.assign(S,{step,tick,deploy,canDeploy,slotFree,soldierCount,deployCost,rankUp,rankCost,needsChoice,withdraw,ult,startBattle,chooseBlessing,preview,snapshot,defOf,
   refundOf:u=>Math.round(u.invested*D.REFUND),drain(){const e=S.events;S.events=[];return e;}});
 }
 const TDSim={createSim,affinity,buildMap,STEP,TERRAIN_NAME,BLOCKED};

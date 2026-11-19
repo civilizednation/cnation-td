@@ -18,12 +18,12 @@ function bestTile(S,def){const d=D.UNITS[def],map=S.map,roads=map.tiles.filter(t
 function play(chapter,seed,verbose,noBoss){
  const legacy=process.env.NO_LEGACY?{}:D.typicalLegacy(chapter,seed),S=createSim({chapter,seed,legacy}),plan=ORDER.filter(id=>S.chapter.roster.includes(id)),log=[];let ults=0,last=-1,guard=0,think=0;
  const spend=()=>{
-  for(const id in S.hero){const h=S.hero[id];if(h.keep&&h.cd<=0&&h.home&&!S.canDeploy(id,h.home[0],h.home[1]))S.deploy(id,h.home[0],h.home[1]);}
+  for(const id in S.hero){const h=S.hero[id];if(!h.keep||h.cd>0||!h.home)continue;let t=S.canDeploy(id,h.home[0],h.home[1])?bestTile(S,id):{c:h.home[0],r:h.home[1]};if(t)S.deploy(id,t.c,t.r);}
   // Each time it can afford something it takes the better deal: one more character, or a rank for one already out.
   for(let n=0;n<10;n++){
-   while(plan.length&&D.UNITS[plan[0]].kind==='hero'&&(S.units.some(u=>u.def===plan[0])||S.hero[plan[0]].cd>0||S.hero[plan[0]].keep))plan.shift();
-   if(!plan.length&&S.units.length<S.command)plan.push(['hunter','militia','apprentice'][S.units.length%3]);
-   const place=plan.length&&S.units.length<S.command?{cost:S.deployCost(plan[0])*(1+S.units.length*.1)}:null;
+   while(plan.length&&(D.UNITS[plan[0]].kind==='hero'?(S.units.some(u=>u.def===plan[0])||S.hero[plan[0]].cd>0||S.hero[plan[0]].keep):!S.slotFree(plan[0])))plan.shift();
+   if(!plan.length&&S.slotFree('militia'))plan.push(['hunter','militia','apprentice'][S.soldierCount()%3]);
+   const place=plan.length?{cost:S.deployCost(plan[0])*(1+S.units.length*.1)}:null;
    const up=S.units.map(u=>({u,cost:S.rankCost(u)})).filter(v=>v.cost!=null).map(v=>({...v,w:v.cost*(S.defOf(v.u).kind==='hero'?1:1.6)})).sort((a,b)=>a.w-b.w)[0];
    if(place&&(!up||place.cost<=up.w)){if(S.gold<S.deployCost(plan[0]))return;const t=bestTile(S,plan[0]);if(t)S.deploy(plan[0],t.c,t.r);plan.shift();}
    else if(up){if(S.gold<up.cost)return;if(S.rankUp(up.u.id,S.needsChoice(up.u)?CHOICE[up.u.def]:undefined))return;}

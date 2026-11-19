@@ -30,7 +30,9 @@ Always write every message to the user in Korean (한국어).
 - Basic attacks: ranged `RANGED_INTERVAL` 1.2 / `RANGED_POWER` 0.3, melee `MELEE_INTERVAL` 0.7 / `MELEE_POWER` 0.7 of the base numbers;
   skills, 필살기 and heals are not affected. No melee on the road within `GATE_GAP` (3) tiles of a monster gate (`map.gates`).
 - Placement: melee on road/grass/forest/bridge; ranged (heroes and soldiers) only on high ground — raised tiles beside the road,
-  `MAPS[id].high` of them (10–16), never two edge to edge (`buildMap`).
+  `MAPS[id].high` of them (6–8), never two edge to edge (`buildMap`).
+- Slots: every joined hero may be on the field at once (one of each); soldiers only up to `S.soldierCap` = `CHAPTER_DEFS[].soldiers`
+  (3,3,2,2,1…1) + legacy 「지휘관의 위엄」 (`command`, +1 each, max 2). `S.slotFree(def)` / `S.soldierCount()`; HUD shows 👑 heroes and 🪖 soldiers.
 - Waves use half as many monsters with twice the HP and twice the gold each (`buildChapter`, `spawn`).
 - Sound: one Web Audio context (`audioCtx`). Music is fetched and decoded into mono 22 kHz AudioBuffers (`bgm.load`, at most 3 kept) and played
   through gain nodes — <audio>.volume does not work on iPhone. `bgm/*.webm` (Opus) first, `bgm/*.m4a` (AAC copy) when WebM cannot be decoded,
