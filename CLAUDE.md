@@ -63,7 +63,7 @@ Always write every message to the user in Korean (한국어).
 - Two bonus kinds, keep them visibly apart: **에테르 축복** (`BLESSINGS`, chosen mid-chapter, this chapter only) and
   **아르카의 유산** (`LEGACIES`, one slot per chapter picked after a clear, permanent and stacking; passed to `createSim` as `legacy` counts).
   The bot (`D.typicalLegacy`) plays each chapter with the legacies an ordinary player would hold, and `diff` is calibrated with them.
-- Developer mode (title screen, beta only; to be removed at release): start any chapter, instant win and +500 gold from the in-game menu.
+- Developer mode (title screen): kept for testing after 1.0.0 by the owner's choice — start any chapter, instant win and +500 gold from the in-game menu.
 
 ## Checking a change
 Serve the folder (`python3 -m http.server`) and drive it with Playwright at a phone viewport (390×780); `window.TD.sim` exposes the simulation.
