@@ -35,7 +35,7 @@ Always write every message to the user in Korean (한국어).
   (3,3,2,2,1…1) + legacy 「지휘관의 위엄」 (`command`, +1 each, max 2). `S.slotFree(def)` / `S.soldierCount()`; HUD shows 👑 heroes and 🪖 soldiers.
 - Painted backgrounds (`docs/ART.md`): a map with an entry in `MAP_ART` (js/data.js) shows `art/<map>.webp` in an <img> behind the
   transparent WebGL canvas, placed by `placeArt()` from the guide frame (`artFrame`: map width + 1 tile, 9:16, centred). The tiles then
-  become invisible shadow catchers; gate arch, crystal dais, trees and water are not drawn (only the gate glow and crystal beam/halo).
+  become invisible shadow catchers (flat tile tops only); gate arch, crystal dais, trees and water are not drawn (only the gate glow and crystal beam/halo).
   `node tools/make-guides.js` renders `art/guides/<map>.png/.json`; `python3 tools/fit-art.py <map> <file> [--apply]` finds the frame
   inside a painting, writes `art/check/<map>.png` (tile outlines) and installs it. Re-make the guides (and repaint) if a map layout changes.
 - Waves use half as many monsters with twice the HP and twice the gold each (`buildChapter`, `spawn`).

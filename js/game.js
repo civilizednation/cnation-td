@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='0.6.1',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='0.6.2',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -86,7 +86,11 @@ function buildTerrain(noArt){disposeGroup(terrainGroup);animated=[];const map=S.
   else if(T==='road'&&!t.apron&&t.v>.8)parts.push(['rock',[x+.34,y+.02,z-.3],[.07,.04,.07],sc.rock]);});
  mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;mesh.receiveShadow=true;mesh.castShadow=!art;
  // With a painting the tiles stay as invisible ground that only shows the characters' shadows.
- if(art){mesh.material.dispose();mesh.material=new THREE.ShadowMaterial({opacity:.3});}terrainGroup.add(mesh);
+ if(art){// only the tile tops catch shadows (box sides would darken whole neighbouring tiles)
+  const top=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1).rotateX(-Math.PI/2),new THREE.ShadowMaterial({opacity:.3}),cells.length);
+  cells.forEach((t,i)=>{dummy.position.set(wx(t.c),t.h,wz(t.r));dummy.scale.set(1,1,1);dummy.updateMatrix();top.setMatrixAt(i,dummy.matrix);});
+  top.instanceMatrix.needsUpdate=true;top.receiveShadow=true;mesh.geometry.dispose();mesh.material.dispose();terrainGroup.add(top);}
+ else terrainGroup.add(mesh);
  // Monster gates: a dark stone arch with red banners and a glowing rift, one per road.
  const basic=(color,opacity)=>new THREE.MeshBasicMaterial({color,transparent:true,opacity,depthWrite:false,side:THREE.DoubleSide});
  map.paths.forEach((path,pi)=>{if(first.findIndex(f=>f[0]===path.wp[0][0]&&f[1]===path.wp[0][1])!==pi)return;const [fc,fr]=path.wp[0],seg=path.segs[0],g=new THREE.Group(),gp=[];
