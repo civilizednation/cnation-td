@@ -185,3 +185,89 @@ Change nothing else.
 ```
 
 (칸 번호는 위에서부터 행, 왼쪽부터 열. 확인 그림을 보고 제가 칸 번호를 적어 드릴 수도 있습니다.)
+
+
+---
+
+# 월드맵 (장 선택) 그림
+
+장 선택 화면의 배경입니다. 게임이 그 위에 장 버튼(번호 · 별 · 잠김 · 유산 배지 · 현재 위치의 카일 표시)과 클리어한 길의 빛을 올립니다.
+받으면 `art/world.webp` 로 저장하고 `WORLD_MAP.file` 과 실제 받침 위치(`WORLD_MAP.stops`, 가로·세로 %)를 등록합니다.
+
+정거장 위치(가로 %, 위에서부터 %): 1 프롤로그 (50,89) · 2 1장 (74,80) · 3 2장 (30,71) · 4 3장 (70,62) · 5 4장 (30,53) ·
+6 5장 (70,44) · 7 6장 (30,35) · 8 7장 (70,26) · 9 8장 (32,18) · 10 FINAL (55,10)
+
+```
+A vertical 9:16 world map illustration for a mobile tower-defense game's chapter select screen, 1080x1920 or larger.
+Stylized low-poly diorama with soft hand-painted textures, bright and readable, premium casual mobile game style,
+seen from a high three-quarter top-down angle. Light from the upper left.
+
+ROUTE:
+- One continuous winding cobblestone path starts at the bottom center and zigzags upward to the top, like a board game trail.
+- Along the path there are exactly TEN stops. Each stop is an EMPTY round flat stone pedestal (a plain circular stone platform
+  with a light top and a darker rim, about 9% of the image width), with nothing on it. Exactly ten, no more.
+- Stop positions (x from the left, y from the top, as a percentage of the image):
+  1 (50%, 89%), 2 (74%, 80%), 3 (30%, 71%), 4 (70%, 62%), 5 (30%, 53%),
+  6 (70%, 44%), 7 (30%, 35%), 8 (70%, 26%), 9 (32%, 18%), 10 (55%, 10%).
+- The path between stops is clearly visible and never hidden behind objects.
+
+REGIONS — the land changes along the route, each stop sits in its own small region, blending smoothly into the next:
+1. a peaceful spring farming village: thatched cottages, windmill, flower fields
+2. a seaside cliff fortress on the right edge: turquoise sea, sandy beach, lighthouse, stone walls
+3. a snowy mountain pass: snow, pine trees, a half-frozen river with a wooden bridge
+4. an ancient primeval forest: huge mossy trees, ferns, mushrooms
+5. a royal capital in autumn: red and orange maple trees, cream townhouses with blue roofs, cobbled square
+6. a desert oasis: golden dunes, palm trees, colorful caravan tents, a small blue pool
+7. jungle temple ruins with a waterfall: vines, carved stone heads, emerald jungle
+8. a volcanic wasteland with a dark sorcerer's black spire: basalt rocks, glowing lava streams at a distance
+9. a grand imperial capital at dusk after rain: wet stone, warm lamp lights, deep red banners, tall pale walls
+10. at the top, the entrance of a vast crystal cavern glowing in teal and violet light, the heart of the ancient Arca core,
+    the most magical and dramatic spot of the map
+
+COMPOSITION:
+- Keep the top 6% of the image calm and simple (sky, clouds or mountain silhouettes).
+- Fill the space beside the path with rich scenery, rivers, bridges and small props, but keep every pedestal and the path clear.
+- Overall the map should feel like a journey from a cozy village up to a mysterious glowing crystal at the summit.
+
+DO NOT include: any text, letters, numbers, icons, UI, buttons, stars, locks, arrows, flags with writing,
+characters, people, monsters, animals, or watermarks.
+```
+
+어긋났을 때:
+```
+Keep this map exactly as it is, but make sure there are exactly ten empty round stone pedestals on the path,
+one in each region, with nothing on top of them. Remove any extra pedestals, numbers, text or icons. Change nothing else.
+```
+
+---
+
+# 아르카의 제단 (유산 창 배경)
+
+「아르카의 유산」 창의 배경입니다. 게임이 열 개의 홈 위에 얻은 유산 아이콘을 빛나게 끼워 넣고, 아래쪽에 효과 합계를 글로 씁니다.
+받으면 `art/altar.webp` 로 저장하고 홈 위치를 재서 등록합니다.
+
+```
+A vertical 9:16 illustration, 1080x1920 or larger, for the "legacy" screen of a fantasy mobile tower-defense game.
+Stylized low-poly diorama with soft hand-painted textures, matching a premium casual mobile game. Seen from the front,
+slightly from above. Light from the upper left.
+
+SCENE:
+- An ancient sacred altar of pale carved stone inside a quiet ruined sanctuary, at night, lit by a huge glowing teal crystal
+  (the Arca core) floating above the altar in the upper middle of the image, with soft rays of light.
+- On the face of the altar there are exactly TEN round EMPTY sockets arranged in two rows of five, evenly spaced,
+  each a shallow circular hollow with a thin gold rim, all the same size (about 12% of the image width), all completely empty.
+  The two rows of sockets sit between 30% and 52% of the image height from the top.
+- Faint glowing ancient rune lines connect the sockets to the crystal above.
+- The lower 40% of the image is calm, dark and simple (stone floor, soft mist, gentle shadows) because text will be placed there.
+- Around the edges: broken pillars, ivy, a few small floating crystal shards, distant starry sky through a broken roof.
+
+PALETTE: deep blue-green night, pale stone, warm gold rims, teal and soft violet crystal glow.
+
+DO NOT include: any text, letters, numbers, icons or symbols inside the sockets, UI, characters, people, animals, or watermarks.
+```
+
+어긋났을 때:
+```
+Keep this image exactly as it is, but make sure the altar has exactly ten empty round sockets with gold rims,
+in two rows of five, evenly spaced and all the same size, with nothing inside them. Change nothing else.
+```

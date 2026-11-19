@@ -13,8 +13,8 @@
 <meta name="apple-mobile-web-app-title" content="cnation TD">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
-@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=20") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:118%}
-@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=20") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:104%}
+@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=21") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:118%}
+@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=21") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:104%}
 :root{--font-display:"Stylish",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--font-body:"Gowun Dodum",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--bg:#16282d;--panel:#1f373d;--panel2:#284850;--line:#3c636b;--ink:#eef4ea;--dim:#a9c0bb;--gold:#f2cf72;--good:#8fe5b4;--bad:#f08f7c;--accent:#8be1bf}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--ink);font-family:var(--font-display);overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -91,6 +91,28 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
 #panel button.x{flex:none;width:34px}
 #modal{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(8,16,19,.72)}
 #modal[hidden]{display:none}
+#world{position:absolute;inset:0;z-index:15;display:flex;flex-direction:column;background:#0d1a1e}#world[hidden]{display:none}
+.whead{flex:none;display:flex;align-items:center;gap:8px;height:calc(48px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 10px 0;background:var(--panel);border-bottom:1px solid var(--line);font-size:16px}
+.whead b{flex:1;font-weight:400}.whead button{height:34px;min-width:38px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--ink);font:inherit;font-size:14px;padding:0 10px}
+.whead .wleg{border-color:rgba(242,207,114,.6);color:var(--gold)}.wstars{color:var(--gold);font-size:14px}
+.wmapwrap{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.wblur{position:absolute;inset:-6%;width:112%;height:112%;object-fit:cover;filter:blur(18px) brightness(.5);pointer-events:none}
+.wmap{position:relative;flex:none}.wart,.wph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.wph{filter:saturate(.55) brightness(.72)}.wph::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 55% 8%,rgba(160,255,240,.55),transparent 30%),repeating-linear-gradient(115deg,rgba(255,255,255,.04) 0 14px,transparent 14px 28px)}
+.wpath{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.wpath .all{fill:none;stroke:rgba(255,248,225,.75);stroke-width:2.6;stroke-dasharray:3 2;stroke-linecap:round;stroke-linejoin:round}
+.wpath .done line{stroke:#ffd257;stroke-width:1.8;stroke-linecap:round;filter:drop-shadow(0 0 1.5px #ffb35c)}
+.wstop{position:absolute;width:15%;aspect-ratio:1;transform:translate(-50%,-50%);border:0;padding:0;background:none;color:var(--ink);font:inherit}
+.wnum{position:absolute;inset:8%;display:flex;align-items:center;justify-content:center;border-radius:50%;background:radial-gradient(circle at 40% 35%,#3e6a72,#1d3439);border:3px solid #cfd8c8;font-size:20px;box-shadow:0 3px 0 rgba(0,0,0,.35)}
+.wstop.clear .wnum{border-color:var(--gold);background:radial-gradient(circle at 40% 35%,#5b7f55,#2b4a33)}.wstop.locked .wnum{filter:grayscale(1) brightness(.7);font-size:16px}
+.wstop.cur .wnum{border-color:#fff;animation:curPulse 1.4s ease-in-out infinite}@keyframes curPulse{50%{box-shadow:0 0 0 5px rgba(255,255,255,.35),0 0 18px rgba(255,230,150,.9)}}
+.wst{position:absolute;left:50%;top:-14%;transform:translateX(-50%);font-size:12px;color:var(--gold);white-space:nowrap;text-shadow:0 1px 2px #000}
+.wname{position:absolute;left:50%;top:96%;transform:translateX(-50%);padding:1px 7px;border-radius:999px;background:rgba(12,22,26,.78);font-size:11.5px;white-space:nowrap}
+.wbadge{position:absolute;right:-8%;top:-4%;width:42%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#2b2410;border:2px solid var(--gold);font-size:12px}
+.wme{position:absolute;left:50%;bottom:78%;width:70%;transform:translateX(-50%);border-radius:50%;border:2px solid #fff;background:#35585f;animation:meBob 1s ease-in-out infinite}@keyframes meBob{50%{transform:translate(-50%,-6px)}}
+#modal.legacyview h2 .cnt{font-size:15px;color:var(--gold)}.sheet ul.totals{list-style:none;padding:0;margin:6px 0;font-size:14px;color:var(--ink)}.sheet ul.totals li{padding:4px 0;border-bottom:1px solid var(--line)}.sheet ul.totals small{color:var(--dim)}
+.sheet h3.sec small{font-size:11px;color:var(--dim);font-family:var(--font-body);margin-left:4px}
+.lslots{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin:6px 0}.lslot{display:flex;flex-direction:column;align-items:center;padding:6px 2px;border:1px dashed var(--line);border-radius:10px;background:var(--bg);opacity:.6;min-width:0}
+.lslot.got{opacity:1;border:1px solid rgba(242,207,114,.7);background:linear-gradient(#2b2a1a,var(--bg))}.lslot b{font-weight:400;font-size:20px}.lslot span{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.lslot small{font-size:9.5px;color:var(--dim);white-space:nowrap;overflow:hidden;max-width:100%}
 #modal.title{background:linear-gradient(#1c3a40,#0f1f24)}
 .sheet{width:100%;max-width:420px;max-height:92%;overflow:auto;padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--panel);text-align:center;touch-action:pan-y}
 .sheet h1{margin:0 0 2px;font-size:30px;letter-spacing:.02em}.sheet h1 em{font-style:normal;color:var(--gold)}
@@ -167,13 +189,14 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
  <div id="panel"></div>
  <div id="dock"></div>
  </aside>
+ <div id="world" hidden></div>
  <div id="modal" hidden></div>
 </div>
 <script src="vendor/three-r170.js"></script>
-<script src="js/data.js?v=1.3.0"></script>
-<script src="js/sim.js?v=1.3.0"></script>
-<script src="js/models.js?v=1.3.0"></script>
-<script src="js/game.js?v=1.3.0"></script>
+<script src="js/data.js?v=1.4.0"></script>
+<script src="js/sim.js?v=1.4.0"></script>
+<script src="js/models.js?v=1.4.0"></script>
+<script src="js/game.js?v=1.4.0"></script>
 <script>if('serviceWorker' in navigator&&location.protocol!=='file:')window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 </body>
 </html>

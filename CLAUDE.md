@@ -71,6 +71,11 @@ Always write every message to the user in Korean (한국어).
 - Chapter clear (`clearFlow` in game.js): pages 결산 → 유산 (`legacyModal`) → 다음 장 준비 → 마무리 (3 pages on FINAL). Uses `S.stats`
   (dealt/healedBy per unit, ults, goldEarned/goldSpent, battle time; kept in the snapshot) and `D.unitStats`/`D.legacyScale` (the same
   legacy formula sim.refresh uses). Best record per chapter: `cnation-td-records-v1` = {chapterId:{stars,life,time,kills}}.
+- World map chapter select (`showWorld`/`chapterInfo` in game.js, `#world` z15 under the modal): `WORLD_MAP` in data.js = painting file
+  (null → placeholder gradient + dotted path) and the ten stops as [x%,y%]. Stops show number, stars, lock, the chapter's legacy badge
+  and Kyle on the current chapter; cleared segments glow. Developer mode keeps the plain list (`chapterList(true)`).
+  Legacy view (`legacyView`): effect totals from `D.legacyTotal(id,n)` + ten chapter slots. Prompts for the world map and an altar
+  background (not yet used) are in docs/ART.md.
 - Two bonus kinds, keep them visibly apart: **에테르 축복** (`BLESSINGS`, chosen mid-chapter, this chapter only) and
   **아르카의 유산** (`LEGACIES`, one slot per chapter picked after a clear, permanent and stacking; passed to `createSim` as `legacy` counts).
   The bot (`D.typicalLegacy`) plays each chapter with the legacies an ordinary player would hold, and `diff` is calibrated with them.

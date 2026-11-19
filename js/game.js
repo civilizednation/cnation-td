@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.3.0',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.4.0',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -302,7 +302,13 @@ function legacyModal(index,done,dots){const picks=legacyPicks(),current=picks[in
  const offer=D.legacyOffer(D.legacyCounts(others),index,Math.random);if(current&&!offer.includes(current))offer.push(current);
  const m=modal(`${dots||''}<p class="sub">${D.CHAPTERS[index].label} CLEAR</p><h2>아르카의 유산</h2><p class="scope keep">♾ 영구 효과 · 다음 장부터 계속 누적됩니다</p><p>이 장을 지켜낸 보답으로 하나를 고르세요.${current?`<br><small>이미 이 장의 유산이 있습니다. 다른 것을 고르면 바뀝니다.</small>`:''}</p>`+offer.map(id=>{const l=legacyInfo(id),n=D.legacyCounts(others)[id]||0;return `<button data-id="${id}" class="${id===current?'cur':''}">${l.icon} ${l.name}${id===current?' (현재)':''}<small>${l.desc}${n?` · 이미 ${n}번 보유 → ${n+1}번째`:''}${l.max>1?` · 최대 ${l.max}번`:''}</small></button>`;}).join(''),'legacy');
  m.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>{const all=loadJSON(LEGACY_KEY,{picks:{}});all.picks=all.picks||{};all.picks[index]=b.dataset.id;saveJSON(LEGACY_KEY,all);sfx('legacy');done(legacyInfo(b.dataset.id));});}
-function legacyView(back){const m=modal(`<h2>아르카의 유산</h2><p class="scope keep">♾ 장을 클리어할 때마다 하나씩 얻는 영구 효과</p><p><small>장마다 유산 칸이 하나씩 있어 최대 10개까지 모입니다. 클리어한 장을 다시 깨면 그 장의 유산을 바꿀 수 있습니다.</small></p>${legacyListHTML(legacyPicks())}<button class="primary" data-a="back">돌아가기</button><button class="dev" data-a="reset">유산 모두 초기화</button>`,'help');
+function legacyView(back){const picks=legacyPicks(),counts=D.legacyCounts(picks),n=Object.values(picks).filter(Boolean).length;
+ const totals=Object.keys(counts).map(id=>{const l=legacyInfo(id);return l?`<li>${l.icon} ${D.legacyTotal(id,counts[id])}${counts[id]>1?` <small>(${l.name} ×${counts[id]})</small>`:''}</li>`:'';}).join('');
+ const slotsHTML=D.CHAPTERS.map((c,i)=>{const l=picks[i]&&legacyInfo(picks[i]);return `<div class="lslot${l?' got':''}"><b>${l?l.icon:'🔒'}</b><span>${l?l.name:(c.id==='prologue'?'프롤로그':c.id==='final'?'FINAL':(+c.id.slice(1))+'장')}</span><small>${l?(c.id==='prologue'?'프롤로그':c.id==='final'?'FINAL':(+c.id.slice(1))+'장'):'아직 없음'}</small></div>`;}).join('');
+ const m=modal(`<p class="sub">ARCA LEGACY</p><h2>아르카의 유산 <span class="cnt">${n}/${D.CHAPTERS.length}</span></h2><p class="scope keep">♾ 영구 효과 · 장을 클리어할 때마다 하나씩, 모든 장에 적용</p>
+  <h3 class="sec">지금 적용 중인 효과</h3>${totals?`<ul class="totals">${totals}</ul>`:'<p class="small">아직 없습니다. 장을 클리어하면 하나씩 얻습니다.</p>'}
+  <h3 class="sec">장별 유산 <small>클리어한 장을 다시 깨면 그 장의 유산을 바꿀 수 있습니다</small></h3><div class="lslots">${slotsHTML}</div>
+  <button class="primary" data-a="back">돌아가기</button><button class="dev" data-a="reset">유산 모두 초기화</button>`,'help legacyview');
  m.querySelector('[data-a=back]').onclick=back;m.querySelector('[data-a=reset]').onclick=()=>{const c=modal(`<h2>유산 초기화</h2><p>모아 둔 아르카의 유산을 모두 지웁니다. 되돌릴 수 없습니다.</p><button class="primary" data-a="n">취소</button><button class="dev" data-a="y">모두 지우기</button>`);c.querySelector('[data-a=n]').onclick=()=>legacyView(back);c.querySelector('[data-a=y]').onclick=()=>{saveJSON(LEGACY_KEY,{picks:{}});legacyView(back);};};}
 // ── Chapter clear: four pages, one after another — 1 결산 · 2 아르카의 유산 · 3 다음 장 준비(능력치 변화) · 4 마무리 ──
 const RECORD_KEY='cnation-td-records-v1';
@@ -420,10 +426,37 @@ function gameMenu(){const m=modal(`<p class="sub">${S.chapter.label} · 전투 $
  on('gold',()=>{S.gold+=500;hudKey='';closeModal();});on('skip',()=>{closeModal();if(S.phase==='prep')S.startBattle();S.queue.length=0;for(const e of S.enemies){e.canSplit=false;e.hp=0;e.st.burn=1;}});}
 function chapterList(dev){const best=cleared(),m=modal(`<h2>${dev?'개발자 모드 · 장 바로 시작':'장 선택'}</h2>${dev?'<p>테스트용 메뉴입니다. 어느 장이든 바로 시작합니다.</p>':''}`+D.CHAPTERS.map((c,i)=>{const open=dev||i===0||best[D.CHAPTERS[i-1].id];return `<button data-i="${i}" ${open?'':'disabled'}>${c.label} · ${c.name}${best[c.id]?' '+'★'.repeat(best[c.id]):''}<small>${open?`${c.place} · 전투 ${c.battles.length}회 · 보스 ${c.boss.name}`:'이전 장을 클리어하면 열립니다'}</small></button>`;}).join('')+`<button class="primary" data-a="back">돌아가기</button>`);
  m.querySelector('[data-a=back]').onclick=showTitle;m.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{closeModal();devMode=dev;startChapter(+b.dataset.i,null);});}
-function showTitle(){S=null;clearObjects();closePanel();disposeGroup(terrainGroup);water=null;animated=[];art=null;artImg.removeAttribute('src');artBlur.removeAttribute('src');delete artImg.dataset.file;app.classList.add('title');bgm.play(1);const save=loadSave(),any=save||slots().some(Boolean);
+// ── World map: chapter select drawn as a journey (WORLD_MAP in data.js) ──
+const worldEl=$('#world');
+function closeWorld(){worldEl.hidden=true;worldEl.innerHTML='';window.removeEventListener('resize',fitWorld);}
+function fitWorld(){const wrap=worldEl.querySelector('.wmapwrap'),map=worldEl.querySelector('.wmap');if(!wrap||!map)return;const W=wrap.clientWidth,H=wrap.clientHeight,w=Math.min(W,H*9/16);map.style.width=w+'px';map.style.height=w*16/9+'px';}
+function showWorld(){closeModal();const W=D.WORLD_MAP,best=cleared(),picks=legacyPicks(),stars=Object.values(best).reduce((a,b)=>a+b,0),nLeg=Object.values(picks).filter(Boolean).length;
+ const open=i=>i===0||!!best[D.CHAPTERS[i-1].id];let cur=D.CHAPTERS.findIndex((c,i)=>open(i)&&!best[c.id]);if(cur<0)cur=D.CHAPTERS.length-1;
+ const pts=W.stops.map(([x,y])=>`${x},${y*16/9}`),seg=(a,b)=>`<line x1="${W.stops[a][0]}" y1="${W.stops[a][1]*16/9}" x2="${W.stops[b][0]}" y2="${W.stops[b][1]*16/9}"/>`;
+ const done=W.stops.slice(1).map((_,i)=>best[D.CHAPTERS[i].id]?seg(i,i+1):'').join('');
+ const bg=W.file?`<img class="wart" alt="" src="${W.file}?v=${GAME_VERSION}">`:`<div class="wph" style="background:linear-gradient(to top,${W.tint.map((c,i)=>`${c} ${4+i*10}%`).join(',')})"></div>`;
+ const short=c=>c.id==='prologue'?'P':c.id==='final'?'F':String(+c.id.slice(1));
+ worldEl.innerHTML=`<header class="whead"><button data-a="back" aria-label="뒤로">←</button><b>장 선택</b><span class="wstars">★ ${stars}/${D.CHAPTERS.length*3}</span><button data-a="legacy" class="wleg">♾ 유산 ${nLeg}/${D.CHAPTERS.length}</button></header>
+  <div class="wmapwrap">${W.file?`<img class="wblur" alt="" src="${W.file}?v=${GAME_VERSION}">`:''}<div class="wmap">${bg}
+   <svg class="wpath" viewBox="0 0 100 177.78" preserveAspectRatio="none">${W.file?'':`<polyline class="all" points="${pts.join(' ')}"/>`}<g class="done">${done}</g></svg>
+   ${D.CHAPTERS.map((c,i)=>{const [x,y]=W.stops[i],st=best[c.id]||0,ok=open(i),l=picks[i]&&legacyInfo(picks[i]);
+    return `<button class="wstop${ok?'':' locked'}${st?' clear':''}${i===cur?' cur':''}" data-i="${i}" style="left:${x}%;top:${y}%">${i===cur?`<img class="wme" alt="" src="${portraits.kyle}">`:''}
+     <span class="wnum">${ok?short(c):'🔒'}</span>${l?`<span class="wbadge" title="${l.name}">${l.icon}</span>`:''}<span class="wst">${ok&&st?'★'.repeat(st)+'☆'.repeat(3-st):''}</span><span class="wname">${c.name}</span></button>`;}).join('')}
+  </div></div>`;
+ worldEl.hidden=false;fitWorld();window.addEventListener('resize',fitWorld);
+ worldEl.querySelector('[data-a=back]').onclick=()=>{sfx('ui_tap');closeWorld();showTitle();};
+ worldEl.querySelector('[data-a=legacy]').onclick=()=>{sfx('ui_tap');legacyView(closeModal);};
+ worldEl.querySelectorAll('.wstop').forEach(b=>b.onclick=()=>{sfx('ui_tap');chapterInfo(+b.dataset.i,open(+b.dataset.i));});}
+function chapterInfo(i,ok){const c=D.CHAPTERS[i],st=cleared()[c.id]||0,rec=loadJSON(RECORD_KEY,{})[c.id],l=legacyPicks()[i]&&legacyInfo(legacyPicks()[i]);
+ const m=modal(`<p class="sub">${c.label}</p><h2>${c.name}</h2><p class="stars">${'★'.repeat(st)}${'☆'.repeat(3-st)}</p><p>${c.place} · 전투 ${c.battles.length}회 · 보스 ${c.boss.name}</p>
+  ${rec?`<p class="small">최고 기록 · 남은 생명 ${rec.life} · ${fmtTime(rec.time)} · 처치 ${rec.kills}</p>`:''}
+  ${l?`<p class="scope keep">♾ 이 장의 유산: ${l.icon} ${l.name} — ${l.desc}<br><small>다시 클리어하면 바꿀 수 있습니다</small></p>`:''}
+  ${ok?`<button class="primary" data-a="go">${st?'다시 도전':'출발'}<small>병사 자리 ${c.soldiers+(legacyNow().command||0)}칸 · 시작 골드 ${c.startGold+60*(legacyNow().startGold||0)}</small></button>`:'<p class="small">🔒 이전 장을 클리어하면 열립니다</p>'}<button data-a="close">닫기</button>`);
+ if(ok)m.querySelector('[data-a=go]').onclick=()=>{closeModal();closeWorld();devMode=false;startChapter(i,null);};m.querySelector('[data-a=close]').onclick=closeModal;}
+function showTitle(){closeWorld();S=null;clearObjects();closePanel();disposeGroup(terrainGroup);water=null;animated=[];art=null;artImg.removeAttribute('src');artBlur.removeAttribute('src');delete artImg.dataset.file;app.classList.add('title');bgm.play(1);const save=loadSave(),any=save||slots().some(Boolean);
  const m=modal(`<p class="sub">ARCA CHRONICLE</p><h1>cnation <em>TD</em></h1><p class="tag">아르카 방어전</p><p>탑을 짓지 않는다. 동료를 세운다.</p>${save?`<button class="primary" data-a="continue">이어하기<small>${D.CHAPTERS[save.chapter].label} · 전투 ${save.battle+1}</small></button>`:''}<button ${save?'':'class="primary"'} data-a="new">새 게임<small>PROLOGUE · 깨어난 빛</small></button><button data-a="chapters">장 선택</button><button data-a="legacy">아르카의 유산<small>${(()=>{const n=Object.values(legacyPicks()).filter(Boolean).length;return n?`${n}개 보유 · 모든 장에 적용 중`:'장을 클리어하면 영구 효과를 얻습니다';})()}</small></button><button data-a="load" ${any?'':'disabled'}>불러오기</button><button data-a="sound">소리 설정</button><button data-a="help">게임 방법</button><button class="dev" data-a="dev">개발자 모드 (테스트용)</button><div class="verbar">ver.${GAME_VERSION} (<a href="revisions.html">rev. history</a>)</div>`,'title');const rv=m.querySelector('.verbar a');if(rv)rv.onclick=e=>{if(e.button||e.metaKey||e.ctrlKey||e.shiftKey)return;e.preventDefault();sfx('ui_tap');showRevisions();};
  const on=(a,f)=>{const b=m.querySelector(`[data-a=${a}]`);if(b)b.onclick=()=>{sfx('ui_tap');f();};};
- on('new',()=>{closeModal();devMode=false;startChapter(0,null);});on('continue',()=>{closeModal();startChapter(save.chapter,save);});on('chapters',()=>chapterList(false));on('legacy',()=>legacyView(showTitle));on('dev',()=>chapterList(true));
+ on('new',()=>{closeModal();devMode=false;startChapter(0,null);});on('continue',()=>{closeModal();startChapter(save.chapter,save);});on('chapters',showWorld);on('legacy',()=>legacyView(showTitle));on('dev',()=>chapterList(true));
  on('load',()=>slotModal('load',showTitle));on('sound',()=>settingsModal(showTitle));on('help',()=>{const h=modal(HELP+helpTips()+`<button class="primary">닫기</button>`,'help');h.querySelector('button').onclick=showTitle;});}
 
 // ── Saves ──
