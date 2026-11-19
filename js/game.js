@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='0.7.0',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.0.0',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -35,12 +35,12 @@ const proj=(x,y,h=0)=>({x:vw/2+wx(x)*pxU,y:vh/2+((wz(y)-tz)*SIN-h*COS)*pxU});
 const unproj=(sx,sy)=>({x:(sx-vw/2)/pxU+(S.map.w-1)/2,y:(sy-vh/2)/(pxU*SIN)+tz+(S.map.h-1)/2});
 // Guide frame for painted backgrounds: map width + 1 tile across, 9:16, centred on the screen centre (see MAP_ART in data.js).
 const artFrame=map=>{const fw=map.w+1;return {fw,fh:fw*16/9};};
-const artImg=$('#art');let art=null;
+const artImg=$('#art'),artBlur=$('#artBlur');let art=null;
 function placeArt(){if(!art||!S)return;const {fw,fh}=artFrame(S.map),[u0,v0,u1,v1]=art.rect||[0,0,1,1],w=fw*pxU/(u1-u0),h=fh*pxU/(v1-v0);
  Object.assign(artImg.style,{width:w+'px',height:h+'px',left:(vw/2-fw*pxU/2-u0*w)+'px',top:(vh/2-fh*pxU/2-v0*h)+'px'});}
 function resize(){const r=viewport.getBoundingClientRect();vw=Math.max(1,r.width);vh=Math.max(1,r.height);dpr=Math.min(2,window.devicePixelRatio||1);
  renderer.setPixelRatio(dpr);renderer.setSize(vw,vh,false);fxc.width=Math.round(vw*dpr);fxc.height=Math.round(vh*dpr);
- const w=S?S.map.w:9,h=S?S.map.h:14;pxU=Math.min(vw/(w+.25),vh/(h*SIN+2.6));const hw=vw/(2*pxU),hh=vh/(2*pxU);
+ const w=S?S.map.w:9,h=S?S.map.h:14,land=matchMedia('(orientation:landscape) and (min-width:640px)').matches;pxU=Math.min(vw/(w+.25),vh/(h*SIN+(land?3.4:2.6)));const hw=vw/(2*pxU),hh=vh/(2*pxU);
  camera.left=-hw;camera.right=hw;camera.top=hh;camera.bottom=-hh;camera.position.set(0,60*SIN,tz+60*COS);camera.lookAt(0,0,tz);camera.updateProjectionMatrix();placeArt();}
 window.addEventListener('resize',resize);
 
@@ -59,7 +59,7 @@ function propParts(kind,x,y,z,v,sc){const p=[],a=sc.accent;
 function buildTerrain(noArt){disposeGroup(terrainGroup);animated=[];const map=S.map,sc=map.scene,rand=D.seeded(map.seed*31+7),W=map.w,H=map.h;
  art=noArt?null:D.MAP_ART[S.chapter.map]||null;const sky='#'+new THREE.Color(sc.sky).getHexString();
  scene.background=art?null:new THREE.Color(sc.sky);viewport.style.background=art?.bg||sky;
- if(art){if(artImg.dataset.file!==art.file){artImg.dataset.file=art.file;artImg.src=art.file+'?v='+GAME_VERSION;}placeArt();}else{artImg.removeAttribute('src');delete artImg.dataset.file;}
+ if(art){if(artImg.dataset.file!==art.file){artImg.dataset.file=art.file;artImg.src=artBlur.src=art.file+'?v='+GAME_VERSION;}placeArt();}else{artImg.removeAttribute('src');artBlur.removeAttribute('src');delete artImg.dataset.file;}
  const first=map.paths.map(p=>p.wp[0]),last=map.paths[0].wp[map.paths[0].wp.length-1],cells=[],padX=4,padTop=7,padBottom=5;
  const lead=(c,r)=>first.some(([fc,fr])=>(fc===c&&fr<0&&r<0)||(fr===r&&fc<0&&c<0)||(fr===r&&fc>=W&&c>=W))||(last[0]===c&&last[1]>=H&&r>=H);
  for(let r=-padTop;r<H+padBottom;r++)for(let c=-padX;c<W+padX;c++){const t=map.tile(c,r);if(t){cells.push({c,r,terrain:t.terrain,h:t.h,alt:t.alt,v:t.v,road:t.road});continue;}
@@ -367,8 +367,8 @@ function gameMenu(){const m=modal(`<p class="sub">${S.chapter.label} · 전투 $
  on('gold',()=>{S.gold+=500;hudKey='';closeModal();});on('skip',()=>{closeModal();if(S.phase==='prep')S.startBattle();S.queue.length=0;for(const e of S.enemies){e.canSplit=false;e.hp=0;e.st.burn=1;}});}
 function chapterList(dev){const best=cleared(),m=modal(`<h2>${dev?'개발자 모드 · 장 바로 시작':'장 선택'}</h2>${dev?'<p>베타 테스트용 메뉴입니다. 어느 장이든 바로 시작합니다.</p>':''}`+D.CHAPTERS.map((c,i)=>{const open=dev||i===0||best[D.CHAPTERS[i-1].id];return `<button data-i="${i}" ${open?'':'disabled'}>${c.label} · ${c.name}${best[c.id]?' '+'★'.repeat(best[c.id]):''}<small>${open?`${c.place} · 전투 ${c.battles.length}회 · 보스 ${c.boss.name}`:'이전 장을 클리어하면 열립니다'}</small></button>`;}).join('')+`<button class="primary" data-a="back">돌아가기</button>`);
  m.querySelector('[data-a=back]').onclick=showTitle;m.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{closeModal();devMode=dev;startChapter(+b.dataset.i,null);});}
-function showTitle(){S=null;clearObjects();closePanel();disposeGroup(terrainGroup);water=null;animated=[];art=null;artImg.removeAttribute('src');delete artImg.dataset.file;app.classList.add('title');bgm.play(1);const save=loadSave(),any=save||slots().some(Boolean);
- const m=modal(`<p class="sub">ARCA CHRONICLE</p><h1>cnation <em>TD</em></h1><p class="tag">아르카 방어전</p><p>탑을 짓지 않는다. 동료를 세운다.</p>${save?`<button class="primary" data-a="continue">이어하기<small>${D.CHAPTERS[save.chapter].label} · 전투 ${save.battle+1}</small></button>`:''}<button ${save?'':'class="primary"'} data-a="new">새 게임<small>PROLOGUE · 깨어난 빛</small></button><button data-a="chapters">장 선택</button><button data-a="legacy">아르카의 유산<small>${(()=>{const n=Object.values(legacyPicks()).filter(Boolean).length;return n?`${n}개 보유 · 모든 장에 적용 중`:'장을 클리어하면 영구 효과를 얻습니다';})()}</small></button><button data-a="load" ${any?'':'disabled'}>불러오기</button><button data-a="sound">소리 설정</button><button data-a="help">게임 방법</button><button class="dev" data-a="dev">개발자 모드 (베타 전용)</button><p class="ver">ver.${GAME_VERSION} beta</p>`,'title');
+function showTitle(){S=null;clearObjects();closePanel();disposeGroup(terrainGroup);water=null;animated=[];art=null;artImg.removeAttribute('src');artBlur.removeAttribute('src');delete artImg.dataset.file;app.classList.add('title');bgm.play(1);const save=loadSave(),any=save||slots().some(Boolean);
+ const m=modal(`<p class="sub">ARCA CHRONICLE</p><h1>cnation <em>TD</em></h1><p class="tag">아르카 방어전</p><p>탑을 짓지 않는다. 동료를 세운다.</p>${save?`<button class="primary" data-a="continue">이어하기<small>${D.CHAPTERS[save.chapter].label} · 전투 ${save.battle+1}</small></button>`:''}<button ${save?'':'class="primary"'} data-a="new">새 게임<small>PROLOGUE · 깨어난 빛</small></button><button data-a="chapters">장 선택</button><button data-a="legacy">아르카의 유산<small>${(()=>{const n=Object.values(legacyPicks()).filter(Boolean).length;return n?`${n}개 보유 · 모든 장에 적용 중`:'장을 클리어하면 영구 효과를 얻습니다';})()}</small></button><button data-a="load" ${any?'':'disabled'}>불러오기</button><button data-a="sound">소리 설정</button><button data-a="help">게임 방법</button><button class="dev" data-a="dev">개발자 모드 (베타 전용)</button><div class="verbar">ver.${GAME_VERSION} (<a href="revisions.html">rev. history</a>)</div>`,'title');const rv=m.querySelector('.verbar a');if(rv)rv.onclick=e=>{if(e.button||e.metaKey||e.ctrlKey||e.shiftKey)return;e.preventDefault();sfx('ui_tap');showRevisions();};
  const on=(a,f)=>{const b=m.querySelector(`[data-a=${a}]`);if(b)b.onclick=()=>{sfx('ui_tap');f();};};
  on('new',()=>{closeModal();devMode=false;startChapter(0,null);});on('continue',()=>{closeModal();startChapter(save.chapter,save);});on('chapters',()=>chapterList(false));on('legacy',()=>legacyView(showTitle));on('dev',()=>chapterList(true));
  on('load',()=>slotModal('load',showTitle));on('sound',()=>settingsModal(showTitle));on('help',()=>{const h=modal(HELP+helpTips()+`<button class="primary">닫기</button>`,'help');h.querySelector('button').onclick=showTitle;});}
@@ -529,5 +529,11 @@ function frame(now){requestAnimationFrame(frame);const real=Math.min(.05,(now-la
 
 makePortraits();resize();showTitle();requestAnimationFrame(frame);
 if(document.fonts&&document.fonts.load){document.fonts.load('16px "Stylish"');document.fonts.load('16px "Gowun Dodum"');}
+// Revision history opens inside the game (iframe), so the page and the music keep playing.
+function showRevisions(){if($('#revisionsView'))return;const view=document.createElement('div');view.id='revisionsView';view.setAttribute('role','dialog');view.setAttribute('aria-modal','true');
+ view.innerHTML=`<iframe src="revisions.html?v=${GAME_VERSION}" title="Revision History"></iframe><button id="closeRevisions" aria-label="닫기">×</button>`;app.append(view);
+ const close=()=>{view.remove();window.removeEventListener('message',onMessage);document.removeEventListener('keydown',onKey);},onKey=e=>{if(e.key==='Escape')close();},
+  onMessage=e=>{if(e.origin===location.origin&&e.data==='td:close-revisions')close();};
+ document.addEventListener('keydown',onKey);window.addEventListener('message',onMessage);$('#closeRevisions').onclick=close;}
 window.TD={bgm,get sim(){return S;},startChapter,renderGuide,version:GAME_VERSION,proj:(x,y,h)=>proj(x,y,h)};
 })();

@@ -7,7 +7,14 @@ Mobile-first portrait tower defence (Korean) built on the characters, monsters a
 Always write every message to the user in Korean (한국어).
 
 ## Files
-- `index.html` — shell, all CSS, script tags with `?v=` cache-busting. On every release bump `GAME_VERSION` (js/game.js), the `?v=` tags and `VERSION` in `sw.js` together.
+- `index.html` — shell, all CSS, script tags with `?v=` cache-busting.
+- Versioning (from 1.0.0, the first complete release): a big change bumps the second digit (1.1.0), a small change or fix bumps the
+  third (1.0.1). On every release update together: `GAME_VERSION` (js/game.js), the `?v=` tags in index.html, `VERSION` in `sw.js`,
+  README, and `revisions.html` — add a new `<section class="rev" id="vX.Y.Z">` at the top (date, 수정/변경/밸런스 bullets in Korean,
+  player-facing words only) and move the `현재` tag to it. The title screen shows `ver.X.Y.Z (rev. history)` at the bottom; the link
+  opens revisions.html inside the game (`showRevisions`, iframe; its back link posts `td:close-revisions`).
+- Landscape (`orientation:landscape` and ≥640px wide): grid with the battlefield left and `#side` (strip, panel, dock) right; portrait
+  phones keep the single column (`#side{display:contents}`). Painted maps also fill empty space with a blurred copy (`#artBlur`).
 - `manifest.webmanifest`, `sw.js`, `icons/` — home screen install (PWA). The service worker is network-first (music cache-first). `icons/*.png` are a
   placeholder drawn from the game models by `tools/icon.html` + `node tools/make-icons.js`; the owner will supply the final icon — then just replace the PNGs.
 - `helpTips()` in js/game.js builds the detailed tips under 「게임 방법」 from the data tables; update its hand-written parts when rules change.
