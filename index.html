@@ -13,8 +13,8 @@
 <meta name="apple-mobile-web-app-title" content="cnation TD">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
-@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=24") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:118%}
-@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=24") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:104%}
+@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=25") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:118%}
+@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=25") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:104%}
 :root{--font-display:"Stylish",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--font-body:"Gowun Dodum",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--bg:#16282d;--panel:#1f373d;--panel2:#284850;--line:#3c636b;--ink:#eef4ea;--dim:#a9c0bb;--gold:#f2cf72;--good:#8fe5b4;--bad:#f08f7c;--accent:#8be1bf}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--ink);font-family:var(--font-display);overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -31,7 +31,15 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
 #artBlur{position:absolute;inset:-6%;width:112%;height:112%;object-fit:cover;filter:blur(16px) brightness(.55) saturate(.9);pointer-events:none}#artBlur:not([src]){display:none}
 #side{display:contents}
 /* Landscape tablets and laptops: the battlefield uses the full height on the left, the controls sit in a column on the right. */
-@media (display-mode:standalone){#app{bottom:auto;height:100vh;height:100lvh}}
+/* iOS home-screen apps (black-translucent status bar) report a viewport one status bar shorter than the screen while the page
+   starts under the status bar: extend the document and the app by that height so nothing is cut off at the bottom. */
+@media (display-mode:standalone){html,body{height:calc(100% + env(safe-area-inset-top))}#app{bottom:auto;height:calc(100% + env(safe-area-inset-top))}}
+/* Painting first: everything drawn on top waits for it, then fades in. */
+#gl,#fx,#hud,#side,#modal.title .sheet{transition:opacity .35s ease}
+#app.artwait #gl,#app.artwait #fx,#app.artwait #hud,#app.artwait #side,#app.artwait #modal.title .sheet{opacity:0;pointer-events:none}
+#app.artwait #viewport::after{content:'';position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;border:3px solid rgba(255,255,255,.25);border-top-color:#f2cf72;animation:artSpin .9s linear infinite}
+@keyframes artSpin{to{transform:rotate(360deg)}}
+.wstop,.asock,.afloor,.wpath{transition:opacity .35s ease}.wloading .wstop,.wloading .asock,.wloading .afloor,.wloading .wpath{opacity:0;pointer-events:none}
 @media (orientation:landscape) and (min-width:640px){
  #app{max-width:1400px;display:grid;grid-template-columns:minmax(0,1fr) clamp(300px,30vw,380px);grid-template-rows:auto minmax(0,1fr);grid-template-areas:"hud hud" "view side"}
  #app #hud{grid-area:hud}#viewport{grid-area:view}
@@ -224,10 +232,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
  <div id="modal" hidden></div>
 </div>
 <script src="vendor/three-r170.js"></script>
-<script src="js/data.js?v=1.6.0"></script>
-<script src="js/sim.js?v=1.6.0"></script>
-<script src="js/models.js?v=1.6.0"></script>
-<script src="js/game.js?v=1.6.0"></script>
+<script src="js/data.js?v=1.6.1"></script>
+<script src="js/sim.js?v=1.6.1"></script>
+<script src="js/models.js?v=1.6.1"></script>
+<script src="js/game.js?v=1.6.1"></script>
 <script>if('serviceWorker' in navigator&&location.protocol!=='file:')window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 </body>
 </html>

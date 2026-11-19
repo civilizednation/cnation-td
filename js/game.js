@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.6.0',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.6.1',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -36,6 +36,16 @@ const unproj=(sx,sy)=>({x:(sx-vw/2)/pxU+(S.map.w-1)/2,y:(sy-vh/2)/(pxU*SIN)+tz+(
 // Guide frame for painted backgrounds: map width + 1 tile across, 9:16, centred on the screen centre (see MAP_ART in data.js).
 const artFrame=map=>{const fw=map.w+1;return {fw,fh:fw*16/9};};
 const artImg=$('#art'),artBlur=$('#artBlur');let art=null;
+// The painted battlefield comes first: until it is downloaded and decoded, the 3D canvas, the effects, the HUD, the dock and the
+// title menu stay hidden (#app.artwait), then everything fades in on top of it. onArt(fn) runs fn once the painting is up.
+let artOK=true,artWaiters=[],artToken=0;
+function onArt(fn){if(artOK)fn();else artWaiters.push(fn);}
+function artDone(){artOK=true;app.classList.remove('artwait');const w=artWaiters;artWaiters=[];for(const f of w)f();preloadArt();}
+function waitArt(src){const token=++artToken;artOK=false;app.classList.add('artwait');const done=()=>{if(token===artToken)artDone();};
+ artImg.onload=()=>{(artImg.decode?artImg.decode():Promise.resolve()).catch(()=>{}).then(done);};artImg.onerror=done;artImg.src=src;setTimeout(done,8000);}
+// Once the first painting is up, fetch the others quietly so later maps, the world map and the altar open at once.
+let preloaded=false;function preloadArt(){if(preloaded)return;preloaded=true;setTimeout(()=>{const files=[...Object.values(D.MAP_ART).map(a=>a.file),D.WORLD_MAP.file,D.ALTAR&&D.ALTAR.file].filter(Boolean);
+ files.forEach((f,i)=>setTimeout(()=>{const im=new Image();im.decoding='async';im.src=f+'?v='+GAME_VERSION;},i*250));},1200);}
 function placeArt(){if(!art||!S)return;const {fw,fh}=artFrame(S.map),[u0,v0,u1,v1]=art.rect||[0,0,1,1],w=fw*pxU/(u1-u0),h=fh*pxU/(v1-v0);
  Object.assign(artImg.style,{width:w+'px',height:h+'px',left:(vw/2-fw*pxU/2-u0*w)+'px',top:(vh/2-fh*pxU/2-v0*h)+'px'});}
 function resize(){const r=viewport.getBoundingClientRect();vw=Math.max(1,r.width);vh=Math.max(1,r.height);dpr=Math.min(2,window.devicePixelRatio||1);
@@ -66,7 +76,7 @@ function propParts(kind,x,y,z,v,sc){const p=[],a=sc.accent;
 function buildTerrain(noArt){disposeGroup(terrainGroup);animated=[];const map=S.map,sc=map.scene,rand=D.seeded(map.seed*31+7),W=map.w,H=map.h;
  art=noArt?null:D.MAP_ART[S.chapter.map]||null;const sky='#'+new THREE.Color(sc.sky).getHexString();
  scene.background=art?null:new THREE.Color(sc.sky);viewport.style.background=art?.bg||sky;
- if(art){if(artImg.dataset.file!==art.file){artImg.dataset.file=art.file;artImg.src=artBlur.src=art.file+'?v='+GAME_VERSION;}placeArt();}else{artImg.removeAttribute('src');artBlur.removeAttribute('src');delete artImg.dataset.file;}
+ if(art){if(artImg.dataset.file!==art.file){artImg.dataset.file=art.file;waitArt(art.file+'?v='+GAME_VERSION);artBlur.src=art.file+'?v='+GAME_VERSION;}placeArt();}else{artImg.removeAttribute('src');artBlur.removeAttribute('src');delete artImg.dataset.file;artDone();}
  const first=map.paths.map(p=>p.wp[0]),last=map.paths[0].wp[map.paths[0].wp.length-1],cells=[],padX=4,padTop=7,padBottom=5;
  const lead=(c,r)=>first.some(([fc,fr])=>(fc===c&&fr<0&&r<0)||(fr===r&&fc<0&&c<0)||(fr===r&&fc>=W&&c>=W))||(last[0]===c&&last[1]>=H&&r>=H);
  for(let r=-padTop;r<H+padBottom;r++)for(let c=-padX;c<W+padX;c++){const t=map.tile(c,r);if(t){cells.push({c,r,terrain:t.terrain,h:t.h,alt:t.alt,v:t.v,road:t.road});continue;}
@@ -431,6 +441,8 @@ function chapterList(dev){const best=cleared(),m=modal(`<h2>${dev?'개발자 모
  m.querySelector('[data-a=back]').onclick=showTitle;m.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{closeModal();devMode=dev;startChapter(+b.dataset.i,null);});}
 // ── World map: chapter select drawn as a journey (WORLD_MAP in data.js) ──
 const worldEl=$('#world');
+// World map / altar: hide the stops and sockets until the painting has loaded.
+function paintFirst(root){const im=root.querySelector('.wart');if(!im||(im.complete&&im.naturalWidth))return;root.classList.add('wloading');const done=()=>root.classList.remove('wloading');im.addEventListener('load',()=>{(im.decode?im.decode():Promise.resolve()).catch(()=>{}).then(done);},{once:true});im.addEventListener('error',done,{once:true});setTimeout(done,8000);}
 function closeWorld(){worldEl.hidden=true;worldEl.innerHTML='';window.removeEventListener('resize',fitWorld);}
 function fitWorld(){for(const wrap of document.querySelectorAll('.wmapwrap')){const map=wrap.querySelector('.wmap');if(!map)continue;const W=wrap.clientWidth,H=wrap.clientHeight,w=Math.min(W,H*9/16);map.style.width=w+'px';map.style.height=w*16/9+'px';}}
 function altarView(back){closeModal();modalOpen=true;const A=D.ALTAR,picks=legacyPicks(),counts=D.legacyCounts(picks),n=Object.values(picks).filter(Boolean).length,short=c=>c.id==='prologue'?'프롤로그':c.id==='final'?'FINAL':(+c.id.slice(1))+'장';
@@ -441,7 +453,7 @@ function altarView(back){closeModal();modalOpen=true;const A=D.ALTAR,picks=legac
    <div class="afloor"><p class="scope keep">♾ 영구 효과 · 장을 클리어할 때마다 하나씩, 모든 장에 적용</p><h3 class="sec">지금 적용 중인 효과</h3>${totals?`<ul class="totals">${totals}</ul>`:'<p class="small">아직 없습니다. 장을 클리어하면 제단에 하나씩 채워집니다.</p>'}
     <p class="small">클리어한 장을 다시 깨면 그 장의 유산을 바꿀 수 있습니다.</p><button class="dev" data-a="reset">유산 모두 초기화</button></div>
   </div></div>`;
- altarEl.hidden=false;fitWorld();window.addEventListener('resize',fitWorld);
+ altarEl.hidden=false;paintFirst(altarEl);fitWorld();window.addEventListener('resize',fitWorld);
  altarEl.querySelector('[data-a=back]').onclick=()=>{sfx('ui_tap');closeAltar();back();};
  altarEl.querySelector('[data-a=reset]').onclick=()=>{const c=modal(`<h2>유산 초기화</h2><p>모아 둔 아르카의 유산을 모두 지웁니다. 되돌릴 수 없습니다.</p><button class="primary" data-a="n">취소</button><button class="dev" data-a="y">모두 지우기</button>`);c.querySelector('[data-a=n]').onclick=closeModal;c.querySelector('[data-a=y]').onclick=()=>{saveJSON(LEGACY_KEY,{picks:{}});closeModal();altarView(back);};};}
 // ── Title attract mode: a real battle plays by itself behind the title (same camera, painted map and models as the game).
@@ -481,7 +493,7 @@ function showWorld(){closeModal();const W=D.WORLD_MAP,best=cleared(),picks=legac
     return `<button class="wstop${ok?'':' locked'}${st?' clear':''}${i===cur?' cur':''}" data-i="${i}" style="left:${x}%;top:${y}%">${i===cur?`<img class="wme" alt="" src="${portraits.kyle}">`:''}
      <span class="wnum">${ok?short(c):'🔒'}</span>${l?`<span class="wbadge" title="${l.name}">${l.icon}</span>`:''}<span class="wst">${ok&&st?'★'.repeat(st)+'☆'.repeat(3-st):''}</span><span class="wname">${c.name}</span></button>`;}).join('')}
   </div></div>`;
- worldEl.hidden=false;fitWorld();window.addEventListener('resize',fitWorld);
+ worldEl.hidden=false;paintFirst(worldEl);fitWorld();window.addEventListener('resize',fitWorld);
  worldEl.querySelector('[data-a=back]').onclick=()=>{sfx('ui_tap');closeWorld();showTitle();};
  worldEl.querySelector('[data-a=legacy]').onclick=()=>{sfx('ui_tap');legacyView(()=>{});};
  worldEl.querySelectorAll('.wstop').forEach(b=>b.onclick=()=>{sfx('ui_tap');chapterInfo(+b.dataset.i,open(+b.dataset.i));});}
@@ -509,7 +521,7 @@ function saveGame(){lastSnap=S.snapshot();lastSnap.time=Date.now();saveJSON(SAVE
 function loadSave(){const s=loadJSON(SAVE_KEY,null);return s&&s.v===2&&D.CHAPTERS[s.chapter]?s:null;}
 function startChapter(index,snapshot){demo.stop();clearObjects();closePanel();app.classList.remove('title');selCard=null;validTiles=null;const legacy=devMode?D.typicalLegacy(index):legacyNow();S=createSim({chapter:index,snapshot,seed:(Date.now()&0xffff)+index*101,legacy});ultSeen=new Set();speed=1;paused=false;hudKey='';
  resize();buildTerrain();buildDock();showPreview();saveGame();bgm.play(battleTrack());
- if(!snapshot)dialogue(S.chapter.intro,()=>toast('동료를 배치하고 「전투 시작」을 누르세요'));else toast(`${S.chapter.label} · 전투 ${S.battle+1} 준비`);
+ onArt(()=>{if(!snapshot)dialogue(S.chapter.intro,()=>toast('동료를 배치하고 「전투 시작」을 누르세요'));else toast(`${S.chapter.label} · 전투 ${S.battle+1} 준비`);});
  if(devMode){const n=Object.values(legacy).reduce((a,b)=>a+b,0);setTimeout(()=>toast(`개발자 모드 · 평균 유산 ${n}개 적용`),2200);}}
 
 // ── Effects (2D overlay) ──
