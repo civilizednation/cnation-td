@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='0.6.0',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='0.6.1',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -20,7 +20,7 @@ if('sfxPick' in settings||'sfxPickReset' in settings){delete settings.sfxPick;de
 
 // ── Renderer ──
 let renderer;
-try{renderer=new THREE.WebGLRenderer({canvas:glc,antialias:true,powerPreference:'high-performance'});}
+try{renderer=new THREE.WebGLRenderer({canvas:glc,antialias:true,alpha:true,powerPreference:'high-performance'});renderer.setClearColor(0,0);}
 catch(e){document.body.innerHTML='<p style="padding:24px">3D 화면을 열 수 없어요. WebGL이 지원되는 Safari 또는 Chrome에서 다시 열어 주세요.</p>';throw e;}
 renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const scene=new THREE.Scene(),camera=new THREE.OrthographicCamera(-5,5,8,-8,.1,200);
@@ -33,10 +33,15 @@ const groundY=(x,y)=>tileTop(S.map.tile(Math.round(x),Math.round(y)));
 // Orthographic camera → the projection is a straight formula (no raycasting needed).
 const proj=(x,y,h=0)=>({x:vw/2+wx(x)*pxU,y:vh/2+((wz(y)-tz)*SIN-h*COS)*pxU});
 const unproj=(sx,sy)=>({x:(sx-vw/2)/pxU+(S.map.w-1)/2,y:(sy-vh/2)/(pxU*SIN)+tz+(S.map.h-1)/2});
+// Guide frame for painted backgrounds: map width + 1 tile across, 9:16, centred on the screen centre (see MAP_ART in data.js).
+const artFrame=map=>{const fw=map.w+1;return {fw,fh:fw*16/9};};
+const artImg=$('#art');let art=null;
+function placeArt(){if(!art||!S)return;const {fw,fh}=artFrame(S.map),[u0,v0,u1,v1]=art.rect||[0,0,1,1],w=fw*pxU/(u1-u0),h=fh*pxU/(v1-v0);
+ Object.assign(artImg.style,{width:w+'px',height:h+'px',left:(vw/2-fw*pxU/2-u0*w)+'px',top:(vh/2-fh*pxU/2-v0*h)+'px'});}
 function resize(){const r=viewport.getBoundingClientRect();vw=Math.max(1,r.width);vh=Math.max(1,r.height);dpr=Math.min(2,window.devicePixelRatio||1);
  renderer.setPixelRatio(dpr);renderer.setSize(vw,vh,false);fxc.width=Math.round(vw*dpr);fxc.height=Math.round(vh*dpr);
  const w=S?S.map.w:9,h=S?S.map.h:14;pxU=Math.min(vw/(w+.25),vh/(h*SIN+2.6));const hw=vw/(2*pxU),hh=vh/(2*pxU);
- camera.left=-hw;camera.right=hw;camera.top=hh;camera.bottom=-hh;camera.position.set(0,60*SIN,tz+60*COS);camera.lookAt(0,0,tz);camera.updateProjectionMatrix();}
+ camera.left=-hw;camera.right=hw;camera.top=hh;camera.bottom=-hh;camera.position.set(0,60*SIN,tz+60*COS);camera.lookAt(0,0,tz);camera.updateProjectionMatrix();placeArt();}
 window.addEventListener('resize',resize);
 
 function disposeGroup(g){for(const c of [...g.children]){g.remove(c);c.traverse(o=>{if(o.userData.shared)return;if(o.geometry)o.geometry.dispose();if(o.material&&o.material!==M.sharedMat&&o.material!==M.ghostMat)o.material.dispose?.();});}}
@@ -51,8 +56,10 @@ function propParts(kind,x,y,z,v,sc){const p=[],a=sc.accent;
  else if(kind==='crystal'){p.push(['rock',[x,y+.55,z],[.26,.6,.26],a],['rock',[x+.28,y+.3,z+.12],[.16,.36,.16],0xdffcf0],['rock',[x-.26,y+.24,z-.1],[.14,.3,.14],a],['cyl',[x,y+.04,z],[.46,.08,.46],0x9db5ad]);}
  else if(kind==='spire'){p.push(['cyl',[x,y+.8,z],[.24,1.6,.24],0x4f5367],['cyl',[x,y+1.62,z],[.32,.1,.32],0x6a6f88],['cone',[x,y+2.05,z],[.26,.8,.26],0x3a3d52],['rock',[x,y+1.2,z+.24],[.07,.1,.04],a]);}
  return p;}
-function buildTerrain(){disposeGroup(terrainGroup);animated=[];const map=S.map,sc=map.scene,rand=D.seeded(map.seed*31+7),W=map.w,H=map.h;
- scene.background=new THREE.Color(sc.sky);
+function buildTerrain(noArt){disposeGroup(terrainGroup);animated=[];const map=S.map,sc=map.scene,rand=D.seeded(map.seed*31+7),W=map.w,H=map.h;
+ art=noArt?null:D.MAP_ART[S.chapter.map]||null;const sky='#'+new THREE.Color(sc.sky).getHexString();
+ scene.background=art?null:new THREE.Color(sc.sky);viewport.style.background=art?.bg||sky;
+ if(art){if(artImg.dataset.file!==art.file){artImg.dataset.file=art.file;artImg.src=art.file+'?v='+GAME_VERSION;}placeArt();}else{artImg.removeAttribute('src');delete artImg.dataset.file;}
  const first=map.paths.map(p=>p.wp[0]),last=map.paths[0].wp[map.paths[0].wp.length-1],cells=[],padX=4,padTop=7,padBottom=5;
  const lead=(c,r)=>first.some(([fc,fr])=>(fc===c&&fr<0&&r<0)||(fr===r&&fc<0&&c<0)||(fr===r&&fc>=W&&c>=W))||(last[0]===c&&last[1]>=H&&r>=H);
  for(let r=-padTop;r<H+padBottom;r++)for(let c=-padX;c<W+padX;c++){const t=map.tile(c,r);if(t){cells.push({c,r,terrain:t.terrain,h:t.h,alt:t.alt,v:t.v,road:t.road});continue;}
@@ -77,20 +84,22 @@ function buildTerrain(){disposeGroup(terrainGroup);animated=[];const map=S.map,s
   else if(T==='grass'){if(t.v<.16)parts.push(['rock',[x-.3,y+.04,z-.28],[.1,.08,.11],sc.rock]);else if(t.v>.84){for(const [a,b] of [[-.2,.22],[.24,-.18]])parts.push(['cone',[x+a,y+.08,z+b],[.07,.16,.07],sc.tree[1]]);}
    if(t.apron&&t.h>.7&&t.v>.5)parts.push(['cone',[x,y+.5,z],[.36,1,.36],sc.cliff]);}
   else if(T==='road'&&!t.apron&&t.v>.8)parts.push(['rock',[x+.34,y+.02,z-.3],[.07,.04,.07],sc.rock]);});
- mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;mesh.receiveShadow=true;mesh.castShadow=true;terrainGroup.add(mesh);
+ mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;mesh.receiveShadow=true;mesh.castShadow=!art;
+ // With a painting the tiles stay as invisible ground that only shows the characters' shadows.
+ if(art){mesh.material.dispose();mesh.material=new THREE.ShadowMaterial({opacity:.3});}terrainGroup.add(mesh);
  // Monster gates: a dark stone arch with red banners and a glowing rift, one per road.
  const basic=(color,opacity)=>new THREE.MeshBasicMaterial({color,transparent:true,opacity,depthWrite:false,side:THREE.DoubleSide});
  map.paths.forEach((path,pi)=>{if(first.findIndex(f=>f[0]===path.wp[0][0]&&f[1]===path.wp[0][1])!==pi)return;const [fc,fr]=path.wp[0],seg=path.segs[0],g=new THREE.Group(),gp=[];
   for(const s of [-1,1]){gp.push(['box',[s*.62,.85,0],[.34,1.7,.4],0x4a4652],['rock',[s*.62,1.8,0],[.24,.22,.24],0x38343f],['cone',[s*.62,2.1,0],[.12,.4,.12],0xb5332e],['box',[s*.62,1.05,.22],[.2,.7,.03],0xc0362f],['cone',[s*.62,.62,.22],[.1,.2,.02],0xc0362f,Math.PI]);}
   gp.push(['box',[0,1.82,0],[1.7,.28,.42],0x4a4652],['rock',[0,2.08,0],[.2,.2,.2],0xd94a3d],['cone',[-.3,2.05,0],[.08,.3,.08],0x38343f],['cone',[.3,2.05,0],[.08,.3,.08],0x38343f]);
-  const arch=new THREE.Mesh(M.bake(gp),M.sharedMat);arch.castShadow=true;g.add(arch);const rift=new THREE.Mesh(new THREE.PlaneGeometry(.95,1.55),basic(0xff3b2f,.6));rift.position.set(0,.85,0);g.add(rift);
+  const arch=new THREE.Mesh(M.bake(gp),M.sharedMat);arch.castShadow=true;if(!art)g.add(arch);const rift=new THREE.Mesh(new THREE.PlaneGeometry(.95,1.55),basic(0xff3b2f,.6));rift.position.set(0,.85,0);g.add(rift);
   const glow=new THREE.Mesh(new THREE.CircleGeometry(.75,24),basic(0xff5a3c,.35));glow.rotation.x=-Math.PI/2;glow.position.set(0,.03,.45);g.add(glow);
   const side=fc<0||fc>=W,off=side?.72:.35;g.position.set(wx(fc)+seg.dx*off,-.07,wz(fr)+seg.dy*off);g.rotation.y=Math.atan2(seg.dx,seg.dy);terrainGroup.add(g);animated.push(t=>{rift.material.opacity=.45+.25*Math.sin(t*3+pi);glow.material.opacity=.22+.16*Math.sin(t*3+pi);});});
  // The Arca crystal: stepped dais, a big floating crystal, a pillar of light.
  {const [lc,lr]=last,inside=!!map.tile(lc,lr),x=wx(lc),z=inside?wz(lr):wz(H-1)+.62,g=new THREE.Group(),dp=[['cyl',[0,.06,0],[.78,.12,.78],0xdfe6dc],['cyl',[0,.18,0],[.6,.12,.6],0xcfd8cd],['cyl',[0,.3,0],[.42,.12,.42],0xeef4ea]];
   for(let i=0;i<4;i++){const an=i*Math.PI/2+Math.PI/4;dp.push(['rock',[Math.cos(an)*.62,.34,Math.sin(an)*.62],[.1,.24,.1],0x9be6d2]);}
-  const dais=new THREE.Mesh(M.bake(dp),M.sharedMat);dais.castShadow=true;dais.receiveShadow=true;g.add(dais);
-  const gem=new THREE.Mesh(M.bake([['rock',[0,0,0],[.34,.62,.34],0x7ff0d2],['rock',[0,0,0],[.22,.46,.22],0xe8fff6]]),M.sharedMat);gem.position.y=1.15;gem.castShadow=true;g.add(gem);
+  const dais=new THREE.Mesh(M.bake(dp),M.sharedMat);dais.castShadow=true;dais.receiveShadow=true;if(!art)g.add(dais);
+  const gem=new THREE.Mesh(M.bake([['rock',[0,0,0],[.34,.62,.34],0x7ff0d2],['rock',[0,0,0],[.22,.46,.22],0xe8fff6]]),M.sharedMat);gem.position.y=1.15;gem.castShadow=true;if(!art)g.add(gem);
   const beam=new THREE.Mesh(new THREE.CylinderGeometry(.3,.42,4.2,16,1,true),basic(0x9ffbe0,.22));beam.position.y=2.3;g.add(beam);
   const halo=new THREE.Mesh(new THREE.RingGeometry(.8,.98,32),basic(0x7ff0d2,.6));halo.rotation.x=-Math.PI/2;halo.position.y=.035;g.add(halo);
   g.position.set(x,inside?-.07:0,z);terrainGroup.add(g);animated.push(t=>{gem.rotation.y=t*.9;gem.position.y=1.15+Math.sin(t*2)*.08;beam.material.opacity=.16+.08*Math.sin(t*2.4);const s=1+.12*Math.sin(t*2.4);halo.scale.set(s,s,1);});}
@@ -100,8 +109,17 @@ function buildTerrain(){disposeGroup(terrainGroup);animated=[];const map=S.map,s
    for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){if(isRoad.has((t.c+dx)+','+(t.r+dz)))continue;const n=map.tile(t.c+dx,t.r+dz);if(n&&n.terrain==='water')continue;
     const ex=x+dx*(.5-T/2),ez=z+dz*(.5-T/2),size=dx?[T,.15,1.0]:[1.0,.15,T];parts.push(['box',[ex,y+.055,ez],size,edge]);
     parts.push(['box',[x+dx*(.5-T-.025),y+.005,z+dz*(.5-T-.025)],dx?[.07,.02,.98]:[.98,.02,.07],lip]);}}}
+ if(art){water=null;return;}
  const deco=new THREE.Mesh(M.bake(parts),M.sharedMat);deco.castShadow=true;deco.receiveShadow=true;terrainGroup.add(deco);
  water=M.makeWaterSurface(waterPlaces);if(water)terrainGroup.add(water);}
+// Guide picture for painting a background (tools/make-guides.js): the map's 3D terrain without characters or markers,
+// seen from the game camera over the artFrame, 1080×1920.
+function renderGuide(index){S=createSim({chapter:index,seed:1});clearObjects();buildTerrain(true);const {fw,fh}=artFrame(S.map),W=1080,H=1920;
+ const r=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});r.outputColorSpace=THREE.SRGBColorSpace;r.shadowMap.enabled=true;r.shadowMap.type=THREE.PCFSoftShadowMap;r.setPixelRatio(1);r.setSize(W,H,false);
+ const cam=new THREE.OrthographicCamera(-fw/2,fw/2,fh/2,-fh/2,.1,200);cam.position.set(0,60*SIN,tz+60*COS);cam.lookAt(0,0,tz);cam.updateProjectionMatrix();
+ unitGroup.visible=false;for(const f of animated)f(0);r.render(scene,cam);unitGroup.visible=true;const url=r.domElement.toDataURL('image/png');r.dispose();
+ const m=S.map,cells=[];for(let y=0;y<m.h;y++)for(let x=0;x<m.w;x++){const t=m.tile(x,y);cells.push([x,y,t.terrain,+t.h.toFixed(3),t.road?1:0]);}
+ const info={map:S.chapter.map,w:m.w,h:m.h,fw,fh,tz,SIN,COS,px:[W,H],gates:m.gates,crystal:m.paths[0].wp[m.paths[0].wp.length-1],cells};S=null;return {url,info};}
 
 // ── Models ──
 const protoCache=new Map();
@@ -345,7 +363,7 @@ function gameMenu(){const m=modal(`<p class="sub">${S.chapter.label} · 전투 $
  on('gold',()=>{S.gold+=500;hudKey='';closeModal();});on('skip',()=>{closeModal();if(S.phase==='prep')S.startBattle();S.queue.length=0;for(const e of S.enemies){e.canSplit=false;e.hp=0;e.st.burn=1;}});}
 function chapterList(dev){const best=cleared(),m=modal(`<h2>${dev?'개발자 모드 · 장 바로 시작':'장 선택'}</h2>${dev?'<p>베타 테스트용 메뉴입니다. 어느 장이든 바로 시작합니다.</p>':''}`+D.CHAPTERS.map((c,i)=>{const open=dev||i===0||best[D.CHAPTERS[i-1].id];return `<button data-i="${i}" ${open?'':'disabled'}>${c.label} · ${c.name}${best[c.id]?' '+'★'.repeat(best[c.id]):''}<small>${open?`${c.place} · 전투 ${c.battles.length}회 · 보스 ${c.boss.name}`:'이전 장을 클리어하면 열립니다'}</small></button>`;}).join('')+`<button class="primary" data-a="back">돌아가기</button>`);
  m.querySelector('[data-a=back]').onclick=showTitle;m.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{closeModal();devMode=dev;startChapter(+b.dataset.i,null);});}
-function showTitle(){S=null;clearObjects();closePanel();disposeGroup(terrainGroup);water=null;animated=[];app.classList.add('title');bgm.play(1);const save=loadSave(),any=save||slots().some(Boolean);
+function showTitle(){S=null;clearObjects();closePanel();disposeGroup(terrainGroup);water=null;animated=[];art=null;artImg.removeAttribute('src');delete artImg.dataset.file;app.classList.add('title');bgm.play(1);const save=loadSave(),any=save||slots().some(Boolean);
  const m=modal(`<p class="sub">ARCA CHRONICLE</p><h1>cnation <em>TD</em></h1><p class="tag">아르카 방어전</p><p>탑을 짓지 않는다. 동료를 세운다.</p>${save?`<button class="primary" data-a="continue">이어하기<small>${D.CHAPTERS[save.chapter].label} · 전투 ${save.battle+1}</small></button>`:''}<button ${save?'':'class="primary"'} data-a="new">새 게임<small>PROLOGUE · 깨어난 빛</small></button><button data-a="chapters">장 선택</button><button data-a="legacy">아르카의 유산<small>${(()=>{const n=Object.values(legacyPicks()).filter(Boolean).length;return n?`${n}개 보유 · 모든 장에 적용 중`:'장을 클리어하면 영구 효과를 얻습니다';})()}</small></button><button data-a="load" ${any?'':'disabled'}>불러오기</button><button data-a="sound">소리 설정</button><button data-a="help">게임 방법</button><button class="dev" data-a="dev">개발자 모드 (베타 전용)</button><p class="ver">ver.${GAME_VERSION} beta</p>`,'title');
  const on=(a,f)=>{const b=m.querySelector(`[data-a=${a}]`);if(b)b.onclick=()=>{sfx('ui_tap');f();};};
  on('new',()=>{closeModal();devMode=false;startChapter(0,null);});on('continue',()=>{closeModal();startChapter(save.chapter,save);});on('chapters',()=>chapterList(false));on('legacy',()=>legacyView(showTitle));on('dev',()=>chapterList(true));
@@ -507,5 +525,5 @@ function frame(now){requestAnimationFrame(frame);const real=Math.min(.05,(now-la
 
 makePortraits();resize();showTitle();requestAnimationFrame(frame);
 if(document.fonts&&document.fonts.load){document.fonts.load('16px "Stylish"');document.fonts.load('16px "Gowun Dodum"');}
-window.TD={bgm,get sim(){return S;},startChapter,version:GAME_VERSION,proj:(x,y,h)=>proj(x,y,h)};
+window.TD={bgm,get sim(){return S;},startChapter,renderGuide,version:GAME_VERSION,proj:(x,y,h)=>proj(x,y,h)};
 })();
