@@ -8,8 +8,8 @@
 <style>
 :root{color-scheme:dark;--bg:#0d1a1e;--card:#1f373d;--line:#ffffff1c;--ink:#e6eee6;--muted:#94aaa7;--gold:#f2cf72;--mint:#8fe5b4}
 *{box-sizing:border-box}
-@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=17") format("woff2");font-display:swap;size-adjust:118%}
-@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=17") format("woff2");font-display:swap;size-adjust:104%}
+@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=18") format("woff2");font-display:swap;size-adjust:118%}
+@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=18") format("woff2");font-display:swap;size-adjust:104%}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 "Gowun Dodum",-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif;padding:calc(16px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom))}
 main{max-width:680px;margin:0 auto}
 a{color:var(--gold)}
@@ -36,8 +36,16 @@ details.rev summary{cursor:pointer}
 <h1>Revision History</h1>
 <p class="lead">큰 변화는 두 번째 자리(1.1.0), 작은 수정은 세 번째 자리(1.0.1)를 올립니다.</p>
 
+<section class="rev" id="v1.1.0">
+<h2>ver.1.1.0 <span class="date">2026-11-19</span> <span class="tag">현재</span></h2>
+<h3>변경</h3><ul>
+<li>장을 클리어하면 네 장의 화면을 차례로 넘깁니다 — 결산 → 아르카의 유산 → 다음 장 준비 → 마무리</li>
+<li>결산: 별이 하나씩 차오르고 별 조건(클리어 · 생명 75% 이상 · 놓친 적 없음)을 함께 보여 줍니다. 처치 · 남은 생명 · 전투 시간 · 번 골드 · 쓴 골드 · 필살기 · 회복량 기록, MVP와 회복 1위, 캐릭터별 피해 막대, 최고 기록 갱신 표시</li>
+<li>다음 장 준비: 고른 유산을 반영한 영웅·병사 능력치(바뀐 값은 초록색), 새로 합류하는 동료(NEW), 시작 골드 · 수정 생명 · 병사 자리 변화</li></ul>
+</section>
+
 <section class="rev" id="v1.0.2">
-<h2>ver.1.0.2 <span class="date">2026-11-19</span> <span class="tag">현재</span></h2>
+<h2>ver.1.0.2 <span class="date">2026-11-19</span></h2>
 <h3>수정</h3><ul><li>홈 화면에 설치한 앱에서 가끔 게임 화면 전체가 아래로 밀려 카드가 가려지던 문제 수정 — 앱으로 돌아오거나 화면을 돌린 뒤에도 화면이 제자리에 고정됩니다</li></ul>
 </section>
 

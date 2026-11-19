@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.0.2',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.1.0',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -298,12 +298,58 @@ const legacyInfo=id=>D.LEGACIES.find(l=>l.id===id);
 function legacyListHTML(picks){const rows=D.CHAPTERS.map((c,i)=>{const l=picks[i]&&legacyInfo(picks[i]);return `<tr><td>${c.label}</td><td>${l?`${l.icon} <b>${l.name}</b><br><small>${l.desc}</small>`:'<small>아직 없음</small>'}</td></tr>`;}).join('');
  const counts=D.legacyCounts(picks),sum=Object.keys(counts).map(id=>{const l=legacyInfo(id);return l?`<li>${l.icon} ${l.name}${counts[id]>1?' ×'+counts[id]:''} — ${l.desc}${counts[id]>1?` (${counts[id]}번 누적)`:''}</li>`:'';}).join('');
  return `<div class="tip"><table>${rows}</table>${sum?`<p><b>지금 적용 중인 효과</b></p><ul>${sum}</ul>`:''}</div>`;}
-function legacyModal(index,done){const picks=legacyPicks(),current=picks[index],others={...picks};delete others[index];
+function legacyModal(index,done,dots){const picks=legacyPicks(),current=picks[index],others={...picks};delete others[index];
  const offer=D.legacyOffer(D.legacyCounts(others),index,Math.random);if(current&&!offer.includes(current))offer.push(current);
- const m=modal(`<p class="sub">${D.CHAPTERS[index].label} CLEAR</p><h2>아르카의 유산</h2><p class="scope keep">♾ 영구 효과 · 다음 장부터 계속 누적됩니다</p><p>이 장을 지켜낸 보답으로 하나를 고르세요.${current?`<br><small>이미 이 장의 유산이 있습니다. 다른 것을 고르면 바뀝니다.</small>`:''}</p>`+offer.map(id=>{const l=legacyInfo(id),n=D.legacyCounts(others)[id]||0;return `<button data-id="${id}" class="${id===current?'cur':''}">${l.icon} ${l.name}${id===current?' (현재)':''}<small>${l.desc}${n?` · 이미 ${n}번 보유 → ${n+1}번째`:''}${l.max>1?` · 최대 ${l.max}번`:''}</small></button>`;}).join(''),'legacy');
+ const m=modal(`${dots||''}<p class="sub">${D.CHAPTERS[index].label} CLEAR</p><h2>아르카의 유산</h2><p class="scope keep">♾ 영구 효과 · 다음 장부터 계속 누적됩니다</p><p>이 장을 지켜낸 보답으로 하나를 고르세요.${current?`<br><small>이미 이 장의 유산이 있습니다. 다른 것을 고르면 바뀝니다.</small>`:''}</p>`+offer.map(id=>{const l=legacyInfo(id),n=D.legacyCounts(others)[id]||0;return `<button data-id="${id}" class="${id===current?'cur':''}">${l.icon} ${l.name}${id===current?' (현재)':''}<small>${l.desc}${n?` · 이미 ${n}번 보유 → ${n+1}번째`:''}${l.max>1?` · 최대 ${l.max}번`:''}</small></button>`;}).join(''),'legacy');
  m.querySelectorAll('[data-id]').forEach(b=>b.onclick=()=>{const all=loadJSON(LEGACY_KEY,{picks:{}});all.picks=all.picks||{};all.picks[index]=b.dataset.id;saveJSON(LEGACY_KEY,all);sfx('legacy');done(legacyInfo(b.dataset.id));});}
 function legacyView(back){const m=modal(`<h2>아르카의 유산</h2><p class="scope keep">♾ 장을 클리어할 때마다 하나씩 얻는 영구 효과</p><p><small>장마다 유산 칸이 하나씩 있어 최대 10개까지 모입니다. 클리어한 장을 다시 깨면 그 장의 유산을 바꿀 수 있습니다.</small></p>${legacyListHTML(legacyPicks())}<button class="primary" data-a="back">돌아가기</button><button class="dev" data-a="reset">유산 모두 초기화</button>`,'help');
  m.querySelector('[data-a=back]').onclick=back;m.querySelector('[data-a=reset]').onclick=()=>{const c=modal(`<h2>유산 초기화</h2><p>모아 둔 아르카의 유산을 모두 지웁니다. 되돌릴 수 없습니다.</p><button class="primary" data-a="n">취소</button><button class="dev" data-a="y">모두 지우기</button>`);c.querySelector('[data-a=n]').onclick=()=>legacyView(back);c.querySelector('[data-a=y]').onclick=()=>{saveJSON(LEGACY_KEY,{picks:{}});legacyView(back);};};}
+// ── Chapter clear: four pages, one after another — 1 결산 · 2 아르카의 유산 · 3 다음 장 준비(능력치 변화) · 4 마무리 ──
+const RECORD_KEY='cnation-td-records-v1';
+const fmtTime=t=>`${Math.floor(t/60)}분 ${String(Math.floor(t%60)).padStart(2,'0')}초`;
+const pageDots=(i,n)=>`<p class="dots">${Array.from({length:n},(_,k)=>`<i class="${k===i?'on':''}"></i>`).join('')}</p>`;
+function countUp(root){root.querySelectorAll('[data-count]').forEach((el,i)=>{const to=+el.dataset.count,fmt=el.dataset.fmt,t0=performance.now()+i*90,dur=700;
+ const draw=v=>{el.textContent=fmt==='time'?fmtTime(v):Math.round(v).toLocaleString('ko-KR');};draw(0);
+ const tick=now=>{const k=Math.min(1,Math.max(0,(now-t0)/dur));draw(to*(1-Math.pow(1-k,3)));if(k<1&&!root.hidden)requestAnimationFrame(tick);};requestAnimationFrame(tick);});}
+function clearFlow(index){const ch=S.chapter,next=D.CHAPTERS[index+1],pages=next?4:3,st=S.stats,lifeGoal=Math.ceil(ch.life*.75);
+ const n=S.leaksTotal===0?3:S.life>=lifeGoal?2:1,best=cleared(),prevStars=best[ch.id]||0;best[ch.id]=Math.max(prevStars,n);saveJSON(CLEAR_KEY,best);try{localStorage.removeItem(SAVE_KEY);}catch(e){}
+ const recs=loadJSON(RECORD_KEY,{}),old=recs[ch.id],rec={stars:n,life:S.life,time:Math.round(st.time),kills:S.kills};
+ const better=old?(n>old.stars||(n===old.stars&&(S.life>old.life||(S.life===old.life&&rec.time<old.time)))):false;if(!old||better){recs[ch.id]=rec;saveJSON(RECORD_KEY,recs);}
+ const before=legacyNow();
+ // Page 1 — 결산
+ const dealt=Object.entries(st.dealt).sort((a,b)=>b[1]-a[1]),healed=Object.entries(st.healedBy||{}).sort((a,b)=>b[1]-a[1]),top=dealt[0]&&dealt[0][1]||1;
+ const mvp=dealt[0]&&dealt[0][0],medic=healed[0]&&healed[0][1]>0?healed[0]:null;
+ const conds=[['장 클리어',true],[`생명 ${lifeGoal} 이상 남기기`,S.life>=lifeGoal],['적을 하나도 놓치지 않기',S.leaksTotal===0]];
+ const p1=()=>{const m=modal(`${pageDots(0,pages)}<p class="sub">${ch.label} CLEAR</p><h2>${ch.name}</h2>
+  <p class="stars big">${[0,1,2].map(i=>`<span class="${i<n?'got':''}" style="animation-delay:${.25+i*.35}s">${i<n?'★':'☆'}</span>`).join('')}</p>
+  <ul class="conds">${conds.map(([t,ok],i)=>`<li class="${ok?'ok':''}">${'★'.repeat(i+1)} ${t} <b>${ok?'✔':'✘'}</b></li>`).join('')}</ul>
+  ${better?'<p class="record">🏆 최고 기록 갱신!</p>':old?`<p class="small">최고 기록 ★${old.stars} · 생명 ${old.life} · ${fmtTime(old.time)}</p>`:''}
+  <div class="tally">${[['처치',S.kills],['남은 생명',S.life],['놓친 적',S.leaksTotal],['전투 시간',Math.round(st.time),'time'],['번 골드',st.goldEarned],['쓴 골드',st.goldSpent],['필살기',st.ults],['회복량',Math.round(st.healed)]].map(([k,v,f])=>`<div><small>${k}</small><b data-count="${v}"${f?` data-fmt="${f}"`:''}>0</b></div>`).join('')}</div>
+  ${mvp?`<div class="mvp"><img alt="" src="${portraits[mvp]}"><div><small>MVP</small><b>${D.UNITS[mvp].name}</b><span>피해 ${Math.round(dealt[0][1]).toLocaleString('ko-KR')}</span>${medic?`<em>든든한 지원 · ${D.UNITS[medic[0]].name} 회복 ${Math.round(medic[1]).toLocaleString('ko-KR')}</em>`:''}</div></div>`:''}
+  <div class="bars">${dealt.slice(0,8).map(([id,v])=>`<div><span>${D.UNITS[id].name}</span><i style="--w:${Math.max(3,v/top*100)}%"></i><small>${Math.round(v).toLocaleString('ko-KR')}</small></div>`).join('')}</div>
+  <button class="primary" data-a="go">다음<small>아르카의 유산 받기</small></button>`,'clear');countUp(m);
+  m.querySelector('[data-a=go]').onclick=()=>{sfx('ui_confirm');legacyModal(index,gained=>{const after=legacyNow();next?p3(gained,after):p4(gained);},pageDots(1,pages));};};
+ // Page 3 — 다음 장 준비: legacy effect on the next chapter's heroes, new companions, other changes
+ const p3=(gained,after)=>{const joinNew=next.roster.filter(id=>!ch.roster.includes(id)),heroes=D.HERO_ORDER.filter(id=>next.roster.includes(id)),soldiers=D.SOLDIER_ORDER.filter(id=>next.roster.includes(id));
+  const stat=(a,b,label)=>{const ra=Math.round(a),rb=Math.round(b);return `<span class="st">${label} ${rb>ra?`${ra} → <b class="up">${rb}</b>`:rb}</span>`;};
+  const card=id=>{const d=D.UNITS[id],a=D.unitStats(id,before),b=D.unitStats(id,after),magic=d.mag>d.atk;
+   return `<div class="ucard${joinNew.includes(id)?' new':''}"><img alt="" src="${portraits[id]}"><div><b>${d.name}${joinNew.includes(id)?' <em>NEW</em>':''}</b>${stat(a.hp,b.hp,'HP')}${magic?stat(a.mag,b.mag,'마법'):stat(a.atk,b.atk,'공격')}</div></div>`;};
+  const v=(k,base,per,L)=>base+per*((L[k])||0),diff=[['시작 골드',v('startGold',next.startGold,60,before),v('startGold',next.startGold,60,after)],['수정 생명',v('life',next.life,3,before),v('life',next.life,3,after)],['병사 자리',v('command',next.soldiers,1,before),v('command',next.soldiers,1,after)]];
+  const changed=Object.keys(after).some(k=>after[k]!==(before[k]||0))||Object.keys(before).some(k=>before[k]!==(after[k]||0));
+  const m=modal(`${pageDots(2,pages)}<p class="sub">NEXT · ${next.label}</p><h2>다음 장 준비</h2>
+   ${gained?`<p class="scope keep">♾ ${gained.icon} ${gained.name} — ${gained.desc}</p>`:''}${changed?'':'<p class="small">이 장의 유산이 그대로라 능력치 변화는 없습니다.</p>'}
+   <h3 class="sec">영웅 · ★1 기준</h3><div class="ucards">${heroes.map(card).join('')}</div>
+   <h3 class="sec">병사</h3><div class="ucards">${soldiers.map(card).join('')}</div>
+   <div class="nextinfo">${diff.map(([k,a,b])=>`<span>${k} ${b!==a?`${a} → <b class="up">${b}</b>`:b}</span>`).join('')}${after.starter?`<span>${before.starter?'':'<b class="up">NEW</b> '}영웅 첫 배치 ★2</span>`:''}${after.rankDisc?`<span>랭크업 비용 −${8*after.rankDisc}%</span>`:''}${after.ultCdr?`<span>필살기 재사용 −${15*after.ultCdr}%</span>`:''}</div>
+   ${joinNew.length?`<p class="small">✨ 새로 합류: ${joinNew.map(id=>D.UNITS[id].name).join(' · ')}</p>`:''}
+   <button class="primary" data-a="go">다음</button>`,'clear');
+  m.querySelector('[data-a=go]').onclick=()=>{sfx('ui_confirm');p4(gained);};};
+ // Page 4 (3 on the last chapter) — 마무리
+ const p4=gained=>{const m=modal(`${pageDots(pages-1,pages)}<p class="sub">${ch.label} CLEAR</p><h2>${ch.name}</h2><p class="stars">${'★'.repeat(n)}${'☆'.repeat(3-n)}</p>
+  ${gained?`<p class="scope keep">♾ 얻은 유산: ${gained.icon} ${gained.name} — ${gained.desc}</p>`:''}
+  ${next?`<button class="primary" data-a="next">다음 장으로<small>${next.label} · ${next.name}</small></button>`:`<p class="line">아르카 연대기 · 방어전<br>모든 장을 지켜냈습니다. 함께해 주셔서 고맙습니다.</p>`}<button data-a="title">타이틀로</button>`);
+  if(next)m.querySelector('[data-a=next]').onclick=()=>{closeModal();startChapter(index+1,null);};m.querySelector('[data-a=title]').onclick=()=>{closeModal();showTitle();};};
+ p1();}
 function resultModal(won,gained){const ch=S.chapter,index=S.chapterIndex;if(won){const n=S.leaksTotal===0?3:S.life>=Math.ceil(ch.life*.75)?2:1,best=cleared();best[ch.id]=Math.max(best[ch.id]||0,n);saveJSON(CLEAR_KEY,best);try{localStorage.removeItem(SAVE_KEY);}catch(e){}
   const next=D.CHAPTERS[index+1];
   const m=modal(`<p class="sub">${ch.label} CLEAR</p><h2>${ch.name}</h2><p class="stars">${'★'.repeat(n)}${'☆'.repeat(3-n)}</p><p>남은 생명 ${S.life} · 놓친 적 ${S.leaksTotal} · 처치 ${S.kills}</p>${gained?`<p class="scope keep">♾ 얻은 유산: ${gained.icon} ${gained.name} — ${gained.desc}</p>`:''}${next?`<button class="primary" data-a="next">다음 장으로<small>${next.label} · ${next.name}</small></button>`:`<p class="line">아르카 연대기 · 방어전<br>모든 장을 지켜냈습니다. 함께해 주셔서 고맙습니다.</p>`}<button data-a="title">타이틀로</button>`);
@@ -435,7 +481,7 @@ function handleEvents(){deaths=[];for(const e of S.drain()){
  else if(e.t==='cleared'){if(S.phase!=='won')sfx('wave_clear');toast(`전투 ${e.battle+1} 승리 +${e.gold}💰${e.clean?' (무누수 보너스)':''}`);}
  else if(e.t==='prep'){saveGame();showPreview();}
  else if(e.t==='bless')blessingModal();
- else if(e.t==='won'){bgm.play(D.CHAPTERS[S.chapterIndex+1]?10:12,!D.CHAPTERS[S.chapterIndex+1]);const index=S.chapterIndex,end=()=>legacyModal(index,l=>resultModal(true,l));if(S.chapter.outro)dialogue(S.chapter.outro,end);else end();}
+ else if(e.t==='won'){bgm.play(D.CHAPTERS[S.chapterIndex+1]?10:12,!D.CHAPTERS[S.chapterIndex+1]);const index=S.chapterIndex,end=()=>clearFlow(index);if(S.chapter.outro)dialogue(S.chapter.outro,end);else end();}
  else if(e.t==='lost'){bgm.stop(1.5);sfx('defeat');resultModal(false);}
  hudKey='';}
  playDeaths();}

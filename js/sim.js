@@ -46,7 +46,9 @@ function createSim(opts){
  const legacy=opts.legacy||{},L=k=>legacy[k]||0,freshLife=chapter.life+3*L('life');
  const S={chapter,chapterIndex:opts.chapter||0,map,time:0,phase:'prep',prep:0,battle:snap?snap.battle:0,gold:snap?snap.gold:chapter.startGold+60*L('startGold'),life:snap?snap.life:freshLife,maxLife:snap?snap.maxLife:freshLife,legacy,soldierCap:chapter.soldiers+L('command'),
   units:[],enemies:[],queue:[],events:[],mods:{burn:0,soldierCost:0,heroBlock:0,bounty:0,haste:0,range:0,cdr:0,rankCost:0,armor:0,grip:0},blessings:snap?snap.blessings.slice():[],offer:null,fortress:0,
-  hero:{},nextId:1,leaks:0,leaksTotal:snap?snap.leaksTotal:0,kills:snap?snap.kills||0:0,rand:seeded((opts.seed??20261117)+(snap?snap.battle*7919:0)),acc:0,stats:{dealt:{},healed:0}};
+  hero:{},nextId:1,leaks:0,leaksTotal:snap?snap.leaksTotal:0,kills:snap?snap.kills||0:0,rand:seeded((opts.seed??20261117)+(snap?snap.battle*7919:0)),acc:0,stats:snap&&snap.stats?JSON.parse(JSON.stringify(snap.stats)):{dealt:{},healed:0,healedBy:{},ults:0,goldEarned:0,goldSpent:0,time:0}};
+ // Chapter record for the clear summary (kept in the snapshot so a resumed chapter keeps it).
+ for(const [k,v] of Object.entries({dealt:{},healed:0,healedBy:{},ults:0,goldEarned:0,goldSpent:0,time:0}))if(S.stats[k]==null)S.stats[k]=v;
  S.mods.rankCost+=.08*L('rankDisc');S.mods.bounty+=.1*L('bounty');
  for(const id of S.blessings){const b=D.BLESSINGS.find(v=>v.id===id);if(b?.mod)for(const k in b.mod)S.mods[k]+=b.mod[k];}
  for(const id of chapter.roster)if(D.UNITS[id].kind==='hero')S.hero[id]={cd:0,keep:null};
@@ -61,7 +63,7 @@ function createSim(opts){
   for(let i=0;i<rank;i++){const e=def.ranks[i];if(!e)continue;take(e);if(e.choice&&choice&&e.choice[choice])take(e.choice[choice]);}
   return k;}
  function refresh(u){const def=defOf(u),m=1+D.RANK_STAT*(u.rank-1),g=1+D.RANK_GUARD*(u.rank-1),kit=kitOf(def,u.rank,u.choice),t=map.tile(u.c,u.r),oldMax=u.maxHp||0;
-  const hero=def.kind==='hero',own=hero?.15*L('hero_'+u.def):0,pw=1+(hero?.08*L('heroPower'):.12*L('soldierPower'))+own,hpm=1+(hero?.12*L('heroHp'):.12*L('soldierPower'))+own;
+  const {pw,hpm}=D.legacyScale(u.def,legacy);
   u.maxHp=Math.round(def.hp*m*hpm);u.hp=oldMax?Math.min(u.maxHp,u.hp+(u.maxHp-oldMax)):u.maxHp;u.atk=def.atk*m*pw;u.mag=def.mag*m*pw;u.arm=def.def*g;u.res=def.res*g;
   u.interval=(1.6-def.spd*.03)*(def.melee?D.MELEE_INTERVAL:D.RANGED_INTERVAL)/(1+S.mods.haste+kit.haste);u.block=t.road?kit.block+(def.kind==='hero'&&def.melee?S.mods.heroBlock:0):0;u.splash=kit.splash;u.auras=kit.auras;u.ult=kit.ult;u.ultBoost=kit.ultBoost;u.eva=kit.eva;u.counter=kit.counter;
   u.onHigh=t.terrain==='high';u.range=def.range+(def.melee?0:(u.onHigh?.5:0)-(t.terrain==='forest'?.5:0)+S.mods.range);
@@ -88,11 +90,11 @@ function createSim(opts){
   if(S.gold<deployCost(def))return '골드가 부족합니다';
   return null;}
  function makeUnit(def,c,r,keep,cost){const u={id:S.nextId++,def,c,r,x:c,y:r,rank:keep?keep.rank:1,choice:keep?keep.choice:null,invested:keep?keep.invested:cost,cd:.4,ultCd:0,engaged:[],hp:0,maxHp:0,buff:1,defBuff:1,hasteBuff:1,st:{},taunt:0,calm:0,face:{dx:0,dy:1},faceT:-9};refresh(u);if(u.ult)u.ultCd=D.SKILLS[u.ult].cd*.5;u.hp=u.maxHp;S.units.push(u);return u;}
- function deploy(def,c,r){const err=canDeploy(def,c,r);if(err)return err;const keep=S.hero[def]?.keep,cost=deployCost(def);S.gold-=cost;const u=makeUnit(def,c,r,keep,cost);if(!keep&&S.hero[def]&&L('starter')&&u.rank<2){u.rank=2;refresh(u);u.hp=u.maxHp;}if(S.hero[def])S.hero[def].keep=null;emit({t:'deploy',id:u.id});return null;}
+ function deploy(def,c,r){const err=canDeploy(def,c,r);if(err)return err;const keep=S.hero[def]?.keep,cost=deployCost(def);S.gold-=cost;S.stats.goldSpent+=cost;const u=makeUnit(def,c,r,keep,cost);if(!keep&&S.hero[def]&&L('starter')&&u.rank<2){u.rank=2;refresh(u);u.hp=u.maxHp;}if(S.hero[def])S.hero[def].keep=null;emit({t:'deploy',id:u.id});return null;}
  const needsChoice=u=>{const k=defOf(u).ranks[u.rank];return !!(k&&k.choice);};
  function rankUp(id,choice){const u=S.units.find(v=>v.id===id);if(!u)return '없는 캐릭터입니다';const cost=rankCost(u);if(cost==null)return '최대 랭크입니다';if(S.gold<cost)return '골드가 부족합니다';
   if(needsChoice(u)){if(!defOf(u).ranks[u.rank].choice[choice])return '각인을 선택하세요';u.choice=choice;}
-  S.gold-=cost;u.invested+=cost;u.rank++;refresh(u);emit({t:'rank',id:u.id});return null;}
+  S.gold-=cost;S.stats.goldSpent+=cost;u.invested+=cost;u.rank++;refresh(u);emit({t:'rank',id:u.id});return null;}
  function release(u){for(const e of S.enemies)if(e.engagedBy===u.id)e.engagedBy=null;u.engaged.length=0;}
  function withdraw(id){const i=S.units.findIndex(v=>v.id===id);if(i<0)return '없는 캐릭터입니다';const u=S.units[i],back=Math.round(u.invested*D.REFUND);S.gold+=back;release(u);S.units.splice(i,1);
   if(S.hero[u.def]){S.hero[u.def].cd=(defOf(u).cooldown||D.WITHDRAW_CD)*(1-.25*L('redeploy'));S.hero[u.def].keep=null;}emit({t:'withdraw',id:u.id,gold:back});return null;}
@@ -120,7 +122,7 @@ function createSim(opts){
    canSplit,slots:bossy?2:trait.slots||1,path:o.path||0,dist:o.at??0,lane:(S.rand()-.5)*.44,engagedBy:null,cd:.6+S.rand()*.6,rcd:1+S.rand()*1.5,st:{},poison:0,x:0,y:0,dx:0,dy:1,timers:{wave:4,summon:6,beam:5,fly:0},phase:0,cloned:false};
   if(bossy&&cfg.fly){e.flying=true;e.timers.fly=cfg.fly.air;}
   const p=map.posAt(e.path,e.dist,e.lane);e.x=p.x;e.y=p.y;e.dx=p.dx;e.dy=p.dy;S.enemies.push(e);emit({t:'spawn',id:e.id,boss:bossy});return e;}
- function killEnemy(e,by){e.hp=0;e.dead=true;const steal=by&&defOf(by).steal?defOf(by).steal:0,gold=Math.round(e.gold*(1+S.mods.bounty+steal));S.gold+=gold;S.kills++;emit({t:'die',id:e.id,x:e.x,y:e.y,gold,boss:e.boss,model:e.model,steal:!!steal});
+ function killEnemy(e,by){e.hp=0;e.dead=true;const steal=by&&defOf(by).steal?defOf(by).steal:0,gold=Math.round(e.gold*(1+S.mods.bounty+steal));S.gold+=gold;S.stats.goldEarned+=gold;S.kills++;emit({t:'die',id:e.id,x:e.x,y:e.y,gold,boss:e.boss,model:e.model,steal:!!steal});
   if(e.canSplit)for(const off of [-.25,.2])spawn({kind:e.kind,path:e.path,at:Math.max(0,e.dist+off),parent:e,split:true});}
  function addStatus(e,status){const tough=e.boss||(e.bossKin&&e.gen===1);
   if(status==='burn')e.st.burn=4;
@@ -151,7 +153,7 @@ function createSim(opts){
  function pickTarget(u,range,canFly,strong){let best=null;const reach=range+.35,min=defOf(u).minRange||0;
   for(const e of S.enemies){if(e.dead)continue;if(e.flying&&!canFly)continue;const d=dist(u,e);if(e.engagedBy!==u.id&&d>reach)continue;if(d<min&&e.engagedBy!==u.id)continue;const score=strong?e.hp:(e.engagedBy===u.id?1000:0)+(e.boss?400:0)+(e.st.sleep?-500:0)+e.dist;if(!best||score>best.score)best={e,score};}
   return best?.e||null;}
- function heal(u,target,power){const amount=Math.round(u.mag*power*(u.buff||1)),before=target.hp;target.hp=Math.min(target.maxHp,target.hp+amount);S.stats.healed+=target.hp-before;emit({t:'heal',unit:target.id,x:target.x,y:target.y,v:Math.round(target.hp-before)});}
+ function heal(u,target,power){const amount=Math.round(u.mag*power*(u.buff||1)),before=target.hp;target.hp=Math.min(target.maxHp,target.hp+amount);S.stats.healed+=target.hp-before;S.stats.healedBy[u.def]=(S.stats.healedBy[u.def]||0)+target.hp-before;emit({t:'heal',unit:target.id,x:target.x,y:target.y,v:Math.round(target.hp-before)});}
  // Tries to cast one skill; returns true if it was used.
  function tryCast(u,sk,point,forced){const s=D.SKILLS[sk.id],def=defOf(u),pm=sk.ult&&u.ultBoost?1.3:1,range=s.range?s.range+(u.range-def.range):u.range,done=()=>{sk.cd=s.cd*(1-S.mods.cdr);return true;},fx=(x,y,extra)=>emit({t:'skill',unit:u.id,skill:sk.id,name:s.name,x,y,area:s.area||0,element:s.element,fx:s.fx,from:{x:u.x,y:u.y},...extra});
   if(s.type==='heal'){if(s.all){fx(u.x,u.y,{area:3});for(const a of S.units){heal(u,a,s.power*pm);if(s.cleanse)a.st={};}return done();}
@@ -172,16 +174,16 @@ function createSim(opts){
    if(burning&&s.element==='wind'){let spread=0;for(const n of S.enemies)if(!n.dead&&n!==e&&!n.st.burn&&dist(n,e)<=1.3){addStatus(n,'burn');spread++;}if(spread)emit({t:'combo',x:e.x,y:e.y,name:'확산'});}}
   if(!s.self){u.face={dx:centre.x-u.x,dy:centre.y-u.y};u.faceT=S.time;}return done();}
  function ult(id,x,y){const u=S.units.find(v=>v.id===id);if(!u||!u.ult)return '필살기가 없습니다';if(u.ultCd>0)return '아직 준비되지 않았습니다';if(S.phase!=='battle')return '전투 중에만 쓸 수 있습니다';if(u.st.freeze||u.st.stun||u.st.silence)return '지금은 쓸 수 없는 상태입니다';
-  const s=D.SKILLS[u.ult];if(s.aim&&(x==null||y==null))return '위치를 지정하세요';const holder={id:u.ult,cd:0,ult:true};if(!tryCast(u,holder,s.aim?{x,y}:null,true))return '사거리 안에 적이 없습니다';u.ultCd=holder.cd*(1-.15*L('ultCdr'))*(u.ultBoost?.85:1);emit({t:'ult',unit:u.id,name:s.name});return null;}
+  const s=D.SKILLS[u.ult];if(s.aim&&(x==null||y==null))return '위치를 지정하세요';const holder={id:u.ult,cd:0,ult:true};if(!tryCast(u,holder,s.aim?{x,y}:null,true))return '사거리 안에 적이 없습니다';u.ultCd=holder.cd*(1-.15*L('ultCdr'))*(u.ultBoost?.85:1);S.stats.ults++;emit({t:'ult',unit:u.id,name:s.name});return null;}
 
  // ── Battle flow ──
  function loadBattle(){const b=chapter.battles[S.battle];S.queue=[];for(const [kind,count,gap,delay,flags,path] of b.waves)for(let i=0;i<count;i++)S.queue.push({t:delay+i*gap,kind,flags:flags||null,path:path||0});S.queue.sort((a,b2)=>a.t-b2.t);S.battleTime=0;S.leaks=0;S.fortress=0;}
  function preview(i=S.battle){const b=chapter.battles[i];if(!b)return [];const out=[];for(const [kind,count,,,flags] of b.waves){const boss=flags==='boss'?chapter.boss:null,m=D.MONSTERS[boss?boss.base:kind],trait=D.MODEL_TRAITS[m.model]||{};
    const same=out.find(o=>!boss&&o.kind===kind&&o.elite===(flags==='elite'));if(same){same.count+=count;continue;}
    out.push({kind,name:boss?boss.name:(flags==='elite'?'정예 ':'')+m.name,count,element:(boss&&boss.element)||m.element||null,flying:boss?!!boss.fly:!!trait.flying,immunity:boss?boss.immunity||null:m.immunity||null,elite:flags==='elite',boss:!!boss,note:boss?boss.hint:trait.note||''});}return out;}
- function startBattle(){if(S.phase!=='prep')return;const bonus=S.battle>0?Math.floor(S.prep):0;if(bonus>0){S.gold+=bonus;emit({t:'bonus',gold:bonus,why:'조기 출발'});}S.phase='battle';loadBattle();emit({t:'battleStart',battle:S.battle});}
+ function startBattle(){if(S.phase!=='prep')return;const bonus=S.battle>0?Math.floor(S.prep):0;if(bonus>0){S.gold+=bonus;S.stats.goldEarned+=bonus;emit({t:'bonus',gold:bonus,why:'조기 출발'});}S.phase='battle';loadBattle();emit({t:'battleStart',battle:S.battle});}
  function enterPrep(){S.phase='prep';S.prep=PREP_TIME;for(const u of S.units){u.hp=u.maxHp;u.st={};release(u);}emit({t:'prep',battle:S.battle});}
- function finishBattle(){const n=S.battle+1,clean=S.leaks===0,bonus=Math.round((30+n*8)*(clean?1.5:1));S.gold+=bonus;S.leaksTotal+=S.leaks;emit({t:'cleared',battle:S.battle,gold:bonus,clean});
+ function finishBattle(){const n=S.battle+1,clean=S.leaks===0,bonus=Math.round((30+n*8)*(clean?1.5:1));S.gold+=bonus;S.stats.goldEarned+=bonus;S.leaksTotal+=S.leaks;emit({t:'cleared',battle:S.battle,gold:bonus,clean});
   if(n>=chapter.battles.length){S.phase='won';emit({t:'won'});return;}
   S.battle=n;
   if(chapter.bless.includes(n)){const pool=D.BLESSINGS.filter(b=>!S.blessings.includes(b.id)),pick=[];while(pick.length<3+L('blessChoices')&&pool.length)pick.push(pool.splice(Math.floor(S.rand()*pool.length),1)[0].id);S.offer=pick;S.phase='bless';emit({t:'bless',offer:pick});}
@@ -200,7 +202,7 @@ function createSim(opts){
   if(c.clones&&!e.cloned&&e.hp<=e.maxHp*c.clones.at){e.cloned=true;for(let i=0;i<c.clones.count;i++)spawn({flags:'clone',parent:e,path:e.path,at:Math.max(0,e.dist-.6-i*.5)});emit({t:'bossPhase',id:e.id,x:e.x,y:e.y,name:'분신'});}
   if(c.phases&&e.phase<c.phases.length&&e.hp<=e.maxHp*c.phases[e.phase]){e.phase++;e.speed*=1.2;T.summon=0;T.wave=Math.min(T.wave,1.5);emit({t:'bossPhase',id:e.id,x:e.x,y:e.y,name:`${e.phase+1}단계`});}}
 
- function tick(dt){S.time+=dt;
+ function tick(dt){S.time+=dt;if(S.phase==='battle')S.stats.time+=dt;
   for(const id in S.hero)if(S.hero[id].cd>0)S.hero[id].cd=Math.max(0,S.hero[id].cd-dt);
   if(S.phase==='prep'){if(S.battle>0){S.prep-=dt;if(S.prep<=0){S.prep=0;startBattle();}}return;}
   if(S.phase!=='battle')return;
@@ -251,7 +253,7 @@ function createSim(opts){
   if(!S.queue.length&&!S.enemies.length&&S.phase==='battle')finishBattle();}
  function step(dt){S.acc+=dt;let n=0;while(S.acc>=STEP&&n<12){tick(STEP);S.acc-=STEP;n++;}if(n>=12)S.acc=0;}
 
- function snapshot(){return {v:2,chapter:S.chapterIndex,battle:S.battle,gold:S.gold,life:S.life,maxLife:S.maxLife,blessings:S.blessings.slice(),leaksTotal:S.leaksTotal,kills:S.kills,
+ function snapshot(){return {v:2,chapter:S.chapterIndex,battle:S.battle,gold:S.gold,life:S.life,maxLife:S.maxLife,blessings:S.blessings.slice(),leaksTotal:S.leaksTotal,kills:S.kills,stats:JSON.parse(JSON.stringify(S.stats)),
   units:S.units.map(u=>({def:u.def,c:u.c,r:u.r,rank:u.rank,choice:u.choice,invested:u.invested})),hero:Object.fromEntries(Object.entries(S.hero).map(([k,v])=>[k,{keep:v.keep}]))};}
  if(snap){for(const s of snap.units)if(D.UNITS[s.def]&&map.tile(s.c,s.r))makeUnit(s.def,s.c,s.r,{rank:s.rank,choice:s.choice,invested:s.invested},0).ultCd=0;
   for(const k in snap.hero||{})if(S.hero[k])S.hero[k].keep=snap.hero[k].keep;}

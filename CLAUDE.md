@@ -62,6 +62,9 @@ Always write every message to the user in Korean (한국어).
   and bump the `?v=` on the font URLs in index.html, or new characters fall back to the system font.
 - Saves: auto save `cnation-td-save-v2` (taken at each battle start), slots `cnation-td-slots-v1` (3), clears `cnation-td-clear-v1`,
   Arca legacies `cnation-td-legacy-v1` = {picks:{chapterIndex: legacyId}}.
+- Chapter clear (`clearFlow` in game.js): pages 결산 → 유산 (`legacyModal`) → 다음 장 준비 → 마무리 (3 pages on FINAL). Uses `S.stats`
+  (dealt/healedBy per unit, ults, goldEarned/goldSpent, battle time; kept in the snapshot) and `D.unitStats`/`D.legacyScale` (the same
+  legacy formula sim.refresh uses). Best record per chapter: `cnation-td-records-v1` = {chapterId:{stars,life,time,kills}}.
 - Two bonus kinds, keep them visibly apart: **에테르 축복** (`BLESSINGS`, chosen mid-chapter, this chapter only) and
   **아르카의 유산** (`LEGACIES`, one slot per chapter picked after a clear, permanent and stacking; passed to `createSim` as `legacy` counts).
   The bot (`D.typicalLegacy`) plays each chapter with the legacies an ordinary player would hold, and `diff` is calibrated with them.
