@@ -36,6 +36,8 @@ Always write every message to the user in Korean (한국어).
 - 필살기 power (1.2.0): arcaslash 5, meteor 4.5, eclipse 6, hawk 12 — area 필살기 take over half a normal monster's HP, hawk one-shots it;
   bosses take full damage and boss HP is calibrated for that. Ult damage events carry `ult`/`pct`; the screen shows a landing reticle
   (`target`), impact flash/cracks/debris (`impact`, `flash2`), a short hit stop (`hitStop`) and bursts with big popping numbers on struck monsters.
+- Soldier attack and magic are multiplied by `SOLDIER_POWER` (3.2, in `legacyScale`, so sim and the clear summary agree); soldiers have
+  no extra abilities by the owner's choice. Target: a soldier deals ~20–30% of a damage hero's damage.
 - Soldiers use their own models (`model:{soldierId}` → `soldierParts` in models.js, a TD-only hook), not recoloured heroes.
 - Every hero has a 필살기 (`UNITS[id].ult`) from ★1, ~18–24 s cooldown, starting half charged; ★5 is `ultBoost` (+30% power, −15% cooldown).
   A ready hero's dock card glows and casts on tap. Call it 필살기 in all player-facing text.
