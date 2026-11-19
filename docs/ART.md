@@ -115,6 +115,15 @@ Theme: a royal capital in autumn. The road is a cobblestone street, open ground 
 maple trees in full autumn colour, townhouses with cream walls and dark blue roofs, lanterns at the border. The water cells are a
 narrow stone canal. TWO monster gates at the top. Raised platforms are low stone terraces. Palette: maple red, orange, cream, slate blue.
 ```
+4장은 AI가 길을 단순하게 바꿔 그리기 쉬우니 아래도 함께 붙입니다(실제로 이걸 붙여서 한 번에 맞았습니다).
+```
+CRITICAL LAYOUT for this map — copy the road from the reference cell by cell:
+- There are TWO monster gates, both on the TOP edge, facing DOWN (left gate in the 2nd column, right gate in the 8th column).
+  From each gate the road goes STRAIGHT DOWN 3 cells; there is NO road along the top edge between the gates.
+- The two roads meet in one horizontal road on the 4th row, then the single road continues exactly as in the reference.
+- The only water is a narrow canal of 3 cells on the RIGHT edge. No pond on the left side.
+- Keep all 8 raised platforms exactly on the reference cells.
+```
 
 **plain — 사막 오아시스 (5장)**
 ```
@@ -144,6 +153,14 @@ Keep the road and platforms lighter than the ground so they read clearly. Palett
 Theme: a grand imperial capital at dusk after rain. Wet dark stone plazas with reflections, tall pale stone walls, deep red banners,
 gas lamps glowing warmly, statues at the border. The water cells are a stone moat. TWO monster gates at the top.
 Raised platforms are cut stone bastions. Keep the road clearly lit and readable. Palette: blue-grey dusk, wet stone, warm lamp light, deep red.
+```
+8장도 문이 2개라 아래를 함께 붙입니다.
+```
+CRITICAL LAYOUT for this map — copy the road from the reference cell by cell:
+- There are TWO monster gates, both on the TOP edge, facing DOWN (left gate in the 1st column, right gate in the 9th column).
+  From each gate the road goes STRAIGHT DOWN; there is NO road along the top edge between the gates.
+- Follow every turn of both roads exactly as in the reference until they join, then the single road down to the crystal.
+- Keep all 8 raised platforms and the water cells exactly on the reference cells.
 ```
 
 **core — 지하 수정 동굴 · 아르카 코어 (FINAL)**
