@@ -341,9 +341,11 @@ function legacyOffer(counts,index,rand,n=3){const roster=CHAPTERS[index].roster,
 // offer in this order of preference. Used by the balance bot and by developer mode.
 const LEGACY_PREF=['heroPower','command','heroHp','startGold','soldierPower','life','rankDisc','hero_kyle','hero_ria','bounty','affinity','ultCdr','redeploy','starter','blessChoices'];
 function typicalLegacy(chapter,seed=1){const rand=seeded(seed*31+7),picks={};for(let c=0;c<chapter;c++){const offer=legacyOffer(legacyCounts(picks),c,rand);picks[c]=offer.slice().sort((a,b)=>{const ia=LEGACY_PREF.indexOf(a),ib=LEGACY_PREF.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib);})[0];}return legacyCounts(picks);}
+// Soldiers' attack and magic are multiplied by this (1.3.0): without it they dealt only ~3% of a hero's damage.
+const SOLDIER_POWER=3.2;
 // Stat multipliers a unit gets from Arca legacies (legacy = {id: times taken}). Shared by sim.refresh and the clear summary.
 function legacyScale(id,legacy){const L=k=>(legacy&&legacy[k])||0,hero=UNITS[id].kind==='hero',own=hero?.15*L('hero_'+id):0;
- return {pw:1+(hero?.08*L('heroPower'):.12*L('soldierPower'))+own,hpm:1+(hero?.12*L('heroHp'):.12*L('soldierPower'))+own};}
+ return {pw:(1+(hero?.08*L('heroPower'):.12*L('soldierPower'))+own)*(hero?1:SOLDIER_POWER),hpm:1+(hero?.12*L('heroHp'):.12*L('soldierPower'))+own};}
 // A unit's ★1 numbers with those legacies (the same formula as sim.refresh at rank 1).
 function unitStats(id,legacy){const d=UNITS[id],{pw,hpm}=legacyScale(id,legacy);return {hp:Math.round(d.hp*hpm),atk:d.atk*pw,mag:d.mag*pw};}
 const legacyCounts=picks=>{const c={};for(const k in picks||{})if(picks[k])c[picks[k]]=(c[picks[k]]||0)+1;return c;};
@@ -364,6 +366,6 @@ const MAP_ART={
  capital:{file:'art/capital.webp',rect:[-0.0083,-0.0399,1.0017,0.9707],bg:'#593c35'},
  core:{file:'art/core.webp',rect:[0.0000,0.0000,1.0000,1.0005],bg:'#272d43'}
 };
-const TDData={MAP_ART,legacyScale,unitStats,RANGED_INTERVAL,RANGED_POWER,MELEE_INTERVAL,MELEE_POWER,GATE_GAP:3,seeded,LEGACIES,legacyOffer,legacyCounts,typicalLegacy,MELEE_GAP:3,SKILLS,UNITS,HERO_ORDER,SOLDIER_ORDER,RANK_COST,RANK_STAT,RANK_GUARD,REFUND,WITHDRAW_CD,DOWN_CD,ENGAGE_SLOW,MONSTERS,MODEL_TRAITS,MOVE_SPEED,ELEMENT_ICON,SCENES,MAPS,CHAPTERS,BOSSES,BLESSINGS};
+const TDData={SOLDIER_POWER,MAP_ART,legacyScale,unitStats,RANGED_INTERVAL,RANGED_POWER,MELEE_INTERVAL,MELEE_POWER,GATE_GAP:3,seeded,LEGACIES,legacyOffer,legacyCounts,typicalLegacy,MELEE_GAP:3,SKILLS,UNITS,HERO_ORDER,SOLDIER_ORDER,RANK_COST,RANK_STAT,RANK_GUARD,REFUND,WITHDRAW_CD,DOWN_CD,ENGAGE_SLOW,MONSTERS,MODEL_TRAITS,MOVE_SPEED,ELEMENT_ICON,SCENES,MAPS,CHAPTERS,BOSSES,BLESSINGS};
 if(typeof module!=='undefined'&&module.exports)module.exports=TDData;else root.TDData=TDData;
 })(typeof window!=='undefined'?window:globalThis);
