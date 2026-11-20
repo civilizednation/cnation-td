@@ -357,7 +357,9 @@ const legacyCounts=picks=>{const c={};for(const k in picks||{})if(picks[k])c[pic
 // World map (chapter select): the painting (art/world.webp, 9:16) and where each chapter's stop sits on it, as [x%, y%] from the
 // top-left. Until the painting arrives, file is null and the game draws a placeholder map with the same stops.
 const WORLD_MAP={file:'art/world.webp',stops:[[48.9,88.3],[70.8,80.4],[29,72.5],[70.7,63.3],[28.9,54.8],[70.8,45.6],[28.9,37.1],[71.1,27.9],[28.9,20.1],[57,12]],
- tint:['#7fbf6a','#4fb3c4','#e7f0f5','#3f7f4f','#e08a3c','#e6c06a','#2f9f6f','#7a2a22','#4a4f78','#3fd0c8']};
+ tint:['#7fbf6a','#4fb3c4','#e7f0f5','#3f7f4f','#e08a3c','#e6c06a','#2f9f6f','#7a2a22','#4a4f78','#3fd0c8'],
+ // number and name colour on each painted pedestal, picked from its region (spring blossom, sea, snow, forest, maple, sand, jungle, lava, lamplight, crystal)
+ ink:['#ffc4dd','#8fe9ff','#eef8ff','#b6f28a','#ffae5c','#ffe08a','#6ff0b8','#ff8d5c','#ffd27a','#a8fff2']};
 // Legacy altar (legacy view background, art/altar.webp, 9:16): the ten sockets' centres [x%,y%], chapter order (two rows of five).
 const ALTAR={file:'art/altar.webp',size:12.6,sockets:[[18.3,36.7],[34.3,36.7],[50,36.7],[65.7,36.7],[81.6,36.7],[18.3,46.4],[34.3,46.4],[50,46.4],[65.7,46.4],[81.6,46.4]]};
 // What a legacy adds up to when taken `n` times (for the legacy summary).

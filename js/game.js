@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.6.5',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.6.6',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -508,8 +508,8 @@ function showWorld(){closeModal();const W=D.WORLD_MAP,best=cleared(),picks=legac
   <div class="wmapwrap">${W.file?`<img class="wblur" alt="" src="${W.file}?v=${GAME_VERSION}">`:''}<div class="wmap">${bg}
    <svg class="wpath" viewBox="0 0 100 177.78" preserveAspectRatio="none">${W.file?'':`<polyline class="all" points="${pts.join(' ')}"/>`}<g class="done">${W.file?'':done}</g></svg>
    ${D.CHAPTERS.map((c,i)=>{const [x,y]=W.stops[i],st=best[c.id]||0,ok=open(i),l=picks[i]&&legacyInfo(picks[i]);
-    return `<button class="wstop${ok?'':' locked'}${st?' clear':''}${i===cur?' cur':''}" data-i="${i}" style="left:${x}%;top:${y}%">${i===cur?`<img class="wme" alt="" src="${portraits.kyle}">`:''}
-     <span class="wnum">${ok?short(c):'🔒'}</span>${l?`<span class="wbadge" title="${l.name}">${l.icon}</span>`:''}<span class="wst">${ok&&st?'★'.repeat(st)+'☆'.repeat(3-st):''}</span><span class="wname">${c.name}</span></button>`;}).join('')}
+    return `<button class="wstop${ok?'':' locked'}${st?' clear':''}${i===cur?' cur':''}${W.file?' painted':''}" data-i="${i}" style="left:${x}%;top:${y}%;--ink:${(W.ink||[])[i]||'#fff3c4'}">${i===cur?`<img class="wme" alt="" src="${portraits.kyle}">`:''}
+     <span class="wnum">${ok||W.file?short(c):'🔒'}</span>${l?`<span class="wbadge" title="${l.name}">${l.icon}</span>`:''}<span class="wst">${ok&&st?(W.file?'★'.repeat(st)+`<i>${'★'.repeat(3-st)}</i>`:'★'.repeat(st)+'☆'.repeat(3-st)):''}</span><span class="wname">${c.name}</span></button>`;}).join('')}
   </div></div>`;
  worldEl.hidden=false;paintFirst(worldEl);fitWorld();window.addEventListener('resize',fitWorld);
  worldEl.querySelector('[data-a=back]').onclick=()=>{sfx('ui_tap');closeWorld();showTitle();};
