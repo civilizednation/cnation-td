@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.6.4',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.6.5',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -38,14 +38,26 @@ const artFrame=map=>{const fw=map.w+1;return {fw,fh:fw*16/9};};
 const artImg=$('#art'),artBlur=$('#artBlur');let art=null;
 // The painted battlefield comes first: until it is downloaded and decoded, the 3D canvas, the effects, the HUD, the dock and the
 // title menu stay hidden (#app.artwait), then everything fades in on top of it. onArt(fn) runs fn once the painting is up.
+// 「데이터 불러오는 중…」: shown whenever something the next screen needs (painting, music) is still downloading.
+// loading.begin(key)/end(key) can overlap; the overlay appears after 120 ms so instant loads never flash it.
+// The overlay is in index.html and visible from the first paint ('boot' key) until the first painting is up.
+const loading=(()=>{const el=$('#loading');
+ const keys=new Set(['boot']);let timer=0,slow=0;
+ const sync=()=>{clearTimeout(timer);clearTimeout(slow);if(keys.size){timer=setTimeout(()=>{el.hidden=false;},120);slow=setTimeout(()=>{el.querySelector('small').textContent='네트워크가 느립니다 · 조금만 기다려 주세요';},6000);}else{el.hidden=true;el.querySelector('small').textContent='';}};
+ return {begin(k){keys.add(k);sync();},end(k){keys.delete(k);sync();},
+  // wait for a promise (at most `cap` ms) under the overlay
+  wait(k,p,cap=10000){keys.add(k);sync();return Promise.race([Promise.resolve(p).catch(()=>{}),new Promise(r=>setTimeout(r,cap))]).then(v=>{keys.delete(k);sync();return v;});}};})();
+// Decoded image promise (cached), so the next painting can be fully ready before the screen switches to it.
+const imgCache=new Map();function loadImg(src){if(!imgCache.has(src))imgCache.set(src,new Promise(ok=>{const im=new Image();im.onload=()=>{(im.decode?im.decode():Promise.resolve()).catch(()=>{}).then(()=>ok(true));};im.onerror=()=>ok(false);im.src=src;}));return imgCache.get(src);}
 let artOK=true,artWaiters=[],artToken=0;
 function onArt(fn){if(artOK)fn();else artWaiters.push(fn);}
-function artDone(){artOK=true;app.classList.remove('artwait');const w=artWaiters;artWaiters=[];for(const f of w)f();preloadArt();}
-function waitArt(src){const token=++artToken;artOK=false;app.classList.add('artwait');const done=()=>{if(token===artToken)artDone();};
- artImg.onload=()=>{(artImg.decode?artImg.decode():Promise.resolve()).catch(()=>{}).then(done);};artImg.onerror=done;artImg.src=src;setTimeout(done,8000);}
+function artDone(){loading.end('boot');artOK=true;app.classList.remove('artwait');const w=artWaiters;artWaiters=[];for(const f of w)f();preloadArt();}
+// No timeout: nothing is drawn on a missing painting (a slow network shows the loading message instead).
+function waitArt(src){const token=++artToken;artOK=false;app.classList.add('artwait');loading.begin('art');const done=()=>{if(token!==artToken)return;loading.end('art');artDone();};
+ artImg.onload=()=>{(artImg.decode?artImg.decode():Promise.resolve()).catch(()=>{}).then(done);};artImg.onerror=done;artImg.src=src;}
 // Once the first painting is up, fetch the others quietly so later maps, the world map and the altar open at once.
 let preloaded=false;function preloadArt(){if(preloaded)return;preloaded=true;setTimeout(()=>{const files=[...Object.values(D.MAP_ART).map(a=>a.file),D.WORLD_MAP.file,D.ALTAR&&D.ALTAR.file].filter(Boolean);
- files.forEach((f,i)=>setTimeout(()=>{const im=new Image();im.decoding='async';im.src=f+'?v='+GAME_VERSION;},i*250));},1200);}
+ files.forEach((f,i)=>setTimeout(()=>{loadImg(f+'?v='+GAME_VERSION);},i*250));},1200);}
 function placeArt(){if(!art||!S)return;const {fw,fh}=artFrame(S.map),[u0,v0,u1,v1]=art.rect||[0,0,1,1],w=fw*pxU/(u1-u0),h=fh*pxU/(v1-v0);
  Object.assign(artImg.style,{width:w+'px',height:h+'px',left:(vw/2-fw*pxU/2-u0*w)+'px',top:(vh/2-fh*pxU/2-v0*h)+'px'});}
 const standalone=()=>navigator.standalone===true||matchMedia('(display-mode: standalone)').matches;
@@ -445,7 +457,7 @@ function chapterList(dev){const best=cleared(),m=modal(`<h2>${dev?'개발자 모
 // ── World map: chapter select drawn as a journey (WORLD_MAP in data.js) ──
 const worldEl=$('#world');
 // World map / altar: hide the stops and sockets until the painting has loaded.
-function paintFirst(root){const im=root.querySelector('.wart');if(!im||(im.complete&&im.naturalWidth))return;root.classList.add('wloading');const done=()=>root.classList.remove('wloading');im.addEventListener('load',()=>{(im.decode?im.decode():Promise.resolve()).catch(()=>{}).then(done);},{once:true});im.addEventListener('error',done,{once:true});setTimeout(done,8000);}
+function paintFirst(root){const im=root.querySelector('.wart');if(!im||(im.complete&&im.naturalWidth))return;root.classList.add('wloading');loading.begin('paint');const done=()=>{root.classList.remove('wloading');loading.end('paint');};im.addEventListener('load',()=>{(im.decode?im.decode():Promise.resolve()).catch(()=>{}).then(done);},{once:true});im.addEventListener('error',done,{once:true});}
 function closeWorld(){worldEl.hidden=true;worldEl.innerHTML='';window.removeEventListener('resize',fitWorld);}
 function fitWorld(){for(const wrap of document.querySelectorAll('.wmapwrap')){const map=wrap.querySelector('.wmap');if(!map)continue;const W=wrap.clientWidth,H=wrap.clientHeight,w=Math.min(W,H*9/16);map.style.width=w+'px';map.style.height=w*16/9+'px';}}
 function altarView(back){closeModal();modalOpen=true;const A=D.ALTAR,picks=legacyPicks(),counts=D.legacyCounts(picks),n=Object.values(picks).filter(Boolean).length,short=c=>c.id==='prologue'?'프롤로그':c.id==='final'?'FINAL':(+c.id.slice(1))+'장';
@@ -462,23 +474,26 @@ function altarView(back){closeModal();modalOpen=true;const A=D.ALTAR,picks=legac
 // ── Title attract mode: a real battle plays by itself behind the title (same camera, painted map and models as the game).
 // No sounds, toasts, saves or result screens; when it ends it starts again on another map.
 const DEMO_SKIP=new Set(['leak','down','withdraw','ult','bonus','battleStart','cleared','prep','bless','won','lost','deploy','rank','bossWave','bossPhase']);
-const demo=(()=>{let on=false,think=0,ultT=0,round=0;
+const demo=(()=>{let on=false,think=0,ultT=0,round=0,gen=0,busy=false;
  function pickTile(def){const d=D.UNITS[def],map=S.map,roads=map.tiles.filter(t=>t.road);let best=null;
   for(const t of map.tiles){if(S.canDeploy(def,t.c,t.r))continue;let score=Math.random()*.5;
    if(d.melee){if(!t.road)continue;const at=Object.values(t.pd)[0],total=map.paths[Object.keys(t.pd)[0]].total;score-=Math.abs(at/total-.45)*4;for(const u of S.units)if(D.UNITS[u.def].melee&&Math.hypot(u.x-t.c,u.y-t.r)<2.5)score-=3;}
    else{const range=d.range+(t.terrain==='high'?.5:0);for(const q of roads)if(Math.hypot(q.c-t.c,q.r-t.r)<=range+.35)score+=1;}
    if(!best||score>best.score)best={t,score};}return best&&best.t;}
  function setup(){const best=cleared(),open=D.CHAPTERS.map((c,i)=>i===0||!!best[D.CHAPTERS[i-1].id]),choices=D.CHAPTERS.map((c,i)=>i).filter(i=>open[i]&&D.MAP_ART[D.CHAPTERS[i].map]),
-   index=choices[(round++ +Math.floor(Math.random()*choices.length))%choices.length]||0;
+   index=choices[(round++ +Math.floor(Math.random()*choices.length))%choices.length]||0,a=D.MAP_ART[D.CHAPTERS[index].map];
+  // the next map's painting is fully loaded before the battle switches to it (the first time under the loading message)
+  const go=++gen;busy=true;loading.wait('demo',a?loadImg(a.file+'?v='+GAME_VERSION):null,60000).then(()=>{busy=false;if(!on||go!==gen)return;build(index);});}
+ function build(index){
   clearObjects();S=createSim({chapter:index,seed:Math.floor(Math.random()*1e6),legacy:D.typicalLegacy(index)});S.gold=1e6;S.life=S.maxLife=999;
   resize();buildTerrain();
   const heroes=D.HERO_ORDER.filter(id=>S.chapter.roster.includes(id)),soldiers=D.SOLDIER_ORDER.filter(id=>S.chapter.roster.includes(id));
   for(const id of [...heroes,...soldiers.slice(0,S.soldierCap)]){const t=pickTile(id);if(t)S.deploy(id,t.c,t.r);}
   for(const u of S.units){let k=0;while(k++<4&&u.rank<Math.min(D.UNITS[u.def].maxRank,3)){const ch=S.needsChoice(u)?Object.keys(D.UNITS[u.def].ranks[u.rank].choice)[0]:undefined;if(S.rankUp(u.id,ch))break;}}
   S.battle=Math.floor(Math.random()*Math.max(1,S.chapter.battles.length-1));S.startBattle();S.drain();}
- return {get on(){return on;},start(){on=true;round=Math.floor(Math.random()*10);setup();},stop(){if(!on)return;on=false;clearObjects();S=null;},
+ return {get on(){return on;},start(){on=true;round=Math.floor(Math.random()*10);if(!S)app.classList.add('artwait');setup();},stop(){if(!on)return;on=false;gen++;busy=false;loading.end('demo');clearObjects();S=null;},
   // called every frame while the title is up: keep the battle going, cast 필살기 now and then, restart when it ends
-  tick(dt){if(!on||!S)return;if(S.phase==='bless')S.chooseBlessing(S.offer[0]);if(S.phase==='prep')S.startBattle();
+  tick(dt){if(!on||!S||busy)return;if(S.phase==='bless')S.chooseBlessing(S.offer[0]);if(S.phase==='prep')S.startBattle();
    if(S.phase==='won'||S.phase==='lost'||(S.phase==='battle'&&!S.enemies.length&&!S.queue.length&&(think+=dt)>2)){think=0;setup();return;}
    if((ultT-=dt)<=0){ultT=2.5+Math.random()*2.5;const ready=S.units.filter(u=>u.ult&&u.ultCd<=0&&D.SKILLS[u.ult].type!=='heal'&&D.SKILLS[u.ult].type!=='fortress');
     const u=ready[Math.floor(Math.random()*ready.length)];if(u&&S.enemies.length>=2){const e=S.enemies.slice().sort((a,b)=>b.dist-a.dist)[0];S.ult(u.id,e.x,e.y);}}}};})();
@@ -523,7 +538,7 @@ function showTitle(){closeWorld();closeAltar();demo.stop();S=null;clearObjects()
 function saveGame(){lastSnap=S.snapshot();lastSnap.time=Date.now();saveJSON(SAVE_KEY,lastSnap);}
 function loadSave(){const s=loadJSON(SAVE_KEY,null);return s&&s.v===2&&D.CHAPTERS[s.chapter]?s:null;}
 function startChapter(index,snapshot){demo.stop();clearObjects();closePanel();app.classList.remove('title');selCard=null;validTiles=null;const legacy=devMode?D.typicalLegacy(index):legacyNow();S=createSim({chapter:index,snapshot,seed:(Date.now()&0xffff)+index*101,legacy});ultSeen=new Set();speed=1;paused=false;hudKey='';
- resize();buildTerrain();buildDock();showPreview();saveGame();bgm.play(battleTrack());
+ resize();buildTerrain();buildDock();showPreview();saveGame();if(bgm.unlocked)loading.wait('music',bgm.load(battleTrack()),8000);bgm.play(battleTrack());
  onArt(()=>{if(!snapshot){banner(S.chapter.label,S.chapter.name);setTimeout(()=>toast('동료를 배치하고 「전투 시작」을 누르세요'),1200);}else toast(`${S.chapter.label} · 전투 ${S.battle+1} 준비`);});
  if(devMode){const n=Object.values(legacy).reduce((a,b)=>a+b,0);setTimeout(()=>toast(`개발자 모드 · 평균 유산 ${n}개 적용`),2200);}}
 

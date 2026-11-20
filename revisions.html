@@ -8,8 +8,8 @@
 <style>
 :root{color-scheme:dark;--bg:#0d1a1e;--card:#1f373d;--line:#ffffff1c;--ink:#e6eee6;--muted:#94aaa7;--gold:#f2cf72;--mint:#8fe5b4}
 *{box-sizing:border-box}
-@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=27") format("woff2");font-display:swap;size-adjust:118%}
-@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=27") format("woff2");font-display:swap;size-adjust:104%}
+@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=28") format("woff2");font-display:swap;size-adjust:118%}
+@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=28") format("woff2");font-display:swap;size-adjust:104%}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 "Gowun Dodum",-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif;padding:calc(16px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom))}
 main{max-width:680px;margin:0 auto}
 a{color:var(--gold)}
@@ -36,8 +36,15 @@ details.rev summary{cursor:pointer}
 <h1>Revision History</h1>
 <p class="lead">큰 변화는 두 번째 자리(1.1.0), 작은 수정은 세 번째 자리(1.0.1)를 올립니다.</p>
 
+<section class="rev" id="v1.6.5">
+<h2>ver.1.6.5 <span class="date">2026-11-20</span> <span class="tag">현재</span></h2>
+<h3>수정</h3><ul>
+<li>처음 실행할 때 배경 그림보다 캐릭터가 먼저 보이던 문제 수정 — 그림이 다 받아질 때까지 캐릭터 · 버튼을 띄우지 않습니다(네트워크가 느려도 그림 없이 먼저 나오지 않음)</li>
+<li>게임 첫 시작과 모든 화면 전환(타이틀 · 지도 · 유산 제단 · 장 시작 · 타이틀 배경 전투 교체)에서 그림이나 음악을 받는 동안 「데이터 불러오는 중…」을 띄웁니다. 오래 걸리면 「네트워크가 느립니다」 안내도 함께 나옵니다</li></ul>
+</section>
+
 <section class="rev" id="v1.6.4">
-<h2>ver.1.6.4 <span class="date">2026-11-20</span> <span class="tag">현재</span></h2>
+<h2>ver.1.6.4 <span class="date">2026-11-20</span></h2>
 <h3>수정</h3><ul><li>아이폰 홈 화면 앱에서 화면 아래가 잘리던 문제 — 상태바를 투명하게 겹치던 설정을 없애, 게임 화면이 상태바 아래부터 화면 끝까지 정확히 맞도록 했습니다</li></ul>
 </section>
 

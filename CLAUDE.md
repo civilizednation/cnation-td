@@ -6,6 +6,10 @@ Mobile-first portrait tower defence (Korean) built on the characters, monsters a
 ## Communication
 Always write every message to the user in Korean (한국어).
 
+## Releasing
+Unless the owner says otherwise, every finished change is committed, pushed to the working branch and fast-forward merged to
+`main` (Vercel deploys main).
+
 ## Files
 - `index.html` — shell, all CSS, script tags with `?v=` cache-busting.
   `#app` is `position:fixed` to all four edges (not `100dvh`) and the page is pinned at 0,0 (`pinPage`/`settle` in game.js): iOS
@@ -79,9 +83,11 @@ Always write every message to the user in Korean (한국어).
 - iOS home-screen apps: status bar style is `black` (opaque), so iOS lays the page out below the status bar with the right height
   and #app simply fills the viewport. With `black-translucent` every sizing trick (bottom:0, 100lvh, +safe-area-inset-top, screen.height)
   was off by the status bar on a real iPhone (1.5–1.6.3). `fitApp()` is now a no-op kept for the resize hook.
-- Painting first (1.6.1): `waitArt`/`onArt` in game.js — while a map painting loads, `#app.artwait` hides the 3D canvas, effects, HUD,
-  dock and title menu (spinner shown) and the chapter intro waits; world map and altar use `paintFirst` (`.wloading`). After the first
-  painting, `preloadArt` fetches the rest; sw.js serves `art/` cache-first like bgm/sfx.
+- Painting first (1.6.1, 1.6.5): `waitArt`/`onArt` in game.js — while a map painting loads, `#app.artwait` hides the 3D canvas, effects,
+  HUD, dock and title menu, with no timeout (a slow network waits). `loading` = the 「데이터 불러오는 중…」 overlay (`#loading` in index.html,
+  visible from first paint under key 'boot' until the first painting): `begin/end/wait(key,promise,cap)`, shown after 120 ms, plus a
+  slow-network line after 6 s. Used by waitArt, `paintFirst` (world map/altar), the title demo (loads the next map's painting with
+  `loadImg` before switching) and chapter start (battle music, 8 s cap). `preloadArt` fetches the rest; sw.js serves `art/` cache-first.
 - Title menu: 이어하기 (if a save), 게임 시작 → world map, 불러오기, 소리 설정, 게임 방법, 개발자 모드. Clear wrap-up, defeat and the
   in-game menu have 지도로 (`toWorld`). The altar view pauses a running battle (sets `modalOpen`).
 - World map chapter select (`showWorld`/`chapterInfo` in game.js, `#world` z15 under the modal): `WORLD_MAP` in data.js = painting file
