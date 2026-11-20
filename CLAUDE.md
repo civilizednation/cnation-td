@@ -95,7 +95,8 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   and Kyle on the current chapter; cleared segments glow. Developer mode keeps the plain list (`chapterList(true)`).
   Painted: `art/world.webp` (stops measured from its pedestals; cleared segments are not drawn over a painting). On the painting
   (`.wstop.painted`) nothing is drawn but text: number and name in the region's `WORLD_MAP.ink` colour with a dark stroke, black-outlined
-  stars (missing ones dark), locked = grey number + small lock, legacy icon beside the pedestal.
+  stars (missing ones dark), locked = a lock only, legacy icon beside the pedestal. Sizes are in `cqw` (.wmap is a size container): the
+  pedestal top is ~10.5cqw × 4.8cqw and the number (5.6cqw) / lock (3.6cqw) fit inside it.
   Legacy view: with `ALTAR.file` (`art/altar.webp`) a full-screen `altarView` (`#altar` z16) puts each chapter's legacy in its socket
   (`ALTAR.sockets` [x%,y%]) and the totals (`D.legacyTotal(id,n)`) on the floor panel; without it the old modal list. Prompts in docs/ART.md.
 - No dialogue in play (owner's choice, 1.6.3): chapter start shows a banner, the boss battle a one-line hint toast; `dialogue()` and
