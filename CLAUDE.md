@@ -76,8 +76,8 @@ Always write every message to the user in Korean (한국어).
   While `demo.on`: no sfx except ui_*, no toast/banner, events in `DEMO_SKIP` ignored (no saves/results), gate and crystal labels hidden.
   Title type scale: logo 40, tagline 18, buttons 16, small 12; menu = 게임 시작 (gold) / 이어하기, three round SVG icon buttons, footer.
   `art/title.webp` (ruins + crystal) is no longer used on the title; kept for a future loading/ending screen.
-- iOS home-screen apps: their viewport is one status bar shorter than the screen while the page starts under it, so in
-  `@media (display-mode:standalone)` html, body and #app get `height:calc(100% + env(safe-area-inset-top))` (bottom:0 / 100lvh were not enough).
+- iOS home-screen apps (`standalone()`): `fitApp()` in game.js pins #app to the top with `height = screen height` (portrait max of
+  screen.width/height). CSS attempts (bottom:0, 100lvh, 100%+safe-area-inset-top) were each off by the status bar on a real iPhone.
 - Painting first (1.6.1): `waitArt`/`onArt` in game.js — while a map painting loads, `#app.artwait` hides the 3D canvas, effects, HUD,
   dock and title menu (spinner shown) and the chapter intro waits; world map and altar use `paintFirst` (`.wloading`). After the first
   painting, `preloadArt` fetches the rest; sw.js serves `art/` cache-first like bgm/sfx.

@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.6.1',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.6.2',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -48,7 +48,12 @@ let preloaded=false;function preloadArt(){if(preloaded)return;preloaded=true;set
  files.forEach((f,i)=>setTimeout(()=>{const im=new Image();im.decoding='async';im.src=f+'?v='+GAME_VERSION;},i*250));},1200);}
 function placeArt(){if(!art||!S)return;const {fw,fh}=artFrame(S.map),[u0,v0,u1,v1]=art.rect||[0,0,1,1],w=fw*pxU/(u1-u0),h=fh*pxU/(v1-v0);
  Object.assign(artImg.style,{width:w+'px',height:h+'px',left:(vw/2-fw*pxU/2-u0*w)+'px',top:(vh/2-fh*pxU/2-v0*h)+'px'});}
-function resize(){const r=viewport.getBoundingClientRect();vw=Math.max(1,r.width);vh=Math.max(1,r.height);dpr=Math.min(2,window.devicePixelRatio||1);
+// iOS home-screen apps report a layout height that differs from the screen by the status bar (shorter on some versions, the app
+// ended up longer on others). There the app is pinned to the top and given exactly the screen's height, read from the device.
+const standalone=()=>navigator.standalone===true||matchMedia('(display-mode: standalone)').matches;
+function fitApp(){if(!standalone()){app.style.height='';app.style.bottom='';return;}const portrait=innerHeight>=innerWidth,sw=screen.width,sh=screen.height,
+ H=portrait?Math.max(sw,sh):Math.min(sw,sh);app.style.bottom='auto';app.style.height=H+'px';}
+function resize(){fitApp();const r=viewport.getBoundingClientRect();vw=Math.max(1,r.width);vh=Math.max(1,r.height);dpr=Math.min(2,window.devicePixelRatio||1);
  renderer.setPixelRatio(dpr);renderer.setSize(vw,vh,false);fxc.width=Math.round(vw*dpr);fxc.height=Math.round(vh*dpr);
  const w=S?S.map.w:9,h=S?S.map.h:14,land=matchMedia('(orientation:landscape) and (min-width:640px)').matches;pxU=Math.min(vw/(w+.25),vh/(h*SIN+(land?3.4:2.6)));const hw=vw/(2*pxU),hh=vh/(2*pxU);
  camera.left=-hw;camera.right=hw;camera.top=hh;camera.bottom=-hh;camera.position.set(0,60*SIN,tz+60*COS);camera.lookAt(0,0,tz);camera.updateProjectionMatrix();placeArt();}

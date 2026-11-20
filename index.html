@@ -31,9 +31,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
 #artBlur{position:absolute;inset:-6%;width:112%;height:112%;object-fit:cover;filter:blur(16px) brightness(.55) saturate(.9);pointer-events:none}#artBlur:not([src]){display:none}
 #side{display:contents}
 /* Landscape tablets and laptops: the battlefield uses the full height on the left, the controls sit in a column on the right. */
-/* iOS home-screen apps (black-translucent status bar) report a viewport one status bar shorter than the screen while the page
-   starts under the status bar: extend the document and the app by that height so nothing is cut off at the bottom. */
-@media (display-mode:standalone){html,body{height:calc(100% + env(safe-area-inset-top))}#app{bottom:auto;height:calc(100% + env(safe-area-inset-top))}}
+/* iOS home-screen apps: #app's height is set from the real screen height in game.js (fitApp); CSS guesses were off by the status bar. */
 /* Painting first: everything drawn on top waits for it, then fades in. */
 #gl,#fx,#hud,#side,#modal.title .sheet{transition:opacity .35s ease}
 #app.artwait #gl,#app.artwait #fx,#app.artwait #hud,#app.artwait #side,#app.artwait #modal.title .sheet{opacity:0;pointer-events:none}
@@ -103,7 +101,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
 /* Title: the attract-mode battle fills the screen; logo on top, a compact menu at the bottom. One display font, four sizes (40/18/16/12). */
 #app.title #viewport{position:absolute;inset:0}
 #app #modal.title{background:linear-gradient(rgba(6,12,22,.82) 0%,rgba(6,12,22,.25) 22%,rgba(6,12,22,0) 34%,rgba(6,12,22,0) 58%,rgba(6,12,22,.7) 76%,rgba(6,12,22,.92) 100%);padding:0;align-items:stretch}
-#modal.title .sheet{max-width:none;max-height:none;height:100%;border:0;border-radius:0;background:none;padding:calc(26px + env(safe-area-inset-top)) 24px calc(16px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;overflow:hidden}
+#modal.title .sheet{max-width:none;max-height:none;height:100%;border:0;border-radius:0;background:none;padding:calc(26px + env(safe-area-inset-top)) 24px max(20px,calc(10px + env(safe-area-inset-bottom)));display:flex;flex-direction:column;align-items:center;overflow:hidden}
 #modal.title .logo{text-align:center}
 #modal.title .logo .sub{margin:0;color:#9fe3d6;letter-spacing:.32em;font-size:12px}
 #modal.title .logo h1{margin:2px 0 0;font-size:40px;line-height:1.1;color:#fbf3dc;text-shadow:0 2px 0 #1b2a33,0 0 14px rgba(255,214,140,.35)}
@@ -232,10 +230,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
  <div id="modal" hidden></div>
 </div>
 <script src="vendor/three-r170.js"></script>
-<script src="js/data.js?v=1.6.1"></script>
-<script src="js/sim.js?v=1.6.1"></script>
-<script src="js/models.js?v=1.6.1"></script>
-<script src="js/game.js?v=1.6.1"></script>
+<script src="js/data.js?v=1.6.2"></script>
+<script src="js/sim.js?v=1.6.2"></script>
+<script src="js/models.js?v=1.6.2"></script>
+<script src="js/game.js?v=1.6.2"></script>
 <script>if('serviceWorker' in navigator&&location.protocol!=='file:')window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 </body>
 </html>
