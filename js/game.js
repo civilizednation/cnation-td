@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.6.2',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.6.3',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -526,7 +526,7 @@ function saveGame(){lastSnap=S.snapshot();lastSnap.time=Date.now();saveJSON(SAVE
 function loadSave(){const s=loadJSON(SAVE_KEY,null);return s&&s.v===2&&D.CHAPTERS[s.chapter]?s:null;}
 function startChapter(index,snapshot){demo.stop();clearObjects();closePanel();app.classList.remove('title');selCard=null;validTiles=null;const legacy=devMode?D.typicalLegacy(index):legacyNow();S=createSim({chapter:index,snapshot,seed:(Date.now()&0xffff)+index*101,legacy});ultSeen=new Set();speed=1;paused=false;hudKey='';
  resize();buildTerrain();buildDock();showPreview();saveGame();bgm.play(battleTrack());
- onArt(()=>{if(!snapshot)dialogue(S.chapter.intro,()=>toast('동료를 배치하고 「전투 시작」을 누르세요'));else toast(`${S.chapter.label} · 전투 ${S.battle+1} 준비`);});
+ onArt(()=>{if(!snapshot){banner(S.chapter.label,S.chapter.name);setTimeout(()=>toast('동료를 배치하고 「전투 시작」을 누르세요'),1200);}else toast(`${S.chapter.label} · 전투 ${S.battle+1} 준비`);});
  if(devMode){const n=Object.values(legacy).reduce((a,b)=>a+b,0);setTimeout(()=>toast(`개발자 모드 · 평균 유산 ${n}개 적용`),2200);}}
 
 // ── Effects (2D overlay) ──
@@ -579,11 +579,11 @@ function handleEvents(){deaths=[];for(const e of S.drain()){if(demo.on&&DEMO_SKI
  else if(e.t==='beamWarn'){warns.set(e.unit,{t:e.delay,boss:e.id});toast(`${e.name}: 조준당한 동료를 지키거나 철수하세요`);sfx('boss_attack');}
  else if(e.t==='beam'){warns.delete(e.unit);if(e.to)addFx({k:'beam',from:e.from,to:e.to,dur:.35});}
  else if(e.t==='bonus')toast(`${e.why} 보너스 +${e.gold}💰`);
- else if(e.t==='battleStart'){saveGame();const b=S.chapter.battles[e.battle];if(S.chapter.battles[e.battle+1]?.boss)bgm.preload(7);if(b.boss)bgm.preload(D.CHAPTERS[S.chapterIndex+1]?10:12);banner(`전투 ${e.battle+1}`,b.name);clearCard();bgm.play(battleTrack());sfx(b.boss?'boss_appear':'battle_start');if(b.boss){paused=true;dialogue(S.chapter.bossIntro,()=>{paused=false;hudKey='';});}}
+ else if(e.t==='battleStart'){saveGame();const b=S.chapter.battles[e.battle];if(S.chapter.battles[e.battle+1]?.boss)bgm.preload(7);if(b.boss)bgm.preload(D.CHAPTERS[S.chapterIndex+1]?10:12);banner(`전투 ${e.battle+1}`,b.name);clearCard();bgm.play(battleTrack());sfx(b.boss?'boss_appear':'battle_start');if(b.boss)setTimeout(()=>{if(S)toast(`👑 ${S.chapter.boss.name} · ${S.chapter.boss.hint||''}`);},1800);}
  else if(e.t==='cleared'){if(S.phase!=='won')sfx('wave_clear');toast(`전투 ${e.battle+1} 승리 +${e.gold}💰${e.clean?' (무누수 보너스)':''}`);}
  else if(e.t==='prep'){saveGame();showPreview();}
  else if(e.t==='bless')blessingModal();
- else if(e.t==='won'){bgm.play(D.CHAPTERS[S.chapterIndex+1]?10:12,!D.CHAPTERS[S.chapterIndex+1]);const index=S.chapterIndex,end=()=>clearFlow(index);if(S.chapter.outro)dialogue(S.chapter.outro,end);else end();}
+ else if(e.t==='won'){bgm.play(D.CHAPTERS[S.chapterIndex+1]?10:12,!D.CHAPTERS[S.chapterIndex+1]);const index=S.chapterIndex;clearFlow(index);}
  else if(e.t==='lost'){bgm.stop(1.5);sfx('defeat');resultModal(false);}
  hudKey='';}
  playDeaths();}

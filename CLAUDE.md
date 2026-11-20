@@ -89,6 +89,8 @@ Always write every message to the user in Korean (한국어).
   Painted: `art/world.webp` (stops measured from its pedestals; cleared segments are not drawn over a painting).
   Legacy view: with `ALTAR.file` (`art/altar.webp`) a full-screen `altarView` (`#altar` z16) puts each chapter's legacy in its socket
   (`ALTAR.sockets` [x%,y%]) and the totals (`D.legacyTotal(id,n)`) on the floor panel; without it the old modal list. Prompts in docs/ART.md.
+- No dialogue in play (owner's choice, 1.6.3): chapter start shows a banner, the boss battle a one-line hint toast; `dialogue()` and
+  the intro/bossIntro/outro texts in data.js are unused.
 - Two bonus kinds, keep them visibly apart: **에테르 축복** (`BLESSINGS`, chosen mid-chapter, this chapter only) and
   **아르카의 유산** (`LEGACIES`, one slot per chapter picked after a clear, permanent and stacking; passed to `createSim` as `legacy` counts).
   The bot (`D.typicalLegacy`) plays each chapter with the legacies an ordinary player would hold, and `diff` is calibrated with them.
