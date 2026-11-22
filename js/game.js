@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.6.7',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.0',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -519,19 +519,20 @@ function chapterInfo(i,ok){const c=D.CHAPTERS[i],st=cleared()[c.id]||0,rec=loadJ
  const m=modal(`<p class="sub">${c.label}</p><h2>${c.name}</h2><p class="stars">${'★'.repeat(st)}${'☆'.repeat(3-st)}</p><p>${c.place} · 전투 ${c.battles.length}회 · 보스 ${c.boss.name}</p>
   ${rec?`<p class="small">최고 기록 · 남은 생명 ${rec.life} · ${fmtTime(rec.time)} · 처치 ${rec.kills}</p>`:''}
   ${l?`<p class="scope keep">♾ 이 장의 유산: ${l.icon} ${l.name} — ${l.desc}<br><small>다시 클리어하면 바꿀 수 있습니다</small></p>`:''}
-  ${ok?`<button class="primary" data-a="go">${st?'다시 도전':'출발'}<small>병사 자리 ${c.soldiers+(legacyNow().command||0)}칸 · 시작 골드 ${c.startGold+60*(legacyNow().startGold||0)}</small></button>`:'<p class="small">🔒 이전 장을 클리어하면 열립니다</p>'}<button data-a="close">닫기</button>`);
- if(ok)m.querySelector('[data-a=go]').onclick=()=>{closeModal();closeWorld();devMode=false;startChapter(i,null);};m.querySelector('[data-a=close]').onclick=closeModal;}
+  ${ok&&loadSave()&&loadSave().chapter===i?`<button class="primary" data-a="resume">▶ 전투 계속하기<small>전투 ${loadSave().battle+1}/${c.battles.length}부터</small></button>`:''}${ok?`<button class="${loadSave()&&loadSave().chapter===i?'':'primary'}" data-a="go">${loadSave()&&loadSave().chapter===i?'처음부터 다시':st?'다시 도전':'출발'}<small>병사 자리 ${c.soldiers+(legacyNow().command||0)}칸 · 시작 골드 ${c.startGold+60*(legacyNow().startGold||0)}</small></button>`:'<p class="small">🔒 이전 장을 클리어하면 열립니다</p>'}<button data-a="close">닫기</button>`);
+ const rs=m.querySelector('[data-a=resume]');if(rs)rs.onclick=()=>{const sv=loadSave();closeModal();closeWorld();devMode=false;startChapter(i,sv);};if(ok)m.querySelector('[data-a=go]').onclick=()=>{closeModal();closeWorld();devMode=false;startChapter(i,null);};m.querySelector('[data-a=close]').onclick=closeModal;}
 function showTitle(){closeWorld();closeAltar();demo.stop();S=null;clearObjects();closePanel();disposeGroup(terrainGroup);water=null;animated=[];art=null;artImg.removeAttribute('src');artBlur.removeAttribute('src');delete artImg.dataset.file;app.classList.add('title');bgm.play(1);demo.start();const save=loadSave(),any=save||slots().some(Boolean);
  const best=cleared(),stars=Object.values(best).reduce((a,b)=>a+b,0),next=D.CHAPTERS.find((c,i)=>(i===0||best[D.CHAPTERS[i-1].id])&&!best[c.id]),
   ICON={load:'<path d="M3 7h6l2 2h10v10H3z"/>',sound:'<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>',help:'<path d="M4 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-4a2 2 0 0 0-2 2"/><path d="M20 5v13h-6"/>'},
   icon=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>`;
  const m=modal(`<div class="logo"><p class="sub">ARCA CHRONICLE</p><h1>cnation <em>TD</em></h1><p class="tag">아르카 방어전</p></div>
-  <div class="tmenu">${save?`<button class="tbtn alt" data-a="continue">이어하기<small>${D.CHAPTERS[save.chapter].label} · 전투 ${save.battle+1}</small></button>`:''}
-   <button class="tbtn main" data-a="start">게임 시작<small>${next?`다음 · ${next.label} ${next.name}`:'모든 장 클리어'}${stars?` · ★ ${stars}/${D.CHAPTERS.length*3}`:''}</small></button>
-   <div class="trow"><button data-a="load" ${any?'':'disabled'}>${icon('load')}<span>불러오기</span></button><button data-a="sound">${icon('sound')}<span>소리</span></button><button data-a="help">${icon('help')}<span>게임 방법</span></button></div>
+  <div class="tmenu">${(()=>{const fresh=!save&&!stars&&!Object.keys(legacyPicks()).length,map=`🗺 모험 지도<small>${next?`다음 · ${next.label} ${next.name}`:'모든 장 클리어'}${stars?` · ★ ${stars}/${D.CHAPTERS.length*3}`:''}</small>`;
+     return save?`<button class="tbtn main" data-a="continue">▶ 전투 계속하기<small>${D.CHAPTERS[save.chapter].label} ${D.CHAPTERS[save.chapter].name} · 전투 ${save.battle+1}/${D.CHAPTERS[save.chapter].battles.length}부터</small></button><button class="tbtn alt" data-a="start">${map}</button>`
+      :fresh?`<button class="tbtn main" data-a="first">⚔ 모험 시작<small>PROLOGUE · ${D.CHAPTERS[0].name}</small></button>`:`<button class="tbtn main" data-a="start">${map}</button>`;})()}
+   <div class="trow"><button data-a="load" ${any?'':'disabled'}>${icon('load')}<span>저장 슬롯</span></button><button data-a="sound">${icon('sound')}<span>소리</span></button><button data-a="help">${icon('help')}<span>게임 방법</span></button></div>
    <div class="tfoot"><button class="dev" data-a="dev">개발자 모드</button><span class="verbar">ver.${GAME_VERSION} (<a href="revisions.html">rev. history</a>)</span></div></div>`,'title');const rv=m.querySelector('.verbar a');if(rv)rv.onclick=e=>{if(e.button||e.metaKey||e.ctrlKey||e.shiftKey)return;e.preventDefault();sfx('ui_tap');showRevisions();};
  const on=(a,f)=>{const b=m.querySelector(`[data-a=${a}]`);if(b)b.onclick=()=>{sfx('ui_tap');f();};};
- on('start',showWorld);on('continue',()=>{closeModal();startChapter(save.chapter,save);});on('dev',()=>chapterList(true));
+ on('start',showWorld);on('first',()=>{closeModal();devMode=false;startChapter(0,null);});on('continue',()=>{closeModal();startChapter(save.chapter,save);});on('dev',()=>chapterList(true));
  on('load',()=>slotModal('load',showTitle));on('sound',()=>settingsModal(showTitle));on('help',()=>{const h=modal(HELP+helpTips()+`<button class="primary">닫기</button>`,'help');h.querySelector('button').onclick=showTitle;});}
 
 // ── Saves ──
@@ -567,7 +568,7 @@ function handleEvents(){deaths=[];for(const e of S.drain()){if(demo.on&&DEMO_SKI
   if(e.fx==='slash')addFx({k:'slash',x:e.x,y:e.y,dur:.3,color,r:e.area?e.area:.55});else if(e.fx==='bolt'){addFx({k:'bolt',x:e.x,y:e.y,dur:.28,color});}
   else if(e.fx==='meteor'){addFx({k:'meteor',x:e.x,y:e.y,dur:.45,color,r:e.area});}else if(e.fx==='heal'){addFx({k:'ring',x:e.x,y:e.y,dur:.5,color:'#8fe5b4',r:.6,fill:true});sfx('heal');}else addFx({k:'ring',x:e.x,y:e.y,dur:.42,color,r:e.area||.6,fill:true});
   if(e.fx==='blast'||e.fx==='shot'||e.fx==='bolt')addFx({k:'shot',from:e.from,to:{x:e.x,y:e.y},dur:.14,color,magic:true});}
- else if(e.t==='dmg'&&e.ult&&e.v>0){const ev=e,go=()=>{if(!S)return;const o=objs.get('e'+ev.id);const heavy=ev.pct>=.35;
+ else if(e.t==='dmg'&&e.ult&&e.v>0){{const hb=objs.get('e'+e.id);if(hb&&ultImpact>0){if(hb.shown==null){const en=S.enemies.find(x=>x.id===e.id);hb.shown=hb.trail=(en?en.hp:0)+e.v;}hb.hold=ultImpact;}}const ev=e,go=()=>{if(!S)return;const o=objs.get('e'+ev.id);const heavy=ev.pct>=.35;
    addFx({k:'burst',real:true,x:ev.x,y:ev.y,dur:.5,color:ev.tag==='weak'?'#ffd257':'#fff2c9',seed:Math.random()*6,big:heavy});
    addFx({k:'num',real:true,pop:true,x:ev.x+(Math.random()-.5)*.25,y:ev.y,h:1.1,text:ev.v+(ev.crit?'!!':'!'),color:ev.tag==='resist'?'#cfd8da':heavy?'#ffcf4a':'#ffe9a8',size:heavy?24:19,dur:1.1});
    if(o){o.flash=.32;o.tremble=Math.max(o.tremble||0,.75);o.push=1.8;}};ultImpact>0?setTimeout(go,ultImpact*1000):go();continue;}
@@ -624,8 +625,16 @@ function drawOverlay(dt,time,realDt=dt){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.cl
  // While aiming a 필살기 (meteor), no range circles: it can land anywhere, and a circle would suggest otherwise.
  if(su&&aiming!==su.id){ellipse(su.x,su.y,su.range+.35);ctx.fillStyle='rgba(255,255,255,.12)';ctx.fill();ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=2;ctx.stroke();if(S.defOf(su).melee&&S.map.tile(su.c,su.r).road){ellipse(su.x,su.y,D.MELEE_GAP-.05);ctx.setLineDash([4,6]);ctx.strokeStyle='rgba(255,110,90,.7)';ctx.lineWidth=1.5;ctx.stroke();ctx.setLineDash([]);}for(const au of su.auras){ellipse(su.x,su.y,au.radius+.4);ctx.setLineDash([6,5]);ctx.strokeStyle='#f2cf72';ctx.stroke();ctx.setLineDash([]);}}
  // Monster bars and status pips
- for(const e of S.enemies){const sc=e.scale||1,p=proj(e.x,e.y,(e.flying?1.95:1.25)*Math.max(1,sc*.92)),w=pxU*.62*(e.boss?1.9:sc>1.2?1.3:1);
-  if(e.hp<e.maxHp||e.boss||e.elite){ctx.fillStyle='rgba(12,22,26,.75)';ctx.fillRect(p.x-w/2-1,p.y-1,w+2,e.boss?8:6);ctx.fillStyle=e.boss?'#ff7361':e.elite?'#f2cf72':'#ee6f5c';ctx.fillRect(p.x-w/2,p.y,w*Math.max(0,e.hp/e.maxHp),e.boss?6:4);}
+ for(const e of S.enemies){const sc=e.scale||1,p=proj(e.x,e.y,(e.flying?1.95:1.25)*Math.max(1,sc*.92)),w=pxU*.8*(e.boss?1.7:sc>1.2?1.25:1);
+  // HP bar: the lost part stays as a bright "trail" for a moment and then drains, so every hit visibly bites into the bar.
+  // A 필살기 holds the bar until its impact lands (meteor falls first). The bar flashes white on a hit.
+  const ob=objs.get('e'+e.id);let shown=e.hp,trail=e.hp,flash=0;
+  if(ob){if(ob.shown==null){ob.shown=e.hp;ob.trail=e.hp;}if((ob.hold||0)>0)ob.hold-=realDt;else if(e.hp<ob.shown-.01){ob.trail=Math.max(ob.trail,ob.shown);ob.shown=e.hp;ob.trailT=.45;ob.barFlash=.18;}else if(e.hp>ob.shown)ob.shown=ob.trail=e.hp;
+   if(ob.trailT>0)ob.trailT-=realDt;else ob.trail=Math.max(ob.shown,ob.trail-e.maxHp*1.4*realDt);ob.barFlash=Math.max(0,(ob.barFlash||0)-realDt);shown=ob.shown;trail=ob.trail;flash=ob.barFlash;}
+  if(e.hp<e.maxHp||e.boss||e.elite){const bh=e.boss?8:6,f=v=>w*Math.max(0,Math.min(1,v/e.maxHp));ctx.fillStyle='rgba(12,22,26,.8)';ctx.fillRect(p.x-w/2-1,p.y-1,w+2,bh+2);
+   ctx.fillStyle='#fff2c9';ctx.fillRect(p.x-w/2+f(shown),p.y,f(trail)-f(shown),bh);
+   ctx.fillStyle=e.boss?'#ff7361':e.elite?'#f2cf72':'#ee6f5c';ctx.fillRect(p.x-w/2,p.y,f(shown),bh);
+   if(flash>0){ctx.strokeStyle=`rgba(255,255,255,${flash/.18})`;ctx.lineWidth=1.5;ctx.strokeRect(p.x-w/2-1.5,p.y-1.5,w+3,bh+3);}}
   let i=0;for(const k in e.st){ctx.fillStyle=ST_COLOR[k]||'#fff';ctx.beginPath();ctx.arc(p.x-w/2+4+i*8,p.y-6,3,0,7);ctx.fill();i++;}
   if(e.engagedBy){ctx.fillStyle='#fff';ctx.font=`400 10px ${FONT}`;ctx.fillText('⛓',p.x+w/2+5,p.y+5);}
   if(e.shielded){const g=proj(e.x,e.y,.5);ctx.beginPath();ctx.arc(g.x,g.y,pxU*.4,0,7);ctx.strokeStyle='rgba(140,230,230,.7)';ctx.lineWidth=2;ctx.stroke();}}

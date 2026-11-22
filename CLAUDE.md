@@ -88,7 +88,11 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   visible from first paint under key 'boot' until the first painting): `begin/end/wait(key,promise,cap)`, shown after 120 ms, plus a
   slow-network line after 6 s. Used by waitArt, `paintFirst` (world map/altar), the title demo (loads the next map's painting with
   `loadImg` before switching) and chapter start (battle music, 8 s cap). `preloadArt` fetches the rest; sw.js serves `art/` cache-first.
-- Title menu: 이어하기 (if a save), 게임 시작 → world map, 불러오기, 소리 설정, 게임 방법, 개발자 모드. Clear wrap-up, defeat and the
+- Title menu (1.7.0): with a save 「▶ 전투 계속하기」 (gold, chapter + battle n/N) + 「🗺 모험 지도」; without a save 「🗺 모험 지도」 only;
+  a brand-new player 「⚔ 모험 시작」 (straight into the prologue). Icons: 저장 슬롯 (load), 소리, 게임 방법. `chapterInfo` offers
+  「전투 계속하기」/「처음부터 다시」 when the auto save is in that chapter.
+- Monster HP bars: a pale trail shows the part just lost (held 0.45 s, then drains) and the bar flashes; a 필살기 holds the bar until
+  its impact (`hold`). Damage areas work on every monster in range (checked: 파이어 hits all of a cluster for ~16–30% of max HP each). Clear wrap-up, defeat and the
   in-game menu have 지도로 (`toWorld`). The altar view pauses a running battle (sets `modalOpen`).
 - World map chapter select (`showWorld`/`chapterInfo` in game.js, `#world` z15 under the modal): `WORLD_MAP` in data.js = painting file
   (null → placeholder gradient + dotted path) and the ten stops as [x%,y%]. Stops show number, stars, lock, the chapter's legacy badge
