@@ -14,8 +14,8 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
 - `index.html` — shell, all CSS, script tags with `?v=` cache-busting.
   `#app` is `position:fixed` to all four edges (not `100dvh`) and the page is pinned at 0,0 (`pinPage`/`settle` in game.js): iOS
   home-screen apps could leave the page offset by the status bar, pushing the dock off screen.
-- Versioning (from 1.0.0, the first complete release): a big change bumps the second digit (1.1.0), a small change or fix bumps the
-  third (1.0.1). On every release update together: `GAME_VERSION` (js/game.js), the `?v=` tags in index.html, `VERSION` in `sw.js`,
+- Versioning (from 1.0.0, the first complete release): bump the third digit (1.6.8 → 1.6.9) for every release by default. Bump the
+  second digit (1.7.0) only when the owner says the change is a big one. On every release update together: `GAME_VERSION` (js/game.js), the `?v=` tags in index.html, `VERSION` in `sw.js`,
   README, and `revisions.html` — add a new `<section class="rev" id="vX.Y.Z">` at the top (date, 수정/변경/밸런스 bullets in Korean,
   player-facing words only) and move the `현재` tag to it. The title screen shows `ver.X.Y.Z (rev. history)` at the bottom; the link
   opens revisions.html inside the game (`showRevisions`, iframe; its back link posts `td:close-revisions`).
@@ -88,7 +88,7 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   visible from first paint under key 'boot' until the first painting): `begin/end/wait(key,promise,cap)`, shown after 120 ms, plus a
   slow-network line after 6 s. Used by waitArt, `paintFirst` (world map/altar), the title demo (loads the next map's painting with
   `loadImg` before switching) and chapter start (battle music, 8 s cap). `preloadArt` fetches the rest; sw.js serves `art/` cache-first.
-- Title menu (1.7.0): with a save 「▶ 전투 계속하기」 (gold, chapter + battle n/N) + 「🗺 모험 지도」; without a save 「🗺 모험 지도」 only;
+- Title menu (1.6.8): with a save 「▶ 전투 계속하기」 (gold, chapter + battle n/N) + 「🗺 모험 지도」; without a save 「🗺 모험 지도」 only;
   a brand-new player 「⚔ 모험 시작」 (straight into the prologue). Icons: 저장 슬롯 (load), 소리, 게임 방법. `chapterInfo` offers
   「전투 계속하기」/「처음부터 다시」 when the auto save is in that chapter.
 - Monster HP bars: a pale trail shows the part just lost (held 0.45 s, then drains) and the bar flashes; a 필살기 holds the bar until
