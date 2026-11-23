@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.6.8',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.6.9',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -259,16 +259,21 @@ function refreshDock(){for(const el of document.querySelectorAll('#dock .card'))
   let cool=el.querySelector('.cool');if(cd>0){if(!cool){cool=document.createElement('div');cool.className='cool';el.appendChild(cool);}cool.textContent=cd;}else if(cool)cool.remove();}}
 function nextRankText(u){const d=S.defOf(u),k=d.ranks[u.rank];if(!k)return '최대 랭크입니다.';const bits=['능력치↑'];if(k.skills)bits.push(k.skills.map(s=>D.SKILLS[s].name).join(', '));if(k.choice)bits.push('각인 선택');if(k.desc)bits.push(k.desc);if(k.ult)bits.push('필살기 '+D.SKILLS[k.ult].name);return `다음 ★${u.rank+1}: `+bits.join(' · ');}
 let panelKey='';
+// Element matchups (same table as sim.affinity): fire > wind > water(+ice) > fire, light ↔ dark; thunder/none neutral.
+const ELF=e=>e==='ice'?'water':e,STRONG_VS={fire:'바람 적에게 강함',water:'불 적에게 강함',ice:'불 적에게 강함',wind:'물 적에게 강함',light:'어둠 적에게 강함',dark:'빛 적에게 강함',thunder:'상성 없음'};
+function matchup(att,tgt){const a=ELF(att),b=ELF(tgt);if(!a||!b)return 1;if((a==='light'&&b==='dark')||(a==='dark'&&b==='light'))return 1.25;const adv={fire:'wind',wind:'water',water:'fire'};return !adv[a]||!adv[b]?1:adv[a]===b?1.25:adv[b]===a?.75:1;}
+// The elements a character attacks with: basic attack, skills and 필살기.
+function unitElements(u){const d=S.defOf(u),set=new Set();if(d.element)set.add(d.element);for(const s of u.skills){const e=D.SKILLS[s.id].element;if(e)set.add(e);}if(u.ult&&D.SKILLS[u.ult].element)set.add(D.SKILLS[u.ult].element);return [...set];}
 function refreshPanel(force){const u=S.units.find(v=>v.id===selUnit);if(!u){closePanel();return;}const d=S.defOf(u),cost=S.rankCost(u),choice=S.needsChoice(u),ultReady=u.ult&&u.ultCd<=0;
  const key=[u.id,u.rank,cost,S.gold>=cost,Math.round(u.hp),Math.ceil(u.ultCd),aiming,choice,Object.keys(u.st).join()].join('|');if(!force&&key===panelKey)return;panelKey=key;
  const kit=u.skills.map(s=>D.SKILLS[s.id].name).join(', '),bad=Object.keys(u.st).map(k=>ST_NAME[k]).join('·');
  let btns='';
- if(choice&&cost!=null){const ch=d.ranks[u.rank].choice;btns+=Object.keys(ch).map(k=>`<button class="primary" data-act="rank" data-choice="${k}" ${S.gold<cost?'disabled':''}>${ch[k].label} ${cost}</button>`).join('');}
+ let chRow='';if(choice&&cost!=null){const ch=d.ranks[u.rank].choice;chRow=`<div class="btns choices">${Object.keys(ch).map(k=>`<button class="primary" data-act="rank" data-choice="${k}" ${S.gold<cost?'disabled':''}>${ch[k].label} ${cost}💰<small>${STRONG_VS[k]||''}</small></button>`).join('')}</div>`;}
  else if(cost!=null)btns+=`<button class="primary" data-act="rank" ${S.gold<cost?'disabled':''}>랭크업 ${cost}💰</button>`;
  if(u.ult)btns+=`<button class="ult" data-act="ult" ${ultReady&&S.phase==='battle'?'':'disabled'}>${aiming===u.id?'위치 지정':ultReady?D.SKILLS[u.ult].name:D.SKILLS[u.ult].name+' '+Math.ceil(u.ultCd)}</button>`;
  btns+=`<button data-act="withdraw">철수 +${S.refundOf(u)}</button><button class="x" data-act="close">×</button>`;
- const line2=choice?Object.values(d.ranks[u.rank].choice).map(c=>c.desc.split(':')[0].split('.')[0]).join(' / '):nextRankText(u);
- $('#panel').innerHTML=`<img alt="" src="${portraits[u.def]}"><div class="info"><h3>${d.name} <span>${'★'.repeat(u.rank)}${'☆'.repeat(d.maxRank-u.rank)}</span> HP ${Math.max(0,Math.round(u.hp))}/${u.maxHp}${bad?` <em>${bad}</em>`:''}</h3><p>공격 ${Math.round((d.magic?u.mag:u.atk)*u.buff)} · 사거리 ${u.range}${u.block?' · 붙잡기 '+u.block:''}${kit?' · '+kit:''}</p><p class="next">${line2}</p><div class="btns">${btns}</div></div>`;}
+ const line2=choice?'★3 각인 · 기술 하나를 그 속성으로 배우거나 강화합니다':nextRankText(u);
+ $('#panel').innerHTML=`<img alt="" src="${portraits[u.def]}"><div class="info"><h3>${d.name} <span>${'★'.repeat(u.rank)}${'☆'.repeat(d.maxRank-u.rank)}</span> HP ${Math.max(0,Math.round(u.hp))}/${u.maxHp}${bad?` <em>${bad}</em>`:''}</h3><p>공격 ${Math.round((d.magic?u.mag:u.atk)*u.buff)} · 사거리 ${u.range}${u.block?' · 붙잡기 '+u.block:''}${kit?' · '+kit:''}</p><p class="next">${line2}</p>${chRow}<div class="btns">${btns}</div></div>`;$('#panel').classList.toggle('choosing',!!chRow);}
 function openPanel(id){selUnit=id;selCard=null;aiming=null;validTiles=null;app.classList.add('unit-open');panelKey='';refreshPanel(true);}
 function closePanel(){selUnit=null;aiming=null;$('#aimHint').style.display='none';app.classList.remove('unit-open');}
 $('#panel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;const act=b.dataset.act,u=S.units.find(v=>v.id===selUnit);if(!u)return closePanel();
@@ -631,6 +636,12 @@ function drawOverlay(dt,time,realDt=dt){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.cl
   const ob=objs.get('e'+e.id);let shown=e.hp,trail=e.hp,flash=0;
   if(ob){if(ob.shown==null){ob.shown=e.hp;ob.trail=e.hp;}if((ob.hold||0)>0)ob.hold-=realDt;else if(e.hp<ob.shown-.01){ob.trail=Math.max(ob.trail,ob.shown);ob.shown=e.hp;ob.trailT=.45;ob.barFlash=.18;}else if(e.hp>ob.shown)ob.shown=ob.trail=e.hp;
    if(ob.trailT>0)ob.trailT-=realDt;else ob.trail=Math.max(ob.shown,ob.trail-e.maxHp*1.4*realDt);ob.barFlash=Math.max(0,(ob.barFlash||0)-realDt);shown=ob.shown;trail=ob.trail;flash=ob.barFlash;}
+  // Element badge left of the bar (TACTICS style). With a character selected: monsters it is strong against glow, weak ones dim.
+  if(e.element){const r=e.boss?8:6.5,bx=p.x-w/2-r-2,by=p.y+3;let m=1;if(selUnit){const su=S.units.find(v=>v.id===selUnit);if(su){const ms=unitElements(su).map(x=>matchup(x,e.element));m=ms.length?Math.max(...ms):1;}}
+   ctx.save();if(selUnit&&m<1)ctx.globalAlpha=.4;if(selUnit&&m>1){ctx.shadowColor=EL_COLOR[e.element]||'#fff';ctx.shadowBlur=10+4*Math.sin(time*6);}
+   ctx.fillStyle='rgba(12,22,26,.85)';ctx.beginPath();ctx.arc(bx,by,r,0,7);ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=EL_COLOR[e.element]||'#fff';ctx.stroke();ctx.shadowBlur=0;
+   ctx.font=`${Math.round(r*1.35)}px sans-serif`;ctx.textBaseline='middle';ctx.fillText(D.ELEMENT_ICON[e.element]||'',bx,by+.5);ctx.textBaseline='alphabetic';
+   if(selUnit&&m>1){ctx.font=`400 10px ${FONT}`;ctx.fillStyle='#ffd257';ctx.strokeStyle='rgba(12,22,26,.9)';ctx.lineWidth=3;ctx.strokeText('▲',bx,by-r-4);ctx.fillText('▲',bx,by-r-4);}ctx.restore();}
   if(e.hp<e.maxHp||e.boss||e.elite){const bh=e.boss?8:6,f=v=>w*Math.max(0,Math.min(1,v/e.maxHp));ctx.fillStyle='rgba(12,22,26,.8)';ctx.fillRect(p.x-w/2-1,p.y-1,w+2,bh+2);
    ctx.fillStyle='#fff2c9';ctx.fillRect(p.x-w/2+f(shown),p.y,f(trail)-f(shown),bh);
    ctx.fillStyle=e.boss?'#ff7361':e.elite?'#f2cf72':'#ee6f5c';ctx.fillRect(p.x-w/2,p.y,f(shown),bh);

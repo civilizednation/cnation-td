@@ -91,6 +91,9 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
 - Title menu (1.6.8): with a save 「▶ 전투 계속하기」 (gold, chapter + battle n/N) + 「🗺 모험 지도」; without a save 「🗺 모험 지도」 only;
   a brand-new player 「⚔ 모험 시작」 (straight into the prologue). Icons: 저장 슬롯 (load), 소리, 게임 방법. `chapterInfo` offers
   「전투 계속하기」/「처음부터 다시」 when the auto save is in that chapter.
+- Elements (1.6.9): monsters with an element show its icon in a coloured ring left of the HP bar; with a character selected,
+  `unitElements(u)` × `matchup()` (same table as sim.affinity) makes strong matchups glow with ▲ and weak ones dim. The ★3 imprint
+  choice gets its own button row (`#panel.choosing`) with `STRONG_VS` hints. An imprint adds/upgrades one skill of that element only.
 - Monster HP bars: a pale trail shows the part just lost (held 0.45 s, then drains) and the bar flashes; a 필살기 holds the bar until
   its impact (`hold`). Damage areas work on every monster in range (checked: 파이어 hits all of a cluster for ~16–30% of max HP each). Clear wrap-up, defeat and the
   in-game menu have 지도로 (`toWorld`). The altar view pauses a running battle (sets `modalOpen`).
