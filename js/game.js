@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.6.10',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.6.11',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -260,7 +260,11 @@ function refreshDock(){for(const el of document.querySelectorAll('#dock .card'))
 function nextRankText(u){const d=S.defOf(u),k=d.ranks[u.rank];if(!k)return '최대 랭크입니다.';const bits=['능력치↑'];if(k.skills)bits.push(k.skills.map(s=>D.SKILLS[s].name).join(', '));if(k.choice)bits.push('각인 선택');if(k.desc)bits.push(k.desc);if(k.ult)bits.push('필살기 '+D.SKILLS[k.ult].name);return `다음 ★${u.rank+1}: `+bits.join(' · ');}
 let panelKey='';
 // Element matchups (same table as sim.affinity): fire > wind > water(+ice) > fire, light ↔ dark; thunder/none neutral.
-const BAR_HOLD=.25,BAR_DRAIN=.25;   // monster HP bar trail: same short time for every hit
+const BAR_HOLD=.25,BAR_DRAIN=.25;
+// Bar length follows the monster's max HP (square-root scale against an ordinary monster of this battle), so tougher monsters
+// carry visibly longer bars: about ×0.8 for the weakest, ×1.5–1.8 for elites and big ones, up to ×2.4 for bosses.
+const BAR_REF_HP=69;function hpBarScale(e){const b=S.chapter.battles[S.battle]||S.chapter.battles[0],ref=BAR_REF_HP*(b.tune?b.tune[0]:1);
+ return Math.max(.75,Math.min(e.boss?2.4:1.8,Math.sqrt(e.maxHp/ref)));}   // monster HP bar trail: same short time for every hit
 const ELF=e=>e==='ice'?'water':e,STRONG_VS={fire:'바람 적에게 강함',water:'불 적에게 강함',ice:'불 적에게 강함',wind:'물 적에게 강함',light:'어둠 적에게 강함',dark:'빛 적에게 강함',thunder:'상성 없음'};
 function matchup(att,tgt){const a=ELF(att),b=ELF(tgt);if(!a||!b)return 1;if((a==='light'&&b==='dark')||(a==='dark'&&b==='light'))return 1.25;const adv={fire:'wind',wind:'water',water:'fire'};return !adv[a]||!adv[b]?1:adv[a]===b?1.25:adv[b]===a?.75:1;}
 // The elements a character attacks with: basic attack, skills and 필살기.
@@ -631,7 +635,7 @@ function drawOverlay(dt,time,realDt=dt){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.cl
  // While aiming a 필살기 (meteor), no range circles: it can land anywhere, and a circle would suggest otherwise.
  if(su&&aiming!==su.id){ellipse(su.x,su.y,su.range+.35);ctx.fillStyle='rgba(255,255,255,.12)';ctx.fill();ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=2;ctx.stroke();if(S.defOf(su).melee&&S.map.tile(su.c,su.r).road){ellipse(su.x,su.y,D.MELEE_GAP-.05);ctx.setLineDash([4,6]);ctx.strokeStyle='rgba(255,110,90,.7)';ctx.lineWidth=1.5;ctx.stroke();ctx.setLineDash([]);}for(const au of su.auras){ellipse(su.x,su.y,au.radius+.4);ctx.setLineDash([6,5]);ctx.strokeStyle='#f2cf72';ctx.stroke();ctx.setLineDash([]);}}
  // Monster bars and status pips
- for(const e of S.enemies){const sc=e.scale||1,p=proj(e.x,e.y,(e.flying?1.95:1.25)*Math.max(1,sc*.92)),w=pxU*.8*(e.boss?1.7:sc>1.2?1.25:1);
+ for(const e of S.enemies){const sc=e.scale||1,p=proj(e.x,e.y,(e.flying?1.95:1.25)*Math.max(1,sc*.92)),w=pxU*.72*hpBarScale(e);
   // HP bar: the lost part stays as a bright "trail" for a moment and then drains, so every hit visibly bites into the bar.
   // A 필살기 holds the bar until its impact lands (meteor falls first). The bar flashes white on a hit.
   const ob=objs.get('e'+e.id);let shown=e.hp,trail=e.hp,flash=0;

@@ -94,6 +94,7 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
 - Elements (1.6.9): monsters with an element show its icon in a coloured ring left of the HP bar; with a character selected,
   `unitElements(u)` × `matchup()` (same table as sim.affinity) makes strong matchups glow with ▲ and weak ones dim. The ★3 imprint
   choice gets its own button row (`#panel.choosing`) with `STRONG_VS` hints. An imprint adds/upgrades one skill of that element only.
+- Monster HP bar length = `hpBarScale(e)`: √(maxHp ÷ (69 × battle tune hp)), clamped 0.75–1.8 (bosses up to 2.4).
 - Monster HP bars (all red `#ee4f3f`, elites and bosses too): a pale trail shows the part just lost — held `BAR_HOLD` 0.25 s, then
   shrinks over `BAR_DRAIN` 0.25 s, the same for every hit — and the bar flashes; a 필살기 holds the bar until
   its impact (`hold`). Damage areas work on every monster in range (checked: 파이어 hits all of a cluster for ~16–30% of max HP each). Clear wrap-up, defeat and the
