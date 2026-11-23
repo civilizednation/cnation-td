@@ -8,8 +8,8 @@
 <style>
 :root{color-scheme:dark;--bg:#0d1a1e;--card:#1f373d;--line:#ffffff1c;--ink:#e6eee6;--muted:#94aaa7;--gold:#f2cf72;--mint:#8fe5b4}
 *{box-sizing:border-box}
-@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=32") format("woff2");font-display:swap;size-adjust:118%}
-@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=32") format("woff2");font-display:swap;size-adjust:104%}
+@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=33") format("woff2");font-display:swap;size-adjust:118%}
+@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=33") format("woff2");font-display:swap;size-adjust:104%}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 "Gowun Dodum",-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif;padding:calc(16px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom))}
 main{max-width:680px;margin:0 auto}
 a{color:var(--gold)}
@@ -36,8 +36,13 @@ details.rev summary{cursor:pointer}
 <h1>Revision History</h1>
 <p class="lead">큰 변화는 두 번째 자리(1.1.0), 작은 수정은 세 번째 자리(1.0.1)를 올립니다.</p>
 
+<section class="rev" id="v1.6.10">
+<h2>ver.1.6.10 <span class="date">2026-11-23</span> <span class="tag">현재</span></h2>
+<h3>변경</h3><ul><li>몬스터 체력바에서 깎인 부분(밝은 막대)이 항상 같은 짧은 시간(0.25초 머문 뒤 0.25초 동안 줄어듦)에 사라지도록 통일했습니다</li><li>몬스터 체력바 색을 모두 빨간색으로 통일했습니다(정예 · 보스의 노란색 · 주황색 바 없앰)</li></ul>
+</section>
+
 <section class="rev" id="v1.6.9">
-<h2>ver.1.6.9 <span class="date">2026-11-23</span> <span class="tag">현재</span></h2>
+<h2>ver.1.6.9 <span class="date">2026-11-23</span></h2>
 <h3>변경</h3><ul>
 <li>속성이 있는 몬스터는 체력바 왼쪽에 속성 아이콘(🔥 💧 🪽 ⚡ ✨ 🌑)이 붙습니다</li>
 <li>캐릭터를 누르면, 그 캐릭터의 공격 · 기술 · 필살기 속성으로 상성이 좋은 몬스터 아이콘이 빛나며 ▲가 뜨고, 상성이 나쁜 몬스터는 흐려집니다</li>

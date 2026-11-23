@@ -94,7 +94,8 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
 - Elements (1.6.9): monsters with an element show its icon in a coloured ring left of the HP bar; with a character selected,
   `unitElements(u)` × `matchup()` (same table as sim.affinity) makes strong matchups glow with ▲ and weak ones dim. The ★3 imprint
   choice gets its own button row (`#panel.choosing`) with `STRONG_VS` hints. An imprint adds/upgrades one skill of that element only.
-- Monster HP bars: a pale trail shows the part just lost (held 0.45 s, then drains) and the bar flashes; a 필살기 holds the bar until
+- Monster HP bars (all red `#ee4f3f`, elites and bosses too): a pale trail shows the part just lost — held `BAR_HOLD` 0.25 s, then
+  shrinks over `BAR_DRAIN` 0.25 s, the same for every hit — and the bar flashes; a 필살기 holds the bar until
   its impact (`hold`). Damage areas work on every monster in range (checked: 파이어 hits all of a cluster for ~16–30% of max HP each). Clear wrap-up, defeat and the
   in-game menu have 지도로 (`toWorld`). The altar view pauses a running battle (sets `modalOpen`).
 - World map chapter select (`showWorld`/`chapterInfo` in game.js, `#world` z15 under the modal): `WORLD_MAP` in data.js = painting file

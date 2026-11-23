@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.6.9',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.6.10',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -260,6 +260,7 @@ function refreshDock(){for(const el of document.querySelectorAll('#dock .card'))
 function nextRankText(u){const d=S.defOf(u),k=d.ranks[u.rank];if(!k)return '최대 랭크입니다.';const bits=['능력치↑'];if(k.skills)bits.push(k.skills.map(s=>D.SKILLS[s].name).join(', '));if(k.choice)bits.push('각인 선택');if(k.desc)bits.push(k.desc);if(k.ult)bits.push('필살기 '+D.SKILLS[k.ult].name);return `다음 ★${u.rank+1}: `+bits.join(' · ');}
 let panelKey='';
 // Element matchups (same table as sim.affinity): fire > wind > water(+ice) > fire, light ↔ dark; thunder/none neutral.
+const BAR_HOLD=.25,BAR_DRAIN=.25;   // monster HP bar trail: same short time for every hit
 const ELF=e=>e==='ice'?'water':e,STRONG_VS={fire:'바람 적에게 강함',water:'불 적에게 강함',ice:'불 적에게 강함',wind:'물 적에게 강함',light:'어둠 적에게 강함',dark:'빛 적에게 강함',thunder:'상성 없음'};
 function matchup(att,tgt){const a=ELF(att),b=ELF(tgt);if(!a||!b)return 1;if((a==='light'&&b==='dark')||(a==='dark'&&b==='light'))return 1.25;const adv={fire:'wind',wind:'water',water:'fire'};return !adv[a]||!adv[b]?1:adv[a]===b?1.25:adv[b]===a?.75:1;}
 // The elements a character attacks with: basic attack, skills and 필살기.
@@ -634,8 +635,9 @@ function drawOverlay(dt,time,realDt=dt){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.cl
   // HP bar: the lost part stays as a bright "trail" for a moment and then drains, so every hit visibly bites into the bar.
   // A 필살기 holds the bar until its impact lands (meteor falls first). The bar flashes white on a hit.
   const ob=objs.get('e'+e.id);let shown=e.hp,trail=e.hp,flash=0;
-  if(ob){if(ob.shown==null){ob.shown=e.hp;ob.trail=e.hp;}if((ob.hold||0)>0)ob.hold-=realDt;else if(e.hp<ob.shown-.01){ob.trail=Math.max(ob.trail,ob.shown);ob.shown=e.hp;ob.trailT=.45;ob.barFlash=.18;}else if(e.hp>ob.shown)ob.shown=ob.trail=e.hp;
-   if(ob.trailT>0)ob.trailT-=realDt;else ob.trail=Math.max(ob.shown,ob.trail-e.maxHp*1.4*realDt);ob.barFlash=Math.max(0,(ob.barFlash||0)-realDt);shown=ob.shown;trail=ob.trail;flash=ob.barFlash;}
+  if(ob){if(ob.shown==null){ob.shown=e.hp;ob.trail=e.hp;}if((ob.hold||0)>0)ob.hold-=realDt;else if(e.hp<ob.shown-.01){ob.from=Math.max(ob.trail,ob.shown);ob.trail=ob.from;ob.shown=e.hp;ob.age=0;ob.barFlash=.18;}else if(e.hp>ob.shown)ob.shown=ob.trail=e.hp;
+   // every trail looks the same: held BAR_HOLD, then shrinks to the bar over BAR_DRAIN, whatever the monster's size or the hit
+   if(ob.trail>ob.shown){ob.age=(ob.age||0)+realDt;const k=Math.max(0,Math.min(1,(ob.age-BAR_HOLD)/BAR_DRAIN));ob.trail=ob.from+(ob.shown-ob.from)*k;}ob.barFlash=Math.max(0,(ob.barFlash||0)-realDt);shown=ob.shown;trail=ob.trail;flash=ob.barFlash;}
   // Element badge left of the bar (TACTICS style). With a character selected: monsters it is strong against glow, weak ones dim.
   if(e.element){const r=e.boss?8:6.5,bx=p.x-w/2-r-2,by=p.y+3;let m=1;if(selUnit){const su=S.units.find(v=>v.id===selUnit);if(su){const ms=unitElements(su).map(x=>matchup(x,e.element));m=ms.length?Math.max(...ms):1;}}
    ctx.save();if(selUnit&&m<1)ctx.globalAlpha=.4;if(selUnit&&m>1){ctx.shadowColor=EL_COLOR[e.element]||'#fff';ctx.shadowBlur=10+4*Math.sin(time*6);}
@@ -644,7 +646,7 @@ function drawOverlay(dt,time,realDt=dt){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.cl
    if(selUnit&&m>1){ctx.font=`400 10px ${FONT}`;ctx.fillStyle='#ffd257';ctx.strokeStyle='rgba(12,22,26,.9)';ctx.lineWidth=3;ctx.strokeText('▲',bx,by-r-4);ctx.fillText('▲',bx,by-r-4);}ctx.restore();}
   if(e.hp<e.maxHp||e.boss||e.elite){const bh=e.boss?8:6,f=v=>w*Math.max(0,Math.min(1,v/e.maxHp));ctx.fillStyle='rgba(12,22,26,.8)';ctx.fillRect(p.x-w/2-1,p.y-1,w+2,bh+2);
    ctx.fillStyle='#fff2c9';ctx.fillRect(p.x-w/2+f(shown),p.y,f(trail)-f(shown),bh);
-   ctx.fillStyle=e.boss?'#ff7361':e.elite?'#f2cf72':'#ee6f5c';ctx.fillRect(p.x-w/2,p.y,f(shown),bh);
+   ctx.fillStyle='#ee4f3f';ctx.fillRect(p.x-w/2,p.y,f(shown),bh);
    if(flash>0){ctx.strokeStyle=`rgba(255,255,255,${flash/.18})`;ctx.lineWidth=1.5;ctx.strokeRect(p.x-w/2-1.5,p.y-1.5,w+3,bh+3);}}
   let i=0;for(const k in e.st){ctx.fillStyle=ST_COLOR[k]||'#fff';ctx.beginPath();ctx.arc(p.x-w/2+4+i*8,p.y-6,3,0,7);ctx.fill();i++;}
   if(e.engagedBy){ctx.fillStyle='#fff';ctx.font=`400 10px ${FONT}`;ctx.fillText('⛓',p.x+w/2+5,p.y+5);}
