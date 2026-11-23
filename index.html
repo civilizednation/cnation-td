@@ -13,8 +13,8 @@
 <meta name="apple-mobile-web-app-title" content="cnation TD">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <style>
-@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=34") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:118%}
-@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=34") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:104%}
+@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=35") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:118%}
+@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=35") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:104%}
 :root{--font-display:"Stylish",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--font-body:"Gowun Dodum",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--bg:#16282d;--panel:#1f373d;--panel2:#284850;--line:#3c636b;--ink:#eef4ea;--dim:#a9c0bb;--gold:#f2cf72;--good:#8fe5b4;--bad:#f08f7c;--accent:#8be1bf}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--ink);font-family:var(--font-display);overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -58,6 +58,16 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
 }
 #fx{touch-action:none}
 #toast{position:absolute;left:50%;top:10px;transform:translateX(-50%);max-width:92%;padding:7px 14px;border-radius:999px;background:rgba(18,34,39,.88);font-size:14px;font-weight:400;text-align:center;pointer-events:none;opacity:0;transition:opacity .25s}
+#bossBar{position:absolute;left:10px;right:10px;top:8px;z-index:5;padding:6px 10px 8px;border-radius:12px;background:rgba(18,12,14,.94);border:1px solid rgba(255,120,100,.5);box-shadow:0 4px 14px rgba(0,0,0,.4);pointer-events:none}
+#bossBar[hidden]{display:none}
+#bossBar .bb-top{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+#bossBar .bb-el{flex:none;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:2px solid #f2cf72;background:rgba(12,22,26,.9);font-size:13px}
+#bossBar .bb-name{flex:1;font-weight:400;font-size:16px;color:#ffe2d8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#bossBar .bb-hp{font-family:var(--font-body);font-size:12px;color:#f0d6cf;font-variant-numeric:tabular-nums}
+#bossBar .bb-bar{position:relative;height:12px;border-radius:6px;background:rgba(0,0,0,.6);overflow:hidden}
+#bossBar .bb-bar i{position:absolute;left:0;top:0;bottom:0}#bossBar .bb-trail{background:#fff2c9}#bossBar .bb-fill{background:linear-gradient(#ff6b5b,#d8382a)}
+#bossBar.hit{border-color:#fff}
+#viewport.has-boss #toast{top:76px}
 #toast.on{opacity:1}
 #banner{position:absolute;left:0;right:0;top:34%;text-align:center;pointer-events:none;opacity:0;transition:opacity .35s;text-shadow:0 2px 8px rgba(0,0,0,.6)}
 #banner.on{opacity:1}
@@ -251,10 +261,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
  <div id="modal" hidden></div>
 </div>
 <script src="vendor/three-r170.js"></script>
-<script src="js/data.js?v=1.6.11"></script>
-<script src="js/sim.js?v=1.6.11"></script>
-<script src="js/models.js?v=1.6.11"></script>
-<script src="js/game.js?v=1.6.11"></script>
+<script src="js/data.js?v=1.6.12"></script>
+<script src="js/sim.js?v=1.6.12"></script>
+<script src="js/models.js?v=1.6.12"></script>
+<script src="js/game.js?v=1.6.12"></script>
 <script>if('serviceWorker' in navigator&&location.protocol!=='file:')window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 </body>
 </html>
