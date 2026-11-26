@@ -36,7 +36,7 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
 - Chapters are generated from `CHAPTER_DEFS` by `buildChapter` (waves from `POOLS`, roster from `JOIN_AT`). Maps in `MAPS` are grown
   around the road by `sim.buildMap` from each map's seed, so the same map always comes out the same.
 - Melee characters do not stop monsters: a monster inside a melee unit's tile (up to `block` at once) moves at `ENGAGE_SLOW` (2/3) and hits it.
-  Melee units on the road must stand at least `MELEE_GAP` (3) tiles apart (`canDeploy`); the screen shows the forbidden zone while placing.
+  Melee units on the road must stand at least `MELEE_GAP` (4 since 1.7.3) tiles apart (`canDeploy`); the screen shows the forbidden zone while placing.
 - 필살기 (1.7.0, the core of play): power arcaslash 8, meteor 7.2, eclipse 9.6, hawk 19 (×1.6 of 1.2.0); bosses take full damage. Ult damage events
   carry `ult`/`pct`/`aff` (the affinity share, shown as a second number) / `element` / `chain`; the screen shows a landing reticle, impact,
   an element flourish (`elemfx`), hit stop and big popping numbers.
@@ -59,8 +59,9 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
 - Battle declutter (1.7.2): no name labels for auto skills (필살기 only), combos are a gold ring (암습 a red X), no numbers for basic attacks or
   damage to allies, skill hits on one monster within 0.3 s merge into one number (`numOf`, dmg events carry `skill`); character HP bars only
   when hurt and ★ only while preparing or selected.
-- Pedestal spread (planned, docs/REPAINT2.md): `MAPS[id].highAt` = hand-placed pedestals (same count, spread out, 1–3 outer-bend spots);
-  applied together with the repainted art, then recalibrate.
+- Pedestal spread (1.7.3, docs/REPAINT2.md): every map has `MAPS[id].highAt` = hand-placed pedestals (same count, spread as far apart as
+  possible, 1–3 outer-bend spots; replaces the grown high cells), and the paintings were repainted to match. To move a pedestal: edit
+  `highAt`, re-make the guide, repaint, `fit-art.py --apply`.
 - 수정 조각: `S.shardIn` (first 18 s, then 40 s of battle) → `S.shard` + event `shard`; `S.giveShard(id|null)` → `shardGiven`, `u.shardT`=20.
   The screen drops it in a light pillar, floats it above the dock (`#shard` in #app), drag onto a card/field hero or tap → tap; 0.25× speed while
   choosing, random after `SHARD_SECONDS` 5 real s. The sim gives it at random after 20 s by itself (bot/demo).
@@ -70,8 +71,8 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
 - Maps have their own size (`MAPS[id].w/h`): early chapters are smaller (9×9 … 9×12), 9×14 from chapter 4.
 - Basic attacks: ranged `RANGED_INTERVAL` 1.2 / `RANGED_POWER` 0.3, melee `MELEE_INTERVAL` 0.7 / `MELEE_POWER` 0.7 of the base numbers;
   skills, 필살기 and heals are not affected. No melee on the road within `GATE_GAP` (2 since 1.7.2) tiles of a monster gate (`map.gates`).
-- Placement: melee on road/grass/forest/bridge; ranged (heroes and soldiers) only on high ground — raised tiles beside the road,
-  `MAPS[id].high` of them (6–8), never two edge to edge (`buildMap`).
+- Placement: melee on road/grass/forest/bridge; ranged (heroes and soldiers) only on high ground — the pedestals in `MAPS[id].highAt`
+  (4–7 per map; `high` only seeds the grown map).
 - Slots: every joined hero may be on the field at once (one of each); soldiers only up to `S.soldierCap` = `CHAPTER_DEFS[].soldiers`
   (3,3,2,2,1…1) + legacy 「지휘관의 위엄」 (`command`, +1 each, max 2). `S.slotFree(def)` / `S.soldierCount()`; HUD shows 👑 heroes and 🪖 soldiers.
 - Painted backgrounds (`docs/ART.md`): a map with an entry in `MAP_ART` (js/data.js) shows `art/<map>.webp` in an <img> behind the
