@@ -13,8 +13,8 @@
 <meta name="apple-mobile-web-app-title" content="cnation TD">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <style>
-@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=41") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:118%}
-@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=41") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:104%}
+@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=42") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:118%}
+@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=42") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:104%}
 :root{--font-display:"Stylish",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--font-body:"Gowun Dodum",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--bg:#16282d;--panel:#1f373d;--panel2:#284850;--line:#3c636b;--ink:#eef4ea;--dim:#a9c0bb;--gold:#f2cf72;--good:#8fe5b4;--bad:#f08f7c;--accent:#8be1bf}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--ink);font-family:var(--font-display);overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -91,6 +91,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
 .card .ct{position:absolute;left:0;right:0;bottom:0;padding:1px 0;font-size:12px;line-height:14px;color:var(--gold);background:rgba(14,26,30,.78)}
 .card.sel{border-color:var(--gold);box-shadow:0 0 0 2px rgba(242,207,114,.4)}
 .card.off img{opacity:.4}.card.off .ct{color:var(--bad)}
+.card.full{border-color:#3a4448;filter:grayscale(1) brightness(.62)}.card.full .ct{color:#9aa3a6}
 .card.out .ct{color:var(--good)}
 .card .ub{position:absolute;left:3px;right:3px;bottom:16px;height:4px;border-radius:2px;background:rgba(10,20,24,.7);overflow:hidden}.card .ub i{display:block;height:100%;background:#ff9a3c}
 .card.ult{border-color:#ffb35c;animation:ultPulse .9s ease-in-out infinite}.card.ult .ct{color:#2b1a05;background:#ffb35c}.card.ult .ub i{background:#ffd257}
@@ -293,10 +294,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
  <div id="modal" hidden></div>
 </div>
 <script src="vendor/three-r170.js"></script>
-<script src="js/data.js?v=1.7.13"></script>
-<script src="js/sim.js?v=1.7.13"></script>
-<script src="js/models.js?v=1.7.13"></script>
-<script src="js/game.js?v=1.7.13"></script>
+<script src="js/data.js?v=1.7.14"></script>
+<script src="js/sim.js?v=1.7.14"></script>
+<script src="js/models.js?v=1.7.14"></script>
+<script src="js/game.js?v=1.7.14"></script>
 <script>if('serviceWorker' in navigator&&location.protocol!=='file:')window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 </body>
 </html>

@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.7.13',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.14',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -261,9 +261,9 @@ function buildDock(){const dock=$('#dock');dock.innerHTML='';const rows=[D.HERO_
  for(const ids of rows){const row=document.createElement('div');row.className='row';for(const id of ids){const d=D.UNITS[id],el=document.createElement('div');el.className='card';el.dataset.id=id;
    el.innerHTML=`<img alt="" src="${portraits[id]}"><div class="nm">${d.name}</div><div class="ct"></div>`;el.addEventListener('pointerdown',e=>cardDown(e,id));row.appendChild(el);}dock.appendChild(row);}refreshDock();}
 function refreshDock(){for(const el of document.querySelectorAll('#dock .card')){const id=el.dataset.id,d=D.UNITS[id],hero=S.hero[id],unit=d.kind==='hero'&&S.units.find(u=>u.def===id),out=!!unit,cost=S.deployCost(id),cd=hero?Math.ceil(hero.cd):0,ready=out&&ultReady(unit);
-  const off=!out&&(S.gold<cost||!S.slotFree(id)||cd>0);el.className='card'+(d.kind==='hero'?' hero':'')+(selCard===id?' sel':'')+(off?' off':'')+(out?' out':'')+(ready?' ult':'')+(out&&unit.shardT>0?' shard':'')+(out&&unit.ult&&shardUi&&shardUi.phase!=='fall'?' take':'');
+  const off=!out&&(S.gold<cost||!S.slotFree(id)||cd>0);const full=d.kind==='soldier'&&!out&&!S.slotFree(id);el.className='card'+(d.kind==='hero'?' hero':'')+(selCard===id?' sel':'')+(off?' off':'')+(full?' full':'')+(out?' out':'')+(ready?' ult':'')+(out&&unit.shardT>0?' shard':'')+(out&&unit.ult&&shardUi&&shardUi.phase!=='fall'?' take':'');
   let ub=el.querySelector('.ub');if(out&&unit.ult){if(!ub){ub=document.createElement('div');ub.className='ub';ub.innerHTML='<i></i>';el.appendChild(ub);}ub.firstChild.style.width=Math.round(100*(1-Math.min(1,unit.ultCd/S.ultTime(unit))))+'%';}else if(ub)ub.remove();
-  el.querySelector('.ct').textContent=ready?'⚡ 필살기':out&&unit.ult&&S.phase==='battle'?Math.ceil(unit.ultCd)+'초':out?'출전 중':hero&&hero.keep&&!cd?'복귀':cost+'💰';
+  el.querySelector('.ct').textContent=full?'자리 없음':ready?'⚡ 필살기':out&&unit.ult&&S.phase==='battle'?Math.ceil(unit.ultCd)+'초':out?'출전 중':hero&&hero.keep&&!cd?'복귀':cost+'💰';
   let cool=el.querySelector('.cool');if(cd>0){if(!cool){cool=document.createElement('div');cool.className='cool';el.appendChild(cool);}cool.textContent=cd;}else if(cool)cool.remove();}}
 function nextRankText(u){const d=S.defOf(u),k=d.ranks[u.rank];if(!k)return '최대 랭크입니다.';const bits=['능력치↑'];if(k.skills)bits.push(k.skills.map(s=>D.SKILLS[s].name).join(', '));if(k.choice)bits.push('각인 선택');if(k.desc)bits.push(k.desc);if(k.ult)bits.push('필살기 '+D.SKILLS[k.ult].name);return `다음 ★${u.rank+1}: `+bits.join(' · ');}
 let panelKey='';
@@ -745,7 +745,7 @@ function drawOverlay(dt,time,realDt=dt){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.cl
   if(e.boss&&!bossShown)bossShown={e,shown,trail,flash};
   if(!e.boss&&(e.hp<e.maxHp||e.elite)){const bh=e.boss?8:6,f=v=>w*Math.max(0,Math.min(1,v/e.maxHp));ctx.fillStyle='rgba(12,22,26,.8)';ctx.fillRect(p.x-w/2-1,p.y-1,w+2,bh+2);
    ctx.fillStyle='#fff2c9';ctx.fillRect(p.x-w/2+f(shown),p.y,f(trail)-f(shown),bh);
-   ctx.fillStyle='#ee4f3f';ctx.fillRect(p.x-w/2,p.y,f(shown),bh);
+   ctx.fillStyle=e.elite?'#a8141c':'#ee4f3f';ctx.fillRect(p.x-w/2,p.y,f(shown),bh);
    if(flash>0){ctx.strokeStyle=`rgba(255,255,255,${flash/.18})`;ctx.lineWidth=1.5;ctx.strokeRect(p.x-w/2-1.5,p.y-1.5,w+3,bh+3);}}
   let i=0;for(const k in e.st){ctx.fillStyle=ST_COLOR[k]||'#fff';ctx.beginPath();ctx.arc(p.x-w/2+4+i*8,p.y-6,3,0,7);ctx.fill();i++;}
   if(e.engagedBy){ctx.fillStyle='#fff';ctx.font=`400 10px ${FONT}`;ctx.fillText('⛓',p.x+w/2+5,p.y+5);}

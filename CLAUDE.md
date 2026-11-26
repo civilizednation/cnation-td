@@ -89,7 +89,8 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
 - Placement: melee on road/grass/forest/bridge; ranged (heroes and soldiers) only on high ground — the pedestals in `MAPS[id].highAt`
   (4–7 per map; `high` only seeds the grown map).
 - Slots: every joined hero may be on the field at once (one of each); soldiers only up to `S.soldierCap` = `CHAPTER_DEFS[].soldiers`
-  (3,3,2,2,1…1) + legacy 「지휘관의 위엄」 (`command`, +1 each, max 2). `S.slotFree(def)` / `S.soldierCount()`; HUD shows 👑 heroes and 🪖 soldiers.
+  (3,3,2,2,1…1) + legacy 「지휘관의 위엄」 (`command`, +1 each, max 2). `S.slotFree(def)` / `S.soldierCount()`; HUD shows 👑 heroes and 🪖 soldiers. When the soldier slots are full the
+  unused soldier cards turn grey (`.card.full`, 「자리 없음」, 1.7.14).
 - Painted backgrounds (`docs/ART.md`): a map with an entry in `MAP_ART` (js/data.js) shows `art/<map>.webp` in an <img> behind the
   transparent WebGL canvas, placed by `placeArt()` from the guide frame (`artFrame`: map width + 1 tile, 9:16, centred). The tiles then
   become invisible shadow catchers (flat tile tops only); gate arch, crystal dais, trees and water are not drawn (only the gate glow and crystal beam/halo).
@@ -138,7 +139,7 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   monster gates) and replaces the chips while a boss is out (`#strip.has-boss`): element, name, red bar + trail with HP numbers inside.
   Hidden on the title demo.
 - Monster HP bar length = `hpBarScale(e)`: √(maxHp ÷ (69 × battle tune hp)), clamped 0.75–1.8 (bosses up to 2.4).
-- Monster HP bars (all red `#ee4f3f`, elites and bosses too) and, since 1.7.11, ally bars: a pale trail shows the part just lost
+- Monster HP bars (red `#ee4f3f`, bosses too; elites a darker red `#a8141c` since 1.7.14) and, since 1.7.11, ally bars: a pale trail shows the part just lost
   (`barTrail`) — held `BAR_HOLD` 0.1 s, then shrinks over `BAR_DRAIN` 0.15 s (owner: 0.5 s felt too long), the same for every hit — and the bar flashes; a 필살기 holds the bar until
   its impact (`hold`). Damage areas work on every monster in range (checked: 파이어 hits all of a cluster for ~16–30% of max HP each). Clear wrap-up, defeat and the
   in-game menu have 지도로 (`toWorld`). The altar view pauses a running battle (sets `modalOpen`).
