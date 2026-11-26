@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.7.15',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.16',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -758,8 +758,11 @@ function drawOverlay(dt,time,realDt=dt){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.cl
  // Character bars, rank, ultimate glow
  bossHud(bossShown);
  for(const u of S.units){const gy=groundY(u.x,u.y),p=proj(u.x,u.y,gy+1.45),w=pxU*.7,calm=S.phase!=='battle'||u.id===selUnit;
-  {const bt=barTrail(objs.get('u'+u.id),u.hp,realDt),f=v=>w*Math.max(0,Math.min(1,v/u.maxHp));if(calm||u.hp<u.maxHp-.5||bt.trail>bt.shown+.01){ctx.fillStyle='rgba(12,22,26,.75)';ctx.fillRect(p.x-w/2-1,p.y-1,w+2,7);
-   ctx.fillStyle='#fff2c9';ctx.fillRect(p.x-w/2+f(bt.shown),p.y,f(bt.trail)-f(bt.shown),5);ctx.fillStyle=u.hp/u.maxHp>.35?'#7fe0a6':'#ffb35c';ctx.fillRect(p.x-w/2,p.y,f(bt.shown),5);
+  // 1.7.16: an ally's bar shows while preparing/selected, for 1.5 s after a hit, and ALWAYS at 30% HP or less (red, pulsing frame)
+  {const ob=objs.get('u'+u.id),bt=barTrail(ob,u.hp,realDt),f=v=>w*Math.max(0,Math.min(1,v/u.maxHp)),low=u.hp<=u.maxHp*.3,recent=ob&&ob.age!=null&&ob.age<1.5;
+   if(calm||low||recent||bt.trail>bt.shown+.01){ctx.fillStyle='rgba(12,22,26,.75)';ctx.fillRect(p.x-w/2-1,p.y-1,w+2,7);
+   ctx.fillStyle='#fff2c9';ctx.fillRect(p.x-w/2+f(bt.shown),p.y,f(bt.trail)-f(bt.shown),5);ctx.fillStyle=low?'#ff4a3d':u.hp/u.maxHp>.55?'#7fe0a6':'#ffc25c';ctx.fillRect(p.x-w/2,p.y,f(bt.shown),5);
+   if(low){ctx.strokeStyle=`rgba(255,90,70,${.55+.45*Math.sin(time*9)})`;ctx.lineWidth=2;ctx.strokeRect(p.x-w/2-2,p.y-2,w+4,9);}
    if(bt.flash>0){ctx.strokeStyle=`rgba(255,255,255,${bt.flash/.15})`;ctx.lineWidth=1.5;ctx.strokeRect(p.x-w/2-1.5,p.y-1.5,w+3,8);}}}
   {ctx.font=`400 10px ${FONT}`;ctx.fillStyle='#f2cf72';ctx.strokeStyle='rgba(12,22,26,.9)';ctx.lineWidth=3;const s='★'.repeat(u.rank);ctx.strokeText(s,p.x,p.y-3);ctx.fillText(s,p.x,p.y-3);}
   if(ultReady(u)){drawReady(u,gy,time);if(!ultSeen.has(u.id)){ultSeen.add(u.id);sfx('ult_ready');addFx({k:'readyburst',real:true,x:u.x,y:u.y,h:gy,color:heroColor(u),dur:.9});}}else ultSeen.delete(u.id);

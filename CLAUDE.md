@@ -67,8 +67,8 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   placed (`room`; melee spot: from melee only). The snapshot keeps `vantage`, so a resumed battle shows the same spots (1.7.9). +25% damage (`VANTAGE_DMG`), charge ×1.5, range +.5 / block +1. The bot (STRAT `vantage`,
   `vw`) gains little from chasing it because it never moves a placed unit; a player who re-plans each battle does.
 - Battle declutter (1.7.2): no name labels for auto skills (필살기 only), combos are a gold ring (암습 a red X), no numbers for basic attacks or
-  damage to allies, skill hits on one monster within 0.3 s merge into one number (`numOf`, dmg events carry `skill`); character HP bars only
-  when hurt; ★ always shown (1.7.6, owner: to see who needs ranks).
+  damage to allies, skill hits on one monster within 0.3 s merge into one number (`numOf`, dmg events carry `skill`); ally HP bars show while
+  preparing/selected, 1.5 s after a hit and always at ≤30% HP (red bar, pulsing red frame; 1.7.16); ★ always shown (1.7.6, owner: to see who needs ranks).
 - Ground marks under characters are 3D meshes (`decalGroup`/`syncDecals`, 1.7.6) so bodies hide the part behind them: 명당 tile (gold fill +
   square frame), 수정 조각 holder (three turning cyan arcs); the TACTICS team foot ring of every model is hidden in `modelFor` (1.7.13, owner's choice); only the shadow disc remains. 2D overlay keeps only motes/labels.
   Owner's rule: shapes around units always go behind bodies. Every ring is a 3D `groundRing(key,x,y,r,color,fill,dashed)` asked for each frame
