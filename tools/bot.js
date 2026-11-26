@@ -48,6 +48,7 @@ function play(chapter,seed,verbose,noBoss){
     let el;const els=S.ultElements(u);if(go&&els.length>1&&ST.element==='best'){const cx=x??u.x,cy=y??u.y,near=S.enemies.filter(e=>Math.hypot(e.x-cx,e.y-cy)<3);
      el=els.map(k=>({k,v:near.reduce((a,e)=>a+S.affinity(k,e.element)*(e.boss?4:1),0)})).sort((a,b)=>b.v-a.v)[0].k;}
     if(go&&!S.ult(u.id,x,y,el))ults++;}}
+  if(S.phase==='battle'&&think===15&&ST.potion!=='none'&&S.potions>0)for(const u of S.units)if(S.defOf(u).kind==='hero'&&u.hp<u.maxHp*.3&&!S.usePotion(u.id))break;
   if(S.shard&&ST.shard==='smart'){const h=S.units.filter(u=>u.ult&&!u.shardT).sort((a,b)=>b.ultCd-a.ultCd)[0];S.giveShard(h?h.id:null);}
   S.tick(1/30);
   for(const e of S.drain()){if(e.t==='leak')(log.leaks=log.leaks||[]).push(`${S.battle+1}:${e.name}`);if(e.t==='down')(log.downs=log.downs||[]).push(`${S.battle+1}:${e.def}`);if(e.t==='cleared'){const l=log[log.length-1];l.leaks=S.leaks;l.time=Math.round(S.battleTime);}}

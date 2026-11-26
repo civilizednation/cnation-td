@@ -80,6 +80,10 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
 - 수정 조각: `S.shardIn` (first 18 s, then 40 s of battle) → `S.shard` + event `shard`; `S.giveShard(id|null)` → `shardGiven`, `u.shardT`=20.
   The screen drops it in a light pillar, floats it above the dock (`#shard` in #app), drag onto a card/field hero or tap → tap; 0.25× speed while
   choosing, random after `SHARD_SECONDS` 5 real s. The sim gives it at random after 20 s by itself (bot/demo).
+- 체력 물약 (1.7.17): `POTIONS` 5 per chapter (`S.potions`, kept in the snapshot, not carried to the next chapter); `S.usePotion(id)` in
+  battle only: +50% max HP, clears bad states, one ally every `POTION_CD` 10 s. Screen: `#potionBtn` 「🧪 N」 in the strip → tap an ally
+  (field or card; quarter speed while choosing) or the ally panel's 물약 button; event `potion` → green bubbles + number. The bot uses one
+  on a hero under 30% HP.
 - Battle chips show 「다음 전투」 (`nextChip`, `S.preview(S.battle+1)`). Waves mix elements; each group one kind, consecutive groups prefer another element.
 - Economy (1.7.0): soldiers −35% cost, soldier rank-up ×0.92 more (−40% total), start gold 150+15×chapter, battles 1/2 at 60%/75% HP.
 - `tools/strategy.js` compares habits (placement, 필살기 timing, element/vantage/shard use); target: ordinary play ≥90% clears, bad habits ≤50%.

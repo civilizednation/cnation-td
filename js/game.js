@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.7.16',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.17',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -11,7 +11,7 @@ const EL_NAME={fire:'불',water:'물',ice:'얼음',wind:'바람',thunder:'번개
 const ST_NAME={burn:'화상',freeze:'빙결',slow:'둔화',stun:'기절',defdown:'방어↓',poison:'독',sleep:'수면',silence:'침묵',root:'속박'};
 const FONT='"Stylish",system-ui,sans-serif';
 
-let pickEl=null,aimEl,shardUi=null,shakeT=0,hitStop=0,ultImpact=0,spacedTiles=[],ultSeen=new Set(),S=null,speed=1,paused=false,selCard=null,selUnit=null,aiming=null,hover=null,dragging=false,validTiles=null,modalOpen=false,devMode=false,lastSnap=null;
+let potionPick=false,pickEl=null,aimEl,shardUi=null,shakeT=0,hitStop=0,ultImpact=0,spacedTiles=[],ultSeen=new Set(),S=null,speed=1,paused=false,selCard=null,selUnit=null,aiming=null,hover=null,dragging=false,validTiles=null,modalOpen=false,devMode=false,lastSnap=null;
 let vw=1,vh=1,pxU=40,tz=.25,dpr=1;
 const objs=new Map(),dying=[],fx=[],warns=new Map();
 const loadJSON=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k)||'null');return v??d;}catch(e){return d;}},saveJSON=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
@@ -165,7 +165,7 @@ function modelFor(key,spec){let p=protoCache.get(key);if(!p){p=M.figure(spec);p.
   if(o.isMesh&&o.geometry.type==='RingGeometry'&&o.geometry.parameters.innerRadius===.34)o.visible=false;});if(p.children[2])p.children[2].visible=false;protoCache.set(key,p);}return p.clone();}
 const unitSpec=def=>({...D.UNITS[def].model,team:'ally',name:D.UNITS[def].name});
 const enemySpec=e=>({model:e.model,color:e.color,name:D.MONSTERS[e.kind].name,elite:e.elite,team:'enemy',scale:e.scale,boss:e.bossId!=null,bossId:e.bossId});
-function clearObjects(){clearDecals();shardUi=null;if(typeof shardEl!=='undefined'){shardEl.hidden=true;shardEl.classList.remove('drag','picking');}if(typeof closeElPick==='function')closeElPick();for(const o of objs.values())unitGroup.remove(o.g);objs.clear();for(const d of dying)unitGroup.remove(d.g);dying.length=0;fx.length=0;warns.clear();}
+function clearObjects(){clearDecals();potionPick=false;shardUi=null;if(typeof shardEl!=='undefined'){shardEl.hidden=true;shardEl.classList.remove('drag','picking');}if(typeof closeElPick==='function')closeElPick();for(const o of objs.values())unitGroup.remove(o.g);objs.clear();for(const d of dying)unitGroup.remove(d.g);dying.length=0;fx.length=0;warns.clear();}
 const portraits={};
 function makePortraits(){const size=160,pr=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});pr.setSize(size,size,false);pr.outputColorSpace=THREE.SRGBColorSpace;
  const ps=new THREE.Scene(),pc=new THREE.OrthographicCamera(-.62,.62,.62,-.62,.1,20);ps.add(new THREE.HemisphereLight(0xe4f0ce,0x203844,2.4));const l=new THREE.DirectionalLight(0xffedc7,3);l.position.set(-3,6,4);ps.add(l);
@@ -242,12 +242,13 @@ const battleTrack=()=>S.chapter.battles[S.battle]?.boss?7:[4,5,6][(S.chapterInde
 let toastTimer=0;function toast(text){if(demo.on)return;const t=$('#toast');t.textContent=text;t.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('on'),2000);}
 let bannerTimer=0;function banner(small,strong){if(demo.on)return;const b=$('#banner');b.children[0].textContent=small;b.children[1].textContent=strong;b.classList.add('on');clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>b.classList.remove('on'),1700);}
 let hudKey='';
-function updateHud(){const key=[S.units.map(u=>u.ult?Math.ceil(u.ultCd)+(ultReady(u)?'!':'')+(u.shardT>0?'s':'')+(u.vantage?'v':''):'').join(),S.life,S.gold,S.units.length,S.battle,S.phase,Math.ceil(S.prep),S.enemies.length+S.queue.length,speed,paused].join('|');if(key===hudKey)return;hudKey=key;
+function updateHud(){const key=[S.potions,potionPick,S.units.map(u=>u.ult?Math.ceil(u.ultCd)+(ultReady(u)?'!':'')+(u.shardT>0?'s':'')+(u.vantage?'v':''):'').join(),S.life,S.gold,S.units.length,S.battle,S.phase,Math.ceil(S.prep),S.enemies.length+S.queue.length,speed,paused].join('|');if(key===hudKey)return;hudKey=key;
  $('#hudLife').textContent=S.life;$('#hudGold').textContent=S.gold;const heroes=Object.keys(S.hero).length;$('#hudHeroes').textContent=`${S.units.length-S.soldierCount()}/${heroes}`;$('#hudSoldiers').textContent=`${S.soldierCount()}/${S.soldierCap}`;
  const b=S.chapter.battles[S.battle];$('#hudBattle').textContent=`${S.battle+1}/${S.chapter.battles.length} ${b?b.name:''}`;
  $('#speedBtn').textContent='×'+speed;$('#pauseBtn').textContent=paused?'▶':'⏸';
  const start=$('#startBtn');if(S.phase==='prep'){start.hidden=false;const bonus=S.battle>0?Math.floor(S.prep):0;start.textContent=bonus>0?`전투 시작 +${bonus}💰`:'전투 시작';}else start.hidden=true;
  if(S.phase==='battle'){const left=S.enemies.length+S.queue.length;$('#chips').innerHTML=`<span class="chip">⚔ 전투 중 · 남은 적 <b>${left}</b></span>`+(S.blessings.length?`<span class="chip bless">✨ 축복 ${S.blessings.length} · 이번 장</span>`:'')+nextChip();}
+ const pb=$('#potionBtn');pb.hidden=S.phase!=='battle';pb.textContent='🧪 '+S.potions;pb.classList.toggle('on',!!potionPick);pb.classList.toggle('empty',S.potions<=0);
  refreshDock();if(selUnit)refreshPanel();}
 // During a battle: what the next battle brings (elements, elites, or the boss), so the player can prepare the matching elements.
 function nextChip(){const nx=S.preview(S.battle+1);if(!nx.length)return '';const boss=nx.find(p=>p.boss);
@@ -295,13 +296,13 @@ function matchup(att,tgt){const a=ELF(att),b=ELF(tgt);if(!a||!b)return 1;if((a==
 // The elements a character attacks with: basic attack, skills and 필살기.
 function unitElements(u){const d=S.defOf(u),set=new Set();if(d.element)set.add(d.element);for(const s of u.skills){const e=D.SKILLS[s.id].element;if(e)set.add(e);}if(u.ult&&D.SKILLS[u.ult].element)set.add(D.SKILLS[u.ult].element);return [...set];}
 function refreshPanel(force){const u=S.units.find(v=>v.id===selUnit);if(!u){closePanel();return;}const d=S.defOf(u),cost=S.rankCost(u),choice=S.needsChoice(u),ultReady=u.ult&&u.ultCd<=0;
- const key=[u.id,u.rank,cost,S.gold>=cost,Math.round(u.hp),Math.ceil(u.ultCd),aiming,choice,u.vantage,u.shardT>0,Object.keys(u.st).join()].join('|');if(!force&&key===panelKey)return;panelKey=key;
+ const key=[u.id,u.rank,cost,S.gold>=cost,Math.round(u.hp),Math.ceil(u.ultCd),aiming,choice,S.potions,u.vantage,u.shardT>0,Object.keys(u.st).join()].join('|');if(!force&&key===panelKey)return;panelKey=key;
  const kit=u.skills.map(s=>D.SKILLS[s.id].name).join(', '),bad=Object.keys(u.st).map(k=>ST_NAME[k]).join('·');
  let btns='';
  let chRow='';if(choice&&cost!=null){const ch=d.ranks[u.rank].choice;chRow=`<div class="btns choices">${Object.keys(ch).map(k=>`<button class="primary" data-act="rank" data-choice="${k}" ${S.gold<cost?'disabled':''}>${ch[k].label} ${cost}💰<small>${STRONG_VS[k]||''}</small></button>`).join('')}</div>`;}
  else if(cost!=null)btns+=`<button class="primary" data-act="rank" ${S.gold<cost?'disabled':''}>랭크업 ${cost}💰</button>`;
  if(u.ult)btns+=`<button class="ult" data-act="ult" ${ultReady&&S.phase==='battle'?'':'disabled'}>${aiming===u.id?'위치 지정':ultReady?D.SKILLS[u.ult].name+' '+S.ultElements(u).map(k=>D.ELEMENT_ICON[k]||'').join(''):D.SKILLS[u.ult].name+' '+Math.ceil(u.ultCd)+'초'}</button>`;
- btns+=`<button data-act="withdraw">철수 +${S.refundOf(u)}</button><button class="x" data-act="close">×</button>`;
+ if(S.phase==='battle')btns+=`<button data-act="potion" ${S.potions>0?'':'disabled'}>🧪 물약 ${S.potions}</button>`;btns+=`<button data-act="withdraw">철수 +${S.refundOf(u)}</button><button class="x" data-act="close">×</button>`;
  const line2=choice?'★3 각인 · 기술 하나를 그 속성으로 배우거나 강화합니다':nextRankText(u);
  $('#panel').innerHTML=`<img alt="" src="${portraits[u.def]}"><div class="info"><h3>${d.name} <span>${'★'.repeat(u.rank)}${'☆'.repeat(d.maxRank-u.rank)}</span> HP ${Math.max(0,Math.round(u.hp))}/${u.maxHp}${bad?` <em>${bad}</em>`:''}</h3><p>${u.vantage?'<b class="vt">✦명당</b> ':''}${u.shardT>0?'<b class="sh">💎×2</b> ':''}공격 ${Math.round((d.magic?u.mag:u.atk)*u.buff)} · 사거리 ${u.range}${u.block?' · 붙잡기 '+u.block:''}${u.ult?' · 필살기 충전 '+Math.round(S.ultTime(u)/(u.vantage?1.5:1))+'초':''}${kit?' · '+kit:''}</p><p class="next">${line2}</p>${chRow}<div class="btns">${btns}</div></div>`;$('#panel').classList.toggle('choosing',!!chRow);}
 function openPanel(id){selUnit=id;selCard=null;aiming=null;validTiles=null;app.classList.add('unit-open');panelKey='';refreshPanel(true);}
@@ -309,6 +310,7 @@ function closePanel(){selUnit=null;aiming=null;$('#aimHint').style.display='none
 $('#panel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;const act=b.dataset.act,u=S.units.find(v=>v.id===selUnit);if(!u)return closePanel();
  if(act==='close'){sfx('ui_tap');closePanel();}
  else if(act==='rank'){const err=S.rankUp(u.id,b.dataset.choice);if(err){toast(err);sfx('ui_error');}else{sfx('rank_up');refreshPanel(true);}}
+ else if(act==='potion'){givePotion(u.id);}
  else if(act==='withdraw'){S.withdraw(u.id);sfx('coin');closePanel();}
  else if(act==='ult'){if(aiming===u.id){aiming=null;$('#aimHint').style.display='none';refreshPanel(true);}else castUlt(u);}
  hudKey='';});
@@ -340,10 +342,12 @@ function tryDeploy(c,r){const id=selCard,err=S.deploy(id,c,r);if(err){toast(err)
 const localPoint=e=>{const r=viewport.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top,inside:e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom};};
 const tileAt=p=>{const w=unproj(p.x,p.y),c=Math.round(w.x),r=Math.round(w.y);return S.map.tile(c,r)?{c,r}:null;};
 let down=null;
-function cardDown(e,id){if(modalOpen||!S)return;e.preventDefault();sfx('ui_tap');if(shardPicking()){const u=S.units.find(v=>v.def===id&&v.ult);if(u){giveShardTo(u.id);return;}}selectCard(id);if(selCard!==id)return;down={x:e.clientX,y:e.clientY,card:true};dragging=false;}
+function cardDown(e,id){if(modalOpen||!S)return;e.preventDefault();sfx('ui_tap');if(shardPicking()){const u=S.units.find(v=>v.def===id&&v.ult);if(u){giveShardTo(u.id);return;}}
+ if(potionPick){const u=S.units.find(v=>v.def===id);if(u){givePotion(u.id);return;}}selectCard(id);if(selCard!==id)return;down={x:e.clientX,y:e.clientY,card:true};dragging=false;}
 window.addEventListener('pointermove',e=>{if(!S||!selCard||!down||!down.card)return;if(!dragging&&Math.hypot(e.clientX-down.x,e.clientY-down.y)>10)dragging=true;if(dragging){const p=localPoint(e);hover=p.inside?tileAt({x:p.x,y:p.y-pxU*.6}):null;}});
 window.addEventListener('pointerup',e=>{if(!S||!down||!down.card)return;const wasDrag=dragging;down=null;if(wasDrag&&selCard){dragging=false;const p=localPoint(e),t=p.inside?tileAt({x:p.x,y:p.y-pxU*.6}):null;hover=null;if(t)tryDeploy(t.c,t.r);}});
 fxc.addEventListener('pointerdown',e=>{if(modalOpen||!S)return;const p=localPoint(e);if(shardPicking()){const u=heroAt(e.clientX,e.clientY);if(u){giveShardTo(u.id);return;}}
+ if(potionPick){const u=allyAt(e.clientX,e.clientY);if(u)givePotion(u.id);else{potionPick=false;hudKey='';}return;}
  if(aiming){const w=unproj(p.x,p.y),err=S.ult(aiming,w.x,w.y,aimEl);if(err){toast(err);sfx('ui_error');}aiming=null;$('#aimHint').style.display='none';closePanel();return;}
  if(selCard){const t=tileAt(p);if(t)tryDeploy(t.c,t.r);else clearCard();return;}
  // Tap a character: test the bodies first (they stand taller than their tile). Otherwise a monster, otherwise the tile.
@@ -439,7 +443,7 @@ function resultModal(won,gained){const ch=S.chapter,index=S.chapterIndex;if(won)
   if(next)m.querySelector('[data-a=next]').onclick=()=>{closeModal();startChapter(index+1,null);};m.querySelector('[data-a=title]').onclick=()=>{closeModal();showTitle();};}
  else{const m=modal(`<p class="sub">DEFEAT</p><h2>수정이 깨졌습니다</h2><p>전투 ${S.battle+1} 「${ch.battles[S.battle].name}」에서 막지 못했습니다.</p><button class="primary" data-a="retry">이 전투 다시 하기<small>전투를 시작했던 배치 그대로</small></button><button data-a="restart">장 처음부터</button><button data-a="map">지도로</button><button data-a="title">타이틀로</button>`);
   m.querySelector('[data-a=retry]').onclick=()=>{closeModal();startChapter(index,lastSnap);};m.querySelector('[data-a=restart]').onclick=()=>{closeModal();startChapter(index,null);};m.querySelector('[data-a=map]').onclick=()=>toWorld();m.querySelector('[data-a=title]').onclick=()=>{closeModal();showTitle();};}}
-const HELP=`<h2>게임 방법</h2><ul><li>아래 초상화를 <b>끌어서</b> 전장에 놓거나, 누른 뒤 색이 칠해진 칸을 누르면 배치됩니다.</li><li>몬스터는 <b>붉은 문</b>에서 나와 길을 따라 <b>아르카 수정</b>으로 갑니다. 닿으면 생명이 줄어듭니다.</li><li><b>근접</b> 캐릭터를 길 위에 세우면 지나가는 몬스터를 붙잡아 <b>속도를 3분의 2</b>로 늦춥니다. 한 번에 붙잡는 수는 캐릭터마다 다르고, 길 위의 근접 캐릭터끼리는 길을 따라 5칸 이상 떨어져 서야 하고, 적 출현 문 2칸 안에는 세울 수 없습니다.</li><li><b>원거리</b> 캐릭터는 길 옆의 <b>올라온 발판(고지대)</b>에만 설 수 있고, 그 위에서 사거리가 0.5칸 늘어납니다.</li><li>늪·모래를 지나는 몬스터는 느려집니다. 그 근처에 화력을 모으세요.</li><li>배치한 캐릭터를 누르면 <b>랭크업</b>·철수·필살기를 쓸 수 있습니다. ★3에서 각인을 고릅니다.</li><li><b>필살기</b>가 핵심입니다. 출전한 영웅의 필살기는 <b>전투 중에만</b> 차오르고, 다 차면 카드가 빛납니다. 누르면 배운 속성 중 하나를 골라 씁니다. 3초 안에 다른 필살기를 이어 쓰면 <b>연계</b>로 더 강해집니다.</li><li>금색으로 빛나는 <b>명당</b>(원거리 1칸·근접 1칸)에 서면 피해 +25%, 필살기 충전 ×1.5입니다.</li><li>하늘에서 <b>수정 조각</b>이 떨어지면 영웅에게 끌어다 놓으세요(또는 조각 → 영웅 순서로 누르기). 20초 동안 필살기 충전 ×2. 5초 안에 고르지 않으면 아무에게나 갑니다.</li><li>🔥불 &gt; 🪽바람 &gt; 💧물 &gt; 🔥불 순으로 강하고, ✨빛과 🌑암흑은 서로에게 강합니다.</li><li>체력바 옆에 🛡 방패가 붙은 몬스터는 보호막 안에 있어 피해를 30% 덜 받습니다(보호막을 거는 파수꾼을 먼저 잡거나 침묵시키세요).</li><li>유령은 물리, 골렘은 마법이 잘 안 먹힙니다. 「ⓘ 적 정보」에서 미리 확인하세요.</li><li>영웅은 한 명뿐입니다. 쓰러지면 잠시 뒤 랭크를 유지한 채 돌아옵니다.</li></ul>`;
+const HELP=`<h2>게임 방법</h2><ul><li>아래 초상화를 <b>끌어서</b> 전장에 놓거나, 누른 뒤 색이 칠해진 칸을 누르면 배치됩니다.</li><li>몬스터는 <b>붉은 문</b>에서 나와 길을 따라 <b>아르카 수정</b>으로 갑니다. 닿으면 생명이 줄어듭니다.</li><li><b>근접</b> 캐릭터를 길 위에 세우면 지나가는 몬스터를 붙잡아 <b>속도를 3분의 2</b>로 늦춥니다. 한 번에 붙잡는 수는 캐릭터마다 다르고, 길 위의 근접 캐릭터끼리는 길을 따라 5칸 이상 떨어져 서야 하고, 적 출현 문 2칸 안에는 세울 수 없습니다.</li><li><b>원거리</b> 캐릭터는 길 옆의 <b>올라온 발판(고지대)</b>에만 설 수 있고, 그 위에서 사거리가 0.5칸 늘어납니다.</li><li>늪·모래를 지나는 몬스터는 느려집니다. 그 근처에 화력을 모으세요.</li><li>배치한 캐릭터를 누르면 <b>랭크업</b>·철수·필살기를 쓸 수 있습니다. ★3에서 각인을 고릅니다.</li><li><b>필살기</b>가 핵심입니다. 출전한 영웅의 필살기는 <b>전투 중에만</b> 차오르고, 다 차면 카드가 빛납니다. 누르면 배운 속성 중 하나를 골라 씁니다. 3초 안에 다른 필살기를 이어 쓰면 <b>연계</b>로 더 강해집니다.</li><li>금색으로 빛나는 <b>명당</b>(원거리 1칸·근접 1칸)에 서면 피해 +25%, 필살기 충전 ×1.5입니다.</li><li>장마다 <b>체력 물약 5개</b>가 주어집니다. 전투 중 아래 「🧪」 버튼(또는 동료 패널)을 누르고 동료를 누르면 체력 50% 회복과 나쁜 상태 해제. 같은 동료는 10초에 한 번, 남은 물약은 다음 장으로 넘어가지 않습니다.</li><li>하늘에서 <b>수정 조각</b>이 떨어지면 영웅에게 끌어다 놓으세요(또는 조각 → 영웅 순서로 누르기). 20초 동안 필살기 충전 ×2. 5초 안에 고르지 않으면 아무에게나 갑니다.</li><li>🔥불 &gt; 🪽바람 &gt; 💧물 &gt; 🔥불 순으로 강하고, ✨빛과 🌑암흑은 서로에게 강합니다.</li><li>체력바 옆에 🛡 방패가 붙은 몬스터는 보호막 안에 있어 피해를 30% 덜 받습니다(보호막을 거는 파수꾼을 먼저 잡거나 침묵시키세요).</li><li>유령은 물리, 골렘은 마법이 잘 안 먹힙니다. 「ⓘ 적 정보」에서 미리 확인하세요.</li><li>영웅은 한 명뿐입니다. 쓰러지면 잠시 뒤 랭크를 유지한 채 돌아옵니다.</li></ul>`;
 // Detailed tips under 「게임 방법」. Hero, soldier, skill, monster and boss parts are built from the data tables so they stay in step with the rules.
 const pct=v=>Math.round(v*100)+'%';
 function skillDesc(id){const s=D.SKILLS[id],b=[];
@@ -697,6 +701,7 @@ function handleEvents(){deaths=[];for(const e of S.drain()){if(demo.on&&DEMO_SKI
  else if(e.t==='ult'){sfx('ult_cast');banner('필살기',e.name);if(e.chain>0){addFx({k:'chainpop',real:true,dur:1.4,n:e.chain+1,pct:15*Math.min(2,e.chain)});sfx('ult_ready',{force:true});}}
  else if(e.t==='shard'){shardUi={phase:'fall',t:0,left:SHARD_SECONDS};sfx('skill_light',{force:true});}
  else if(e.t==='shardGiven'){shardGiven(e);}
+ else if(e.t==='potion'){sfx('heal',{force:true});addFx({k:'potion',real:true,x:e.x,y:e.y,dur:1.1,seed:Math.random()*6});addFx({k:'num',real:true,pop:true,x:e.x,y:e.y,h:1.5,text:'+'+e.v,color:'#8fe5b4',size:20,dur:1});}
  else if(e.t==='bossWave'){addFx({k:'ring',x:e.x,y:e.y,dur:.7,color:EL_COLOR[e.element]||'#ff6b5a',r:e.r,fill:true});addFx({k:'label',x:e.x,y:e.y,h:2.4,text:e.name,color:'#ff9d8a',dur:1.1,size:15});sfx('boss_attack');}
  else if(e.t==='bossSummon')addFx({k:'label',x:e.x,y:e.y,h:2.2,text:'소환!',color:'#ffb3a3',dur:.9,size:14});
  else if(e.t==='bossPhase'){banner('BOSS',e.name);sfx('boss_appear');addFx({k:'ring',x:e.x,y:e.y,dur:.8,color:'#fff3b0',r:3,fill:false});}
@@ -885,6 +890,12 @@ function pruneRings(){for(const [k,o] of rings)if(!ringsUsed.has(k)){decalGroup.
 function shieldBadge(x,y){ctx.save();ctx.fillStyle='rgba(12,30,36,.9)';ctx.strokeStyle='#8fe8ff';ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(x,y-6);ctx.lineTo(x+5,y-4);ctx.lineTo(x+5,y+1);ctx.quadraticCurveTo(x+5,y+5,x,y+7);ctx.quadraticCurveTo(x-5,y+5,x-5,y+1);ctx.lineTo(x-5,y-4);ctx.closePath();ctx.fill();ctx.stroke();
  ctx.strokeStyle='rgba(143,232,255,.85)';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x,y-3.5);ctx.lineTo(x,y+4.5);ctx.stroke();ctx.restore();}
 
+// ── 체력 물약 (1.7.17): 🧪 button in the strip (or the ally panel) → tap an ally (on the field or its card); quarter speed while choosing ──
+$('#potionBtn').addEventListener('click',()=>{if(!S||modalOpen||S.phase!=='battle')return;sfx('ui_tap');if(S.potions<=0){toast('이번 장의 물약을 모두 썼습니다');return;}
+ potionPick=!potionPick;if(potionPick){closePanel();clearCard();closeElPick();toast('물약을 줄 동료를 누르세요');}hudKey='';});
+function givePotion(id){const err=S.usePotion(id);potionPick=false;hudKey='';if(err){toast(err);sfx('ui_error');}}
+function allyAt(cx,cy){const r=viewport.getBoundingClientRect(),x=cx-r.left,y=cy-r.top;let best=null;for(const u of S.units){const s=proj(u.x,u.y,groundY(u.x,u.y)+.5),d=Math.hypot(s.x-x,s.y-y);if(d<pxU*.8&&(!best||d<best.d))best={u,d};}return best&&best.u;}
+
 // ── 1.7.1: melee swings drawn as effects, and the 필살기-ready look ──
 const HERO_COLOR={kyle:'#ffd257',sera:'#7fe08a',ria:'#ff5a6e',nero:'#b07cff',bran:'#ff9a3c',luna:'#f4f6ff'};
 const heroColor=u=>HERO_COLOR[u.def]||'#ffd257';
@@ -917,6 +928,8 @@ function drawFx3(f,k){
   ctx.save();ctx.lineCap='round';ctx.globalAlpha=fade*.55;ctx.strokeStyle=f.glow;ctx.lineWidth=pxU*(f.spear?.2:.14);ctx.shadowColor=f.glow;ctx.shadowBlur=14;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.stroke();
   ctx.globalAlpha=fade;ctx.strokeStyle=f.color;ctx.lineWidth=pxU*(f.spear?.07:.045);ctx.beginPath();ctx.moveTo(x0+(x1-x0)*.3,y0+(y1-y0)*.3);ctx.lineTo(x1,y1);ctx.stroke();
   if(reach>=1){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x1,y1,pxU*.09*fade+1,0,7);ctx.fill();}ctx.restore();ctx.globalAlpha=1;return true;}
+ if(f.k==='potion'){const g=proj(f.x,f.y,groundY(f.x,f.y));ctx.save();ctx.globalCompositeOperation='lighter';for(let i=0;i<14;i++){const ph=Math.min(1,k*1.3+(i%5)*.06),an=f.seed+i*.9,r=pxU*(.15+.3*((i*37)%10)/10),q=proj(f.x+Math.cos(an)*.3,f.y+Math.sin(an)*.3,groundY(f.x,f.y)+ph*1.8);ctx.globalAlpha=(1-k)*.9;ctx.fillStyle=i%3?'#8fe5b4':'#e9fff1';ctx.beginPath();ctx.arc(q.x,q.y,2+2*(1-ph),0,7);ctx.fill();}
+  ctx.globalAlpha=(1-k)*.5;const gr=ctx.createRadialGradient(g.x,g.y-pxU*.6,0,g.x,g.y-pxU*.6,pxU*.9);gr.addColorStop(0,'rgba(140,240,180,.9)');gr.addColorStop(1,'rgba(140,240,180,0)');ctx.fillStyle=gr;ctx.beginPath();ctx.arc(g.x,g.y-pxU*.6,pxU*.9,0,7);ctx.fill();ctx.restore();ctx.globalAlpha=1;return true;}
  if(f.k==='xmark'){const b=proj(f.x,f.y,.9),L=pxU*.32*(k<.2?k/.2:1);ctx.save();ctx.globalAlpha=k<.6?1:1-(k-.6)/.4;ctx.lineCap='round';ctx.strokeStyle='#ff3b3b';ctx.shadowColor='#ff0000';ctx.shadowBlur=12;ctx.lineWidth=5;
   ctx.beginPath();ctx.moveTo(b.x-L,b.y-L);ctx.lineTo(b.x+L,b.y+L);ctx.moveTo(b.x+L,b.y-L);ctx.lineTo(b.x-L,b.y+L);ctx.stroke();ctx.restore();ctx.globalAlpha=1;return true;}
  // the moment a 필살기 is charged: a beam drops onto the hero and a ring of light spreads from its feet, once
@@ -1015,9 +1028,9 @@ function drawShardFall(){if(!shardUi||shardUi.phase!=='fall')return;const t=shar
 
 let lastTime=0;
 function frame(now){requestAnimationFrame(frame);const real=Math.min(.05,(now-lastTime)/1000||0);lastTime=now;if(!S){bgm.setDuck(1);ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,fxc.width,fxc.height);renderer.render(scene,camera);return;}
- if(hitStop>0)hitStop=Math.max(0,hitStop-real);const busy=S.phase==='battle'&&(selCard||selUnit||aiming||pickEl!=null||(shardUi&&shardUi.phase!=='fly')),scale=demo.on?(hitStop>0?.12:1):paused||modalOpen?0:speed*(busy?.25:1)*(hitStop>0?.12:1);if(demo.on)demo.tick(real);if(!S)return;
+ if(hitStop>0)hitStop=Math.max(0,hitStop-real);const busy=S.phase==='battle'&&(selCard||selUnit||aiming||pickEl!=null||(shardUi&&shardUi.phase!=='fly')||potionPick),scale=demo.on?(hitStop>0?.12:1):paused||modalOpen?0:speed*(busy?.25:1)*(hitStop>0?.12:1);if(demo.on)demo.tick(real);if(!S)return;
  bgm.setDuck(!demo.on&&(S.phase==='prep'||S.phase==='battle'||S.phase==='bless')&&(paused||modalOpen)?.4:1);
- if(scale>0)S.step(real*scale);handleEvents();if(!S)return;shardTick(real,paused||modalOpen);chainTick();if(pickEl!=null&&!ultReady(S.units.find(v=>v.id===pickEl)))closeElPick();
+ if(scale>0)S.step(real*scale);handleEvents();if(!S)return;shardTick(real,paused||modalOpen);chainTick();if(potionPick&&S.phase!=='battle'){potionPick=false;hudKey='';}if(pickEl!=null&&!ultReady(S.units.find(v=>v.id===pickEl)))closeElPick();
  const t=now/1000;syncObjects(real*(scale>0?Math.max(1,scale):1),t);syncDecals(t);if(water)water.material.uniforms.uTime.value=t;for(const f of animated)f(t);
  if(shakeT>0){shakeT=Math.max(0,shakeT-real);const m=shakeT*14;viewport.style.transform=`translate(${(Math.random()-.5)*m}px,${(Math.random()-.5)*m}px)`;}else if(viewport.style.transform)viewport.style.transform='';
  renderer.render(scene,camera);drawOverlay(real*(scale>0?Math.max(.5,scale):.5),t,real);if(!demo.on)drawShardFall();pruneRings();updateHud();}

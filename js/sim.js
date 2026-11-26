@@ -4,7 +4,7 @@
 const D=(typeof module!=='undefined'&&module.exports)?require('./data.js'):root.TDData;
 const STEP=1/30,PREP_TIME=30,ZONE_BACK=.8,ZONE_FRONT=.5;
 // 1.7.0 필살기 카드: chain window, shard timing, vantage bonuses, element side effects of a 필살기.
-const FLIGHT={meteor:.5,bolt:.12,blast:.14,shot:.14},SHOT_FLIGHT=.17,CHAIN_WINDOW=3,SHARD_EVERY=40,SHARD_FIRST=18,SHARD_TIME=20,SHARD_RATE=2,SHARD_WAIT=20,VANTAGE_DMG=1.25,VANTAGE_RATE=1.5;
+const POTIONS=5,POTION_HEAL=.5,POTION_CD=10,FLIGHT={meteor:.5,bolt:.12,blast:.14,shot:.14},SHOT_FLIGHT=.17,CHAIN_WINDOW=3,SHARD_EVERY=40,SHARD_FIRST=18,SHARD_TIME=20,SHARD_RATE=2,SHARD_WAIT=20,VANTAGE_DMG=1.25,VANTAGE_RATE=1.5;
 const ULT_STATUS={fire:'burn',ice:'freeze',water:'freeze',wind:'slow',thunder:'stun',dark:'poison'};
 const seeded=D.seeded;
 const elementFamily=e=>e==='ice'?'water':e;
@@ -51,7 +51,7 @@ function createSim(opts){
  const legacy=opts.legacy||{},L=k=>legacy[k]||0,freshLife=chapter.life+3*L('life');
  const S={chapter,chapterIndex:opts.chapter||0,map,time:0,phase:'prep',prep:0,battle:snap?snap.battle:0,gold:snap?snap.gold:chapter.startGold+60*L('startGold'),life:snap?snap.life:freshLife,maxLife:snap?snap.maxLife:freshLife,legacy,soldierCap:chapter.soldiers+L('command'),
   units:[],enemies:[],queue:[],events:[],mods:{burn:0,soldierCost:0,heroBlock:0,bounty:0,haste:0,range:0,cdr:0,rankCost:0,armor:0,grip:0},blessings:snap?snap.blessings.slice():[],offer:null,fortress:0,
-  hero:{},nextId:1,leaks:0,leaksTotal:snap?snap.leaksTotal:0,kills:snap?snap.kills||0:0,rand:seeded((opts.seed??20261117)+(snap?snap.battle*7919:0)),acc:0,pending:[],lastUlt:-99,chain:0,vantage:[],shard:null,shardIn:SHARD_FIRST,stats:snap&&snap.stats?JSON.parse(JSON.stringify(snap.stats)):{dealt:{},healed:0,healedBy:{},ults:0,goldEarned:0,goldSpent:0,time:0}};
+  hero:{},nextId:1,leaks:0,leaksTotal:snap?snap.leaksTotal:0,kills:snap?snap.kills||0:0,rand:seeded((opts.seed??20261117)+(snap?snap.battle*7919:0)),acc:0,pending:[],potions:snap&&snap.potions!=null?snap.potions:POTIONS,lastUlt:-99,chain:0,vantage:[],shard:null,shardIn:SHARD_FIRST,stats:snap&&snap.stats?JSON.parse(JSON.stringify(snap.stats)):{dealt:{},healed:0,healedBy:{},ults:0,goldEarned:0,goldSpent:0,time:0}};
  // Chapter record for the clear summary (kept in the snapshot so a resumed chapter keeps it).
  for(const [k,v] of Object.entries({dealt:{},healed:0,healedBy:{},ults:0,goldEarned:0,goldSpent:0,time:0}))if(S.stats[k]==null)S.stats[k]=v;
  S.mods.rankCost+=.08*L('rankDisc');S.mods.bounty+=.1*L('bounty');
@@ -208,6 +208,10 @@ function createSim(opts){
   S.vantage=[high,melee].filter(Boolean).map(t=>({c:t.c,r:t.r,kind:t.terrain==='high'?'ranged':'melee'}));for(const u of S.units)refresh(u);emit({t:'vantage',spots:S.vantage});}
  // ── 수정 조각 (crystal shard): every SHARD_EVERY s of battle a shard falls; the player gives it to a hero (giveShard), who then charges
  // its 필살기 ×2 for SHARD_TIME s. The screen gives a hero at random after 5 s; the sim does so itself after SHARD_WAIT s (bot, safety).
+ // 체력 물약 (1.7.17): POTIONS per chapter, in battle only; heals half of max HP and clears bad states; one ally at most every POTION_CD s.
+ function usePotion(id){if(S.phase!=='battle')return '전투 중에만 쓸 수 있습니다';if(S.potions<=0)return '물약이 없습니다';const u=S.units.find(v=>v.id===id);if(!u)return '없는 동료입니다';
+  if(u.potionAt!=null&&S.time-u.potionAt<POTION_CD)return `${Math.ceil(POTION_CD-(S.time-u.potionAt))}초 뒤에 다시 쓸 수 있습니다`;if(u.hp>=u.maxHp-.5&&!Object.keys(u.st).length)return '체력이 가득합니다';
+  const before=u.hp;u.hp=Math.min(u.maxHp,u.hp+u.maxHp*POTION_HEAL);u.st={};u.potionAt=S.time;S.potions--;emit({t:'potion',unit:u.id,x:u.x,y:u.y,v:Math.round(u.hp-before),left:S.potions});return null;}
  function giveShard(id){if(!S.shard)return '수정 조각이 없습니다';let u=id!=null?S.units.find(v=>v.id===id&&v.ult):null;
   if(!u){const list=S.units.filter(v=>v.ult);if(!list.length){S.shard=null;return null;}u=list[Math.floor(S.rand()*list.length)];}
   u.shardT=SHARD_TIME;S.shard=null;emit({t:'shardGiven',unit:u.id,x:u.x,y:u.y});return null;}
@@ -293,14 +297,14 @@ function createSim(opts){
   if(!S.queue.length&&!S.enemies.length&&S.phase==='battle')finishBattle();}
  function step(dt){S.acc+=dt;let n=0;while(S.acc>=STEP&&n<12){tick(STEP);S.acc-=STEP;n++;}if(n>=12)S.acc=0;}
 
- function snapshot(){return {v:2,vantage:(S.vantage||[]).map(v=>({...v})),chapter:S.chapterIndex,battle:S.battle,gold:S.gold,life:S.life,maxLife:S.maxLife,blessings:S.blessings.slice(),leaksTotal:S.leaksTotal,kills:S.kills,stats:JSON.parse(JSON.stringify(S.stats)),
+ function snapshot(){return {v:2,potions:S.potions,vantage:(S.vantage||[]).map(v=>({...v})),chapter:S.chapterIndex,battle:S.battle,gold:S.gold,life:S.life,maxLife:S.maxLife,blessings:S.blessings.slice(),leaksTotal:S.leaksTotal,kills:S.kills,stats:JSON.parse(JSON.stringify(S.stats)),
   units:S.units.map(u=>({def:u.def,c:u.c,r:u.r,rank:u.rank,choice:u.choice,invested:u.invested,ultCd:u.ultCd})),hero:Object.fromEntries(Object.entries(S.hero).map(([k,v])=>[k,{keep:v.keep}]))};}
  if(snap){for(const s of snap.units)if(D.UNITS[s.def]&&map.tile(s.c,s.r))makeUnit(s.def,s.c,s.r,{rank:s.rank,choice:s.choice,invested:s.invested,ultCd:s.ultCd},0);
   for(const k in snap.hero||{})if(S.hero[k])S.hero[k].keep=snap.hero[k].keep;}
  S.prep=PREP_TIME;
  // a resumed battle keeps the 명당 it was saved with (1.7.9); a fresh chapter or an old save picks them
  if(snap&&snap.vantage&&snap.vantage.length&&snap.vantage.every(v=>map.tile(v.c,v.r))){S.vantage=snap.vantage.map(v=>({...v}));for(const u of S.units)refresh(u);}else pickVantage();S.events.length=0;
- return Object.assign(S,{affinity,ultElements,ultTime,giveShard,pickVantage,step,tick,deploy,canDeploy,slotFree,soldierCount,deployCost,rankUp,rankCost,needsChoice,withdraw,ult,startBattle,chooseBlessing,preview,snapshot,defOf,
+ return Object.assign(S,{usePotion,POTION_CD,affinity,ultElements,ultTime,giveShard,pickVantage,step,tick,deploy,canDeploy,slotFree,soldierCount,deployCost,rankUp,rankCost,needsChoice,withdraw,ult,startBattle,chooseBlessing,preview,snapshot,defOf,
   refundOf:u=>Math.round(u.invested*D.REFUND),drain(){const e=S.events;S.events=[];return e;}});
 }
 const TDSim={createSim,affinity,buildMap,STEP,TERRAIN_NAME,BLOCKED};
