@@ -61,7 +61,7 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   Call it 필살기 in all player-facing text.
 - 명당 (`S.vantage`, `pickVantage` at each prep, 1.7.4): one high tile from the top third by road cover, one road tile (path fraction .3–.62,
   scored by crossings + pedestals within 2.9 + slow ground) from the top third; within those, the half farthest from characters already
-  placed (`room`; melee spot: from melee only). +25% damage (`VANTAGE_DMG`), charge ×1.5, range +.5 / block +1. The bot (STRAT `vantage`,
+  placed (`room`; melee spot: from melee only). The snapshot keeps `vantage`, so a resumed battle shows the same spots (1.7.9). +25% damage (`VANTAGE_DMG`), charge ×1.5, range +.5 / block +1. The bot (STRAT `vantage`,
   `vw`) gains little from chasing it because it never moves a placed unit; a player who re-plans each battle does.
 - Battle declutter (1.7.2): no name labels for auto skills (필살기 only), combos are a gold ring (암습 a red X), no numbers for basic attacks or
   damage to allies, skill hits on one monster within 0.3 s merge into one number (`numOf`, dmg events carry `skill`); character HP bars only

@@ -289,11 +289,13 @@ function createSim(opts){
   if(!S.queue.length&&!S.enemies.length&&S.phase==='battle')finishBattle();}
  function step(dt){S.acc+=dt;let n=0;while(S.acc>=STEP&&n<12){tick(STEP);S.acc-=STEP;n++;}if(n>=12)S.acc=0;}
 
- function snapshot(){return {v:2,chapter:S.chapterIndex,battle:S.battle,gold:S.gold,life:S.life,maxLife:S.maxLife,blessings:S.blessings.slice(),leaksTotal:S.leaksTotal,kills:S.kills,stats:JSON.parse(JSON.stringify(S.stats)),
+ function snapshot(){return {v:2,vantage:(S.vantage||[]).map(v=>({...v})),chapter:S.chapterIndex,battle:S.battle,gold:S.gold,life:S.life,maxLife:S.maxLife,blessings:S.blessings.slice(),leaksTotal:S.leaksTotal,kills:S.kills,stats:JSON.parse(JSON.stringify(S.stats)),
   units:S.units.map(u=>({def:u.def,c:u.c,r:u.r,rank:u.rank,choice:u.choice,invested:u.invested,ultCd:u.ultCd})),hero:Object.fromEntries(Object.entries(S.hero).map(([k,v])=>[k,{keep:v.keep}]))};}
  if(snap){for(const s of snap.units)if(D.UNITS[s.def]&&map.tile(s.c,s.r))makeUnit(s.def,s.c,s.r,{rank:s.rank,choice:s.choice,invested:s.invested,ultCd:s.ultCd},0);
   for(const k in snap.hero||{})if(S.hero[k])S.hero[k].keep=snap.hero[k].keep;}
- S.prep=PREP_TIME;pickVantage();S.events.length=0;
+ S.prep=PREP_TIME;
+ // a resumed battle keeps the 명당 it was saved with (1.7.9); a fresh chapter or an old save picks them
+ if(snap&&snap.vantage&&snap.vantage.length&&snap.vantage.every(v=>map.tile(v.c,v.r))){S.vantage=snap.vantage.map(v=>({...v}));for(const u of S.units)refresh(u);}else pickVantage();S.events.length=0;
  return Object.assign(S,{affinity,ultElements,ultTime,giveShard,pickVantage,step,tick,deploy,canDeploy,slotFree,soldierCount,deployCost,rankUp,rankCost,needsChoice,withdraw,ult,startBattle,chooseBlessing,preview,snapshot,defOf,
   refundOf:u=>Math.round(u.invested*D.REFUND),drain(){const e=S.events;S.events=[];return e;}});
 }
