@@ -199,25 +199,25 @@ const SCENES={
 };
 const MAPS={
  prologue:{scene:'ruin',seed:11,w:9,h:9,paths:[[[1,-1],[1,1],[7,1],[7,4],[1,4],[1,7],[5,7],[5,9]]],
-  slow:[{path:0,from:12,to:14,type:'swamp'}],lakes:[[8,7.6,1.3]],high:6,forest:6,cliff:1,prop:2,rock:3},
+  slow:[{path:0,from:12,to:14,type:'swamp'}],lakes:[[8,7.6,1.3]],noHigh:[[6,3],[2,6]],high:6,forest:6,cliff:1,prop:2,rock:3},
  fort:{scene:'fort',seed:23,w:9,h:10,paths:[[[9,1],[1,1],[1,4],[7,4],[7,7],[2,7],[2,10]]],
-  slow:[{path:0,from:13,to:16,type:'sand'}],lakes:[[8,9,1.2]],high:6,forest:4,cliff:3,prop:3,rock:4},
+  slow:[{path:0,from:13,to:16,type:'sand'}],lakes:[[8,9,1.2]],noHigh:[[6,5],[2,3]],high:6,forest:4,cliff:3,prop:3,rock:4},
  river:{scene:'river',seed:37,w:9,h:11,paths:[[[4,-1],[4,1],[1,1],[1,4],[7,4],[7,7],[2,7],[2,9],[6,9],[6,11]]],
-  rivers:[{row:5,from:3,to:8}],lakes:[[0,9.5,1.2]],high:7,forest:5,cliff:4,prop:2,rock:4},
+  rivers:[{row:5,from:3,to:8}],lakes:[[0,9.5,1.2]],noHigh:[[6,8],[2,3]],high:7,forest:5,cliff:4,prop:2,rock:4},
  forest:{scene:'forest',seed:41,w:9,h:12,paths:[[[7,-1],[7,2],[1,2],[1,5],[5,5],[5,8],[1,8],[1,10],[6,10],[6,12]]],
   slow:[{path:0,from:5,to:8,type:'swamp'},{path:0,from:19,to:21,type:'swamp'}],lakes:[[7,7,1.3]],high:7,forest:12,cliff:2,prop:4,rock:3},
  city:{scene:'city',seed:53,paths:[[[1,-1],[1,3],[4,3],[4,6],[1,6],[1,9],[7,9],[7,12],[3,12],[3,14]],[[7,-1],[7,3],[4,3],[4,6],[1,6],[1,9],[7,9],[7,12],[3,12],[3,14]]],
-  rivers:[{col:8,from:5,to:7}],high:8,forest:4,cliff:2,prop:8,rock:3},
+  rivers:[{col:8,from:5,to:7}],noHigh:[[3,2],[6,10]],high:8,forest:4,cliff:2,prop:8,rock:3},
  plain:{scene:'camp',seed:67,paths:[[[-1,1],[6,1],[6,4],[2,4],[2,7],[7,7],[7,10],[1,10],[1,12],[5,12],[5,14]]],
-  slow:[{path:0,from:22,to:25,type:'sand'}],lakes:[[0,5,1.4],[8,13,1.2]],high:8,forest:6,cliff:2,prop:5,rock:5},
+  slow:[{path:0,from:22,to:25,type:'sand'}],lakes:[[0,5,1.4],[8,13,1.2]],noHigh:[[5,2],[3,11]],high:8,forest:6,cliff:2,prop:5,rock:5},
  ruins:{scene:'crystal',seed:79,paths:[[[4,-1],[4,2],[7,2],[7,5],[1,5],[1,8],[4,8],[4,10],[7,10],[7,12],[2,12],[2,14]]],
-  rivers:[{row:6,from:0,to:5},{row:11,from:5,to:8}],high:8,forest:6,cliff:3,prop:6,rock:4},
+  rivers:[{row:6,from:0,to:5},{row:11,from:5,to:8}],noHigh:[[6,1],[2,9]],high:8,forest:6,cliff:3,prop:6,rock:4},
  tower:{scene:'tower',seed:83,paths:[[[-1,1],[7,1],[7,12],[1,12],[1,4],[5,4],[5,9],[3,9],[3,6]]],
-  slow:[{path:0,from:26,to:29,type:'swamp'}],high:8,noHigh:[[3,5]],forest:4,cliff:3,prop:4,rock:4},
+  slow:[{path:0,from:26,to:29,type:'swamp'}],high:8,noHigh:[[3,5],[6,8]],forest:4,cliff:3,prop:4,rock:4},
  capital:{scene:'wall',seed:97,paths:[[[0,-1],[0,3],[3,3],[3,6],[6,6],[6,9],[2,9],[2,12],[6,12],[6,14]],[[8,-1],[8,3],[6,3],[6,6],[6,9],[2,9],[2,12],[6,12],[6,14]]],
-  rivers:[{row:10,from:4,to:8}],high:8,forest:4,cliff:3,prop:7,rock:3},
+  rivers:[{row:10,from:4,to:8}],noHigh:[[7,5],[2,4]],high:8,forest:4,cliff:3,prop:7,rock:3},
  core:{scene:'core',seed:101,paths:[[[4,-1],[4,1],[1,1],[1,3],[7,3],[7,6],[1,6],[1,9],[7,9],[7,12],[4,12],[4,14]]],
-  slow:[{path:0,from:16,to:19,type:'swamp'}],lakes:[[4,7.6,1.1],[8,0,1.2]],high:8,forest:7,cliff:3,prop:7,rock:3}
+  slow:[{path:0,from:16,to:19,type:'swamp'}],lakes:[[4,7.6,1.1],[8,0,1.2]],noHigh:[[6,11],[2,7]],high:8,forest:7,cliff:3,prop:7,rock:3}
 };
 
 // ── Bosses (battle 10 of each chapter) ──────────────────────────────────────────────────────────────

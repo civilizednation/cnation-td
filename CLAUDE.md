@@ -57,7 +57,9 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   become invisible shadow catchers (flat tile tops only); gate arch, crystal dais, trees and water are not drawn (only the gate glow and crystal beam/halo).
   `node tools/make-guides.js` renders `art/guides/<map>.png/.json`; `python3 tools/fit-art.py <map> <file> [--apply]` finds the frame
   inside a painting, writes `art/check/<map>.png` (tile outlines) and installs it. Re-make the guides (and repaint) if a map layout changes.
-  `MAPS[id].noHigh` turns listed high cells back into grass after the map is grown (rest of the map unchanged) — used where a painting hides a cell (tower: behind the crystal).
+  `MAPS[id].noHigh` turns listed high cells back into grass after the map is grown (rest of the map unchanged) — used where a painting
+  hides a cell (tower: behind the crystal) and (1.6.13) to retire surplus pedestals: high = prologue/fort 4, river 5, forest 7, the
+  rest 6 (≈ max ranged units + 1–2). Those paintings were repainted with the pedestals turned into ground (docs/REPAINT.md).
 - Waves use half as many monsters with twice the HP and twice the gold each (`buildChapter`, `spawn`).
 - Sound: one Web Audio context (`audioCtx`). Music is fetched and decoded into mono 22 kHz AudioBuffers (`bgm.load`, at most 3 kept) and played
   through gain nodes — <audio>.volume does not work on iPhone. `bgm/*.webm` (Opus) first, `bgm/*.m4a` (AAC copy) when WebM cannot be decoded,
