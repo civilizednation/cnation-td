@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.7.5',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.6',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -163,7 +163,7 @@ const protoCache=new Map();
 function modelFor(key,spec){let p=protoCache.get(key);if(!p){p=M.figure(spec);p.traverse(o=>{o.userData.shared=true;if(o.isMesh&&o.material!==M.ghostMat)o.castShadow=o.geometry.type!=='RingGeometry'&&o.geometry.type!=='CircleGeometry';});if(p.children[2])p.children[2].visible=false;protoCache.set(key,p);}return p.clone();}
 const unitSpec=def=>({...D.UNITS[def].model,team:'ally',name:D.UNITS[def].name});
 const enemySpec=e=>({model:e.model,color:e.color,name:D.MONSTERS[e.kind].name,elite:e.elite,team:'enemy',scale:e.scale,boss:e.bossId!=null,bossId:e.bossId});
-function clearObjects(){shardUi=null;if(typeof shardEl!=='undefined'){shardEl.hidden=true;shardEl.classList.remove('drag','picking');}if(typeof closeElPick==='function')closeElPick();for(const o of objs.values())unitGroup.remove(o.g);objs.clear();for(const d of dying)unitGroup.remove(d.g);dying.length=0;fx.length=0;warns.clear();}
+function clearObjects(){clearDecals();shardUi=null;if(typeof shardEl!=='undefined'){shardEl.hidden=true;shardEl.classList.remove('drag','picking');}if(typeof closeElPick==='function')closeElPick();for(const o of objs.values())unitGroup.remove(o.g);objs.clear();for(const d of dying)unitGroup.remove(d.g);dying.length=0;fx.length=0;warns.clear();}
 const portraits={};
 function makePortraits(){const size=160,pr=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});pr.setSize(size,size,false);pr.outputColorSpace=THREE.SRGBColorSpace;
  const ps=new THREE.Scene(),pc=new THREE.OrthographicCamera(-.62,.62,.62,-.62,.1,20);ps.add(new THREE.HemisphereLight(0xe4f0ce,0x203844,2.4));const l=new THREE.DirectionalLight(0xffedc7,3);l.position.set(-3,6,4);ps.add(l);
@@ -460,7 +460,7 @@ function helpTips(){const sec=(title,body)=>`<details><summary>${title}</summary
  return `<h3 class="tips-h">상세 팁</h3>
 ${sec('⚔ 속성 상성',`<table><tr><th>공격</th><th>강함 ×1.25</th><th>약함 ×0.75</th></tr><tr><td>🔥 불</td><td>🪽 바람</td><td>💧 물</td></tr><tr><td>🪽 바람</td><td>💧 물</td><td>🔥 불</td></tr><tr><td>💧 물·❄ 냉기</td><td>🔥 불</td><td>🪽 바람</td></tr><tr><td>✨ 빛</td><td>🌑 암흑</td><td>–</td></tr><tr><td>🌑 암흑</td><td>✨ 빛</td><td>–</td></tr></table>
 <ul><li>⚡번개와 무속성 공격은 상성이 없습니다.</li><li>적의 속성은 「ⓘ 적 정보」와 몬스터 칩의 아이콘으로 미리 볼 수 있습니다. 숫자가 <b class="y">노란색</b>이면 상성이 맞은 것, <b class="g">회색</b>이면 덜 들어간 것입니다.</li><li>★3 각인에서 다음 전투의 적 속성에 맞춰 속성을 고르세요. 한 장 안에서도 적 구성이 바뀌니, 영웅마다 서로 다른 속성을 고르면 대응이 쉬워집니다.</li></ul>`)}
-${sec('⚡ 필살기 · 명당 · 수정 조각',`<ul><li>필살기는 출전한 영웅마다 하나씩, ★1부터 있습니다. 충전 시간: 세라 32초 · 카일 38초 · 네로 40초 · 리아 45초 · 브란·루나 48초. ★5는 −15%.</li><li>충전은 <b>전투 중에만</b> 차오릅니다. 다음 전투로 그대로 이어지고, 장이 바뀌면 처음부터입니다. <b>철수하면 0</b>으로, 쓰러지면 절반이 날아갑니다.</li><li>쓸 때 영웅이 배운 속성 중 하나를 고릅니다: 🔥불 화상 · ❄얼음·💧물 빙결 · 🪽바람 둔화 · ⚡번개 기절 · 🌑어둠 독 · ✨빛 피해 +20%. 상성이 맞으면 ×1.25, 반대면 ×0.75 — 숫자 아래 「+상성」/「상성 불리」로 따로 표시됩니다. 브란(수호)과 루나(치유)는 속성 없이 씁니다.</li><li><b>연계</b>: 필살기를 쓴 뒤 3초 안에 다른 필살기를 쓰면 +15%, 세 번째는 +30%. 화면 위 금색 막대가 남은 시간입니다. 여러 영웅의 필살기를 모아 두었다가 이어 쓰는 것이 가장 강합니다.</li><li><b>명당</b>: 전투마다 원거리 발판 1칸과 근접 길 1칸이 금색으로 빛납니다. 그 자리의 캐릭터는 피해 +25%, 필살기 충전 ×1.5, 원거리는 사거리 +0.5, 근접은 붙잡기 +1. 전투가 끝나면 자리가 바뀌니 옮겨 설지 판단하세요(철수하면 충전이 0이 됩니다).</li><li><b>수정 조각</b>: 전투 중 약 40초마다 떨어집니다. 고르는 동안 시간이 느려집니다. 필살기가 가장 덜 찬 영웅에게 주는 것이 보통 이득입니다.</li><li>전투 중 위쪽 칩 「다음 전투」에서 다음 적의 속성과 보스를 미리 볼 수 있습니다.</li></ul>`)}
+${sec('⚡ 필살기 · 명당 · 수정 조각',`<ul><li>필살기는 출전한 영웅마다 하나씩, ★1부터 있습니다. 충전 시간: 세라 32초 · 카일 38초 · 네로 40초 · 리아 45초 · 브란·루나 48초. ★5는 −15%.</li><li>충전은 <b>전투 중에만</b> 차오릅니다. 다음 전투로 그대로 이어지고, 장이 바뀌면 처음부터입니다. <b>철수하면 0</b>으로, 쓰러지면 절반이 날아갑니다.</li><li>쓸 때 영웅이 배운 속성 중 하나를 고릅니다: 🔥불 화상 · ❄얼음·💧물 빙결 · 🪽바람 둔화 · ⚡번개 기절 · 🌑어둠 독 · ✨빛 피해 +20%. 상성이 맞으면 ×1.25, 반대면 ×0.75 — 숫자 아래 「+상성」/「상성 불리」로 따로 표시됩니다. 브란(수호)과 루나(치유)는 속성 없이 씁니다.</li><li>원거리 영웅(리아·세라·루나)의 필살기는 사거리와 상관없이 전장 어디에나 닿습니다. 세라는 가장 강한 적을, 리아는 누른 곳을 노립니다.</li><li><b>연계</b>: 필살기를 쓴 뒤 3초 안에 다른 필살기를 쓰면 +15%, 세 번째는 +30%. 화면 위 금색 막대가 남은 시간입니다. 여러 영웅의 필살기를 모아 두었다가 이어 쓰는 것이 가장 강합니다.</li><li><b>명당</b>: 전투마다 원거리 발판 1칸과 근접 길 1칸이 금색으로 빛납니다. 그 자리의 캐릭터는 피해 +25%, 필살기 충전 ×1.5, 원거리는 사거리 +0.5, 근접은 붙잡기 +1. 전투가 끝나면 자리가 바뀌니 옮겨 설지 판단하세요(철수하면 충전이 0이 됩니다).</li><li><b>수정 조각</b>: 전투 중 약 40초마다 떨어집니다. 고르는 동안 시간이 느려집니다. 필살기가 가장 덜 찬 영웅에게 주는 것이 보통 이득입니다.</li><li>전투 중 위쪽 칩 「다음 전투」에서 다음 적의 속성과 보스를 미리 볼 수 있습니다.</li></ul>`)}
 ${sec('🛡 물리·마법과 면역',`<ul><li>피해 = 공격력 × 배율 − 상대 방어 × 0.5 (최소 공격력의 20%). 물리는 방어(DEF), 마법은 마법 방어(RES)로 줄어듭니다.</li><li><b>유령</b>은 물리 피해를 35%만 받습니다. 속성이 실린 물리 스킬은 60%까지 들어갑니다.</li><li><b>골렘</b>은 마법 피해를 35%만 받습니다(보스는 50%).</li><li>마법 캐릭터: 리아·루나·수습 마도사·수습 사제. 나머지는 물리입니다. 두 가지를 섞어 두어야 어떤 적이 와도 막힙니다.</li><li>치명타는 피해 ×1.5입니다. 네로(18%)와 세라(12%)가 가장 잘 터뜨립니다.</li><li>방어↓(갑옷 가르기)가 걸린 적은 물리 피해를 25% 더 받습니다.</li></ul>`)}
 ${sec('🗺 지형',`<table><tr><th>지형</th><th>효과</th></tr><tr><td>길</td><td>근접 캐릭터만 설 수 있고, 지나가는 적을 붙잡습니다</td></tr><tr><td>평지</td><td>근접 캐릭터만 설 수 있습니다. 공격만 하고 붙잡지는 못합니다</td></tr><tr><td>고지대 (올라온 발판)</td><td>원거리 캐릭터만 설 수 있는 자리 · 사거리 +0.5칸 · 세라는 피해 +15%</td></tr><tr><td>수풀</td><td>근접 캐릭터만 · 적의 원거리 공격을 30% 확률로 피하고, 적이 덜 노립니다</td></tr><tr><td>늪</td><td>지나는 적 이동 속도 −30%</td></tr><tr><td>모래</td><td>지나는 적 이동 속도 −18%</td></tr><tr><td>다리</td><td>강을 건너는 길목. 근접 캐릭터를 세우기 좋습니다</td></tr><tr><td>물·절벽·바위·구조물</td><td>배치할 수 없습니다</td></tr></table><ul><li>적 출현 문과 수정 바로 앞 칸은 비워 둬야 합니다.</li><li>지형 칸을 누르면 효과가 표시됩니다.</li></ul>`)}
 ${sec('⛓ 근접 캐릭터의 붙잡기',`<ul><li>길 위의 근접 캐릭터는 자기 칸을 지나는 적을 붙잡아 <b>속도를 3분의 2</b>로 늦춥니다(보스는 55%). 적은 막히지 않고 천천히 스쳐 지나갑니다.</li><li>한 번에 붙잡는 수: 브란 3 · 카일 2 · 방패병 2 · 네로 1 · 민병 1. 민병·방패병은 ★3에서 +1. 골렘과 보스는 두 자리를 차지합니다.</li><li>붙잡힌 적은 1.6초마다 그 캐릭터를 때립니다. 4초 동안 맞지 않으면 캐릭터 체력이 초당 2.5%씩 회복됩니다.</li><li><b>비행</b>(비룡·매)과 <b>유령</b>은 붙잡을 수 없습니다.</li><li>길 위의 근접 캐릭터끼리는 <b>길을 따라 5칸 이상</b> 떨어져야 합니다. 근접 캐릭터를 고르면 기존 근접 캐릭터 둘레의 배치 금지 범위가 붉게 표시됩니다. 한곳에 몰아 세우지 말고 길 여러 곳에 나눠 세우세요.</li><li>적 출현 문에서 <b>2칸 안</b>의 길에는 근접 캐릭터를 세울 수 없습니다(나오자마자 붙잡는 배치 방지). 근접 캐릭터를 고르면 문 둘레도 붉게 표시됩니다.</li><li>붙잡힌 적 위에는 ⛓ 표시가 뜹니다. 근접 캐릭터를 여러 칸에 나눠 세우면 늦춰지는 구간이 길어집니다.</li></ul>`)}
@@ -694,10 +694,9 @@ function drawOverlay(dt,time,realDt=dt){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.cl
  bossHud(bossShown);
  for(const u of S.units){const gy=groundY(u.x,u.y),p=proj(u.x,u.y,gy+1.45),w=pxU*.7,calm=S.phase!=='battle'||u.id===selUnit;
   if(calm||u.hp<u.maxHp-.5){ctx.fillStyle='rgba(12,22,26,.75)';ctx.fillRect(p.x-w/2-1,p.y-1,w+2,7);ctx.fillStyle=u.hp/u.maxHp>.35?'#7fe0a6':'#ffb35c';ctx.fillRect(p.x-w/2,p.y,w*Math.max(0,u.hp/u.maxHp),5);}
-  if(calm){ctx.font=`400 10px ${FONT}`;ctx.fillStyle='#f2cf72';ctx.strokeStyle='rgba(12,22,26,.9)';ctx.lineWidth=3;const s='★'.repeat(u.rank);ctx.strokeText(s,p.x,p.y-3);ctx.fillText(s,p.x,p.y-3);}
+  {ctx.font=`400 10px ${FONT}`;ctx.fillStyle='#f2cf72';ctx.strokeStyle='rgba(12,22,26,.9)';ctx.lineWidth=3;const s='★'.repeat(u.rank);ctx.strokeText(s,p.x,p.y-3);ctx.fillText(s,p.x,p.y-3);}
   if(ultReady(u)){drawReady(u,gy,time);if(!ultSeen.has(u.id)){ultSeen.add(u.id);sfx('ult_ready');addFx({k:'readyburst',real:true,x:u.x,y:u.y,h:gy,color:heroColor(u),dur:.9});}}else ultSeen.delete(u.id);
-  if(u.shardT>0){const g=proj(u.x,u.y,gy),rot=time*2.4;ctx.save();ctx.shadowColor='#7ff3ff';ctx.shadowBlur=12;ctx.strokeStyle=`rgba(140,245,255,${.7+.3*Math.sin(time*8)})`;ctx.lineWidth=3;ctx.setLineDash([pxU*.18,pxU*.1]);ctx.lineDashOffset=-rot*pxU;
-   ctx.beginPath();ctx.ellipse(g.x,g.y,pxU*.62,pxU*.62*SIN,0,0,7);ctx.stroke();ctx.setLineDash([]);for(let j=0;j<4;j++){const ph=(time*.9+j/4)%1,an=rot+j*1.57,q=proj(u.x+Math.cos(an)*.5,u.y+Math.sin(an)*.5,gy+ph*1.6);ctx.globalAlpha=1-ph;ctx.fillStyle='#bdf8ff';ctx.beginPath();ctx.arc(q.x,q.y,2.6,0,7);ctx.fill();}ctx.restore();
+  if(u.shardT>0){const g=proj(u.x,u.y,gy),rot=time*2.4;ctx.save();for(let j=0;j<4;j++){const ph=(time*.9+j/4)%1,an=rot+j*1.57,q=proj(u.x+Math.cos(an)*.5,u.y+Math.sin(an)*.5,gy+ph*1.6);ctx.globalAlpha=1-ph;ctx.fillStyle='#bdf8ff';ctx.beginPath();ctx.arc(q.x,q.y,2.6,0,7);ctx.fill();}ctx.restore();
 }
   if(S.fortress>0){const g=proj(u.x,u.y,gy+.6);ctx.beginPath();ctx.arc(g.x,g.y,pxU*.55,0,7);ctx.strokeStyle='rgba(255,243,176,.8)';ctx.lineWidth=2.5;ctx.stroke();}
   let i=0;for(const k in u.st){ctx.fillStyle=ST_COLOR[k]||'#fff';ctx.beginPath();ctx.arc(p.x-w/2+4+i*8,p.y+11,3.5,0,7);ctx.fill();i++;}
@@ -779,6 +778,27 @@ function syncObjects(dt,time){
  for(const [key,o] of objs){const id=+key.slice(1),alive=key[0]==='u'?S.units.some(u=>u.id===id):S.enemies.some(e=>e.id===id);if(!alive){objs.delete(key);unitGroup.remove(o.g);}}
  for(let i=dying.length-1;i>=0;i--){const d=dying[i];d.t+=dt;const k=1-d.t/.25;if(k<=0){unitGroup.remove(d.g);dying.splice(i,1);}else d.g.scale.setScalar(Math.max(.01,k));}}
 
+// ── Ground marks drawn in 3D (1.7.6): they lie on the ground under the characters, so a body hides the part of a ring behind it ──
+const decalGroup=new THREE.Group();scene.add(decalGroup);
+const decalMat=color=>new THREE.MeshBasicMaterial({color,transparent:true,opacity:.8,depthWrite:false,side:THREE.DoubleSide});
+const decals={vkey:'',vant:[],shard:new Map()};
+function clearDecals(){for(const o of decals.vant)decalGroup.remove(o.g);decals.vant=[];decals.vkey='';for(const o of decals.shard.values())decalGroup.remove(o);decals.shard.clear();}
+// a square frame: a 4-sided ring turned 45°
+const squareFrame=(half,w)=>{const g=new THREE.RingGeometry((half-w)*Math.SQRT2,half*Math.SQRT2,4,1);g.rotateZ(Math.PI/4);g.rotateX(-Math.PI/2);return g;};
+function syncDecals(time){if(!S||demo.on){if(decals.vant.length||decals.shard.size)clearDecals();return;}
+ const key=(S.vantage||[]).map(v=>v.c+','+v.r).join('|');
+ if(key!==decals.vkey){for(const o of decals.vant)decalGroup.remove(o.g);decals.vant=[];decals.vkey=key;
+  for(const v of S.vantage||[]){const g=new THREE.Group(),fillGeo=new THREE.PlaneGeometry(.9,.9);fillGeo.rotateX(-Math.PI/2);
+   const fill=new THREE.Mesh(fillGeo,decalMat(0xffcd5a)),frame=new THREE.Mesh(squareFrame(.47,.06),decalMat(0xffe18a));g.add(fill,frame);
+   g.position.set(wx(v.c),groundY(v.c,v.r)+.03,wz(v.r));decalGroup.add(g);decals.vant.push({g,fill,frame,v});}}
+ const pulse=.5+.5*Math.sin(time*3);
+ for(const o of decals.vant){const want=selCard&&(D.UNITS[selCard].melee?o.v.kind==='melee':o.v.kind==='ranged');o.fill.material.opacity=(want?.4:.2)+.16*pulse;o.frame.material.opacity=.6+.4*pulse;o.frame.scale.setScalar(want?1.04:1);}
+ // 수정 조각 holder: three cyan arcs turning at its feet
+ const live=new Set();for(const u of S.units){if(!(u.shardT>0))continue;live.add(u.id);let g=decals.shard.get(u.id);
+  if(!g){g=new THREE.Group();for(let i=0;i<3;i++){const a=new THREE.RingGeometry(.5,.58,16,1,i*Math.PI*2/3,Math.PI*.5);a.rotateX(-Math.PI/2);g.add(new THREE.Mesh(a,decalMat(0x8ff3ff)));}decalGroup.add(g);decals.shard.set(u.id,g);}
+  g.position.set(wx(u.x),groundY(u.x,u.y)+.04,wz(u.y));g.rotation.y=-time*2.4;for(const m of g.children)m.material.opacity=.7+.3*Math.sin(time*8);}
+ for(const [id,g] of decals.shard)if(!live.has(id)){decalGroup.remove(g);decals.shard.delete(id);}}
+
 // ── 1.7.1: melee swings drawn as effects, and the 필살기-ready look ──
 const HERO_COLOR={kyle:'#ffd257',sera:'#7fe08a',ria:'#ff5a6e',nero:'#b07cff',bran:'#ff9a3c',luna:'#f4f6ff'};
 const heroColor=u=>HERO_COLOR[u.def]||'#ffd257';
@@ -839,7 +859,6 @@ function readyGlow(u,o,time){const on=ultReady(u);if(!on&&!o.glowing)return;
 const SHARD_SECONDS=5,CHAIN_SECONDS=3;
 // 명당: one high-ground tile and one road tile per battle shine gold; rising motes, and a label while preparing/placing.
 function drawVantage(time){if(demo.on||!S.vantage)return;for(const v of S.vantage){const t=S.map.tile(v.c,v.r);if(!t)continue;const h=tileTop(t),pulse=.5+.5*Math.sin(time*3),occ=S.units.find(u=>u.c===v.c&&u.r===v.r),want=selCard&&(D.UNITS[selCard].melee?v.kind==='melee':v.kind==='ranged');
-  ctx.save();ctx.shadowColor='#ffcc55';ctx.shadowBlur=want?22:12;tileQuad(v.c,v.r,h);ctx.fillStyle=`rgba(255,205,90,${(want?.32:.16)+.14*pulse})`;ctx.fill();ctx.strokeStyle=`rgba(255,225,130,${.6+.4*pulse})`;ctx.lineWidth=want?4:2.5;ctx.stroke();ctx.restore();
   for(let j=0;j<6;j++){const ph=(time*.55+j/6)%1,ox=Math.sin(j*2.4+v.c)*.34,oy=Math.cos(j*1.7+v.r)*.34,p=proj(v.c+ox,v.r+oy,h+ph*1.4);ctx.globalAlpha=(1-ph)*.95;ctx.fillStyle=j%2?'#fff3c4':'#ffd76a';ctx.beginPath();ctx.arc(p.x,p.y,2.4,0,7);ctx.fill();}ctx.globalAlpha=1;
   if(!occ&&(S.phase==='prep'||want)){const g=proj(v.c,v.r,h+1);pill(g.x,g.y,v.kind==='ranged'?'✦ 명당 · 원거리':'✦ 명당 · 근접','rgba(120,85,10,.92)','#ffe9a8');}}}
 // 연계: after a 필살기 the next one within 3 s is stronger. A gold bar counts the window down; ready cards flash gold.
@@ -913,7 +932,7 @@ function frame(now){requestAnimationFrame(frame);const real=Math.min(.05,(now-la
  if(hitStop>0)hitStop=Math.max(0,hitStop-real);const busy=S.phase==='battle'&&(selCard||selUnit||aiming||pickEl!=null||(shardUi&&shardUi.phase!=='fly')),scale=demo.on?(hitStop>0?.12:1):paused||modalOpen?0:speed*(busy?.25:1)*(hitStop>0?.12:1);if(demo.on)demo.tick(real);if(!S)return;
  bgm.setDuck(!demo.on&&(S.phase==='prep'||S.phase==='battle'||S.phase==='bless')&&(paused||modalOpen)?.4:1);
  if(scale>0)S.step(real*scale);handleEvents();if(!S)return;shardTick(real,paused||modalOpen);chainTick();if(pickEl!=null&&!ultReady(S.units.find(v=>v.id===pickEl)))closeElPick();
- const t=now/1000;syncObjects(real*(scale>0?Math.max(1,scale):1),t);if(water)water.material.uniforms.uTime.value=t;for(const f of animated)f(t);
+ const t=now/1000;syncObjects(real*(scale>0?Math.max(1,scale):1),t);syncDecals(t);if(water)water.material.uniforms.uTime.value=t;for(const f of animated)f(t);
  if(shakeT>0){shakeT=Math.max(0,shakeT-real);const m=shakeT*14;viewport.style.transform=`translate(${(Math.random()-.5)*m}px,${(Math.random()-.5)*m}px)`;}else if(viewport.style.transform)viewport.style.transform='';
  renderer.render(scene,camera);drawOverlay(real*(scale>0?Math.max(.5,scale):.5),t,real);if(!demo.on)drawShardFall();updateHud();}
 

@@ -167,7 +167,7 @@ function createSim(opts){
   return best?.e||null;}
  function heal(u,target,power){const amount=Math.round(u.mag*power*(u.buff||1)),before=target.hp;target.hp=Math.min(target.maxHp,target.hp+amount);S.stats.healed+=target.hp-before;S.stats.healedBy[u.def]=(S.stats.healedBy[u.def]||0)+target.hp-before;emit({t:'heal',unit:target.id,x:target.x,y:target.y,v:Math.round(target.hp-before)});}
  // Tries to cast one skill; returns true if it was used.
- function tryCast(u,sk,point,forced){const s=D.SKILLS[sk.id],def=defOf(u),pm=sk.ult&&u.ultBoost?1.3:1,range=s.range?s.range+(u.range-def.range):u.range,done=()=>{sk.cd=s.cd*(1-S.mods.cdr);return true;},fx=(x,y,extra)=>emit({t:'skill',unit:u.id,skill:sk.id,name:s.name,x,y,area:s.area||0,element:s.element,fx:s.fx,from:{x:u.x,y:u.y},...extra});
+ function tryCast(u,sk,point,forced){const s=D.SKILLS[sk.id],def=defOf(u),pm=sk.ult&&u.ultBoost?1.3:1,range=sk.ult&&!def.melee?99:s.range?s.range+(u.range-def.range):u.range,done=()=>{sk.cd=s.cd*(1-S.mods.cdr);return true;},fx=(x,y,extra)=>emit({t:'skill',unit:u.id,skill:sk.id,name:s.name,x,y,area:s.area||0,element:s.element,fx:s.fx,from:{x:u.x,y:u.y},...extra});
   if(s.type==='heal'){if(s.all){fx(u.x,u.y,{area:3});for(const a of S.units){heal(u,a,s.power*pm);if(s.cleanse)a.st={};}return done();}
    let best=null;for(const a of S.units){if(dist(u,a)>range+.35)continue;const ratio=a.hp/a.maxHp;if(ratio<.85&&(!best||ratio<best.hp/best.maxHp))best=a;}if(!best)return false;fx(best.x,best.y);heal(u,best,s.power);return done();}
   if(s.type==='cleanse'){const a=S.units.find(v=>dist(u,v)<=range+.35&&Object.keys(v.st).length);if(!a)return false;a.st={};fx(a.x,a.y);emit({t:'cleanse',unit:a.id,x:a.x,y:a.y});return done();}

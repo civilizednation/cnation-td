@@ -55,6 +55,7 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   (fire burn, ice/water freeze, wind slow, thunder stun, dark poison) or light +20%. 연계: within `CHAIN_WINDOW` 3 s of the last 필살기 → +15%/+30%.
   The screen (1.7.1): a charged hero has no ring — its body glows in `HERO_COLOR` (`readyGlow`, per-unit emissive copy of `M.sharedMat`), a halo +
   rising motes and a diamond crest (`drawReady`), and a one-time `readyburst` beam when it fills. A ready card glows and casts on tap; more than one element opens `#elPick` (weak/resist counts); `#chainBar` + 「N 연계!」.
+  A ranged hero's 필살기 ignores range (1.7.6: `range=99` in tryCast for ults of non-melee units).
   Call it 필살기 in all player-facing text.
 - 명당 (`S.vantage`, `pickVantage` at each prep, 1.7.4): one high tile from the top third by road cover, one road tile (path fraction .3–.62,
   scored by crossings + pedestals within 2.9 + slow ground) from the top third; within those, the half farthest from characters already
@@ -62,7 +63,9 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   `vw`) gains little from chasing it because it never moves a placed unit; a player who re-plans each battle does.
 - Battle declutter (1.7.2): no name labels for auto skills (필살기 only), combos are a gold ring (암습 a red X), no numbers for basic attacks or
   damage to allies, skill hits on one monster within 0.3 s merge into one number (`numOf`, dmg events carry `skill`); character HP bars only
-  when hurt and ★ only while preparing or selected.
+  when hurt; ★ always shown (1.7.6, owner: to see who needs ranks).
+- Ground marks under characters are 3D meshes (`decalGroup`/`syncDecals`, 1.7.6) so bodies hide the part behind them: 명당 tile (gold fill +
+  square frame), 수정 조각 holder (three turning cyan arcs); the ally foot ring is part of the model. 2D overlay keeps only motes/labels.
 - Pedestal spread (1.7.3, docs/REPAINT2.md): every map has `MAPS[id].highAt` = hand-placed pedestals (same count, spread as far apart as
   possible, 1–3 outer-bend spots; replaces the grown high cells), and the paintings were repainted to match. To move a pedestal: edit
   `highAt`, re-make the guide, repaint, `fit-art.py --apply`.
