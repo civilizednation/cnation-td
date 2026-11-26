@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.7.7',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.8',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -270,9 +270,9 @@ const BAR_HOLD=.25,BAR_DRAIN=.25;
 // Bar length follows the monster's max HP (square-root scale against an ordinary monster of this battle), so tougher monsters
 // carry visibly longer bars: about ×0.8 for the weakest, ×1.5–1.8 for elites and big ones, up to ×2.4 for bosses.
 // Big boss bar at the top of the battlefield: name, element, HP numbers, the same red bar with its pale trail.
-const bossEl=(()=>{const el=document.createElement('div');el.id='bossBar';el.hidden=true;el.innerHTML='<div class="bb-top"><span class="bb-el"></span><b class="bb-name"></b><span class="bb-hp"></span></div><div class="bb-bar"><i class="bb-trail"></i><i class="bb-fill"></i></div>';$('#viewport').appendChild(el);return el;})();
+const bossEl=(()=>{const el=document.createElement('div');el.id='bossBar';el.hidden=true;el.innerHTML='<span class="bb-el"></span><b class="bb-name"></b><div class="bb-bar"><i class="bb-trail"></i><i class="bb-fill"></i><span class="bb-hp"></span></div>';$('#strip').insertBefore(el,$('#chips'));return el;})();
 let bossKey='';
-function bossHud(b){const show=!!b&&!demo.on;if(bossEl.hidden===show)bossEl.hidden=!show;viewport.classList.toggle('has-boss',show);if(!show){bossKey='';return;}
+function bossHud(b){const show=!!b&&!demo.on;if(bossEl.hidden===show)bossEl.hidden=!show;$('#strip').classList.toggle('has-boss',show);if(!show){bossKey='';return;}
  const e=b.e,pct=v=>Math.max(0,Math.min(100,v/e.maxHp*100)).toFixed(2)+'%',key=e.id+'|'+e.name;
  if(key!==bossKey){bossKey=key;bossEl.querySelector('.bb-name').textContent=e.name;const ic=bossEl.querySelector('.bb-el');ic.textContent=e.element?D.ELEMENT_ICON[e.element]:'👑';ic.style.borderColor=e.element?(EL_COLOR[e.element]||'#fff'):'#f2cf72';}
  bossEl.querySelector('.bb-fill').style.width=pct(b.shown);bossEl.querySelector('.bb-trail').style.width=pct(b.trail);

@@ -58,16 +58,15 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
 }
 #fx{touch-action:none}
 #toast{position:absolute;left:50%;top:10px;transform:translateX(-50%);max-width:92%;padding:7px 14px;border-radius:999px;background:rgba(18,34,39,.88);font-size:14px;font-weight:400;text-align:center;pointer-events:none;opacity:0;transition:opacity .25s}
-#bossBar{position:absolute;left:10px;right:10px;top:8px;z-index:5;padding:6px 10px 8px;border-radius:12px;background:rgba(18,12,14,.94);border:1px solid rgba(255,120,100,.5);box-shadow:0 4px 14px rgba(0,0,0,.4);pointer-events:none}
-#bossBar[hidden]{display:none}
-#bossBar .bb-top{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+/* 1.7.8: the boss bar lives in the strip under the battlefield (in place of the chips), so it never covers the monster gates */
+#bossBar{flex:1;min-width:0;display:flex;align-items:center;gap:7px;height:34px;padding:0 8px;border-radius:10px;background:rgba(18,12,14,.94);border:1px solid rgba(255,120,100,.5);pointer-events:none}
+#bossBar[hidden]{display:none}#strip.has-boss #chips{display:none}
 #bossBar .bb-el{flex:none;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:2px solid #f2cf72;background:rgba(12,22,26,.9);font-size:13px}
-#bossBar .bb-name{flex:1;font-weight:400;font-size:16px;color:#ffe2d8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#bossBar .bb-hp{font-family:var(--font-body);font-size:12px;color:#f0d6cf;font-variant-numeric:tabular-nums}
-#bossBar .bb-bar{position:relative;height:12px;border-radius:6px;background:rgba(0,0,0,.6);overflow:hidden}
+#bossBar .bb-name{flex:none;max-width:38%;font-weight:400;font-size:14px;color:#ffe2d8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#bossBar .bb-bar{position:relative;flex:1;min-width:60px;height:18px;border-radius:6px;background:rgba(0,0,0,.6);overflow:hidden}
 #bossBar .bb-bar i{position:absolute;left:0;top:0;bottom:0}#bossBar .bb-trail{background:#fff2c9}#bossBar .bb-fill{background:linear-gradient(#ff6b5b,#d8382a)}
+#bossBar .bb-hp{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-body);font-size:11.5px;color:#fff;text-shadow:0 0 3px #000,0 0 3px #000;font-variant-numeric:tabular-nums}
 #bossBar.hit{border-color:#fff}
-#viewport.has-boss #toast{top:76px}
 #toast.on{opacity:1}
 #banner{position:absolute;left:0;right:0;top:34%;text-align:center;pointer-events:none;opacity:0;transition:opacity .35s;text-shadow:0 2px 8px rgba(0,0,0,.6)}
 #banner.on{opacity:1}
@@ -115,7 +114,6 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
 #elPick button.best{box-shadow:0 0 0 2px #ffd257,0 0 14px rgba(255,210,87,.7)}
 #elPick button.x{flex:0 0 34px;border-color:#556;font-size:18px;justify-content:center}
 #chainBar{position:absolute;left:50%;top:44px;transform:translateX(-50%);z-index:5;width:min(78%,300px);pointer-events:none;text-align:center}
-#viewport.has-boss #chainBar{top:112px}
 #chainBar b{display:block;font-weight:400;font-size:15px;color:#ffd257;text-shadow:0 0 6px #000,0 0 10px rgba(255,176,32,.8)}
 #chainBar div{height:6px;margin-top:3px;border-radius:3px;background:rgba(10,20,24,.75);overflow:hidden}#chainBar i{display:block;height:100%;background:linear-gradient(90deg,#ffb020,#fff3c4)}
 #shard{position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;z-index:14;touch-action:none;cursor:grab;animation:shardBob 1.4s ease-in-out infinite}
@@ -295,10 +293,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
  <div id="modal" hidden></div>
 </div>
 <script src="vendor/three-r170.js"></script>
-<script src="js/data.js?v=1.7.7"></script>
-<script src="js/sim.js?v=1.7.7"></script>
-<script src="js/models.js?v=1.7.7"></script>
-<script src="js/game.js?v=1.7.7"></script>
+<script src="js/data.js?v=1.7.8"></script>
+<script src="js/sim.js?v=1.7.8"></script>
+<script src="js/models.js?v=1.7.8"></script>
+<script src="js/game.js?v=1.7.8"></script>
 <script>if('serviceWorker' in navigator&&location.protocol!=='file:')window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 </body>
 </html>

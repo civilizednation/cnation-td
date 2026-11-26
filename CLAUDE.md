@@ -128,8 +128,9 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
 - Elements (1.6.9): monsters with an element show its icon in a coloured ring left of the HP bar; with a character selected,
   `unitElements(u)` × `matchup()` (same table as sim.affinity) makes strong matchups glow with ▲ and weak ones dim. The ★3 imprint
   choice gets its own button row (`#panel.choosing`) with `STRONG_VS` hints. An imprint adds/upgrades one skill of that element only.
-- Boss HP: no overhead bar; `bossHud()` fills `#bossBar` at the top of the viewport (name, element, HP numbers, same red bar + trail);
-  toasts move below it (`#viewport.has-boss`). Hidden on the title demo.
+- Boss HP: no overhead bar; `bossHud()` fills `#bossBar`, which sits in `#strip` under the battlefield (1.7.8: at the top it hid the
+  monster gates) and replaces the chips while a boss is out (`#strip.has-boss`): element, name, red bar + trail with HP numbers inside.
+  Hidden on the title demo.
 - Monster HP bar length = `hpBarScale(e)`: √(maxHp ÷ (69 × battle tune hp)), clamped 0.75–1.8 (bosses up to 2.4).
 - Monster HP bars (all red `#ee4f3f`, elites and bosses too): a pale trail shows the part just lost — held `BAR_HOLD` 0.25 s, then
   shrinks over `BAR_DRAIN` 0.25 s, the same for every hit — and the bar flashes; a 필살기 holds the bar until
