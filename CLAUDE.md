@@ -40,6 +40,9 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
 - 필살기 (1.7.0, the core of play): power arcaslash 8, meteor 7.2, eclipse 9.6, hawk 19 (×1.6 of 1.2.0); bosses take full damage. Ult damage events
   carry `ult`/`pct`/`aff` (the affinity share, shown as a second number) / `element` / `chain`; the screen shows a landing reticle, impact,
   an element flourish (`elemfx`), hit stop and big popping numbers.
+- Melee basic attacks (1.7.1) are drawn as effects, not animation: `meleeSwing` per unit (kyle alternating crescents + every 3rd an X `mcross`,
+  bran hop + `msmash` shockwave, nero double `mstab` + red `xmark` on 암습, militia spear `mstab`, shield short arc), coloured by the ★3 imprint;
+  the model dashes, leans (`rotation.order='YXZ'`) and squashes (`o.strike`, `o.heavy`).
 - Soldier attack and magic are multiplied by `SOLDIER_POWER` (3.2, in `legacyScale`, so sim and the clear summary agree); soldiers have
   no extra abilities by the owner's choice. Target: a soldier deals ~20–30% of a damage hero's damage.
 - Soldiers use their own models (`model:{soldierId}` → `soldierParts` in models.js, a TD-only hook), not recoloured heroes.
@@ -48,7 +51,8 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   (snapshot keeps `ultCd`), withdraw resets, going down keeps half. Rate ×1.5 on a vantage tile, ×2 while `u.shardT` > 0.
   `S.ult(id,x,y,element)`: element must be in `S.ultElements(u)` (ult/basic/skill elements; [] for heal/fortress) and adds `ULT_STATUS`
   (fire burn, ice/water freeze, wind slow, thunder stun, dark poison) or light +20%. 연계: within `CHAIN_WINDOW` 3 s of the last 필살기 → +15%/+30%.
-  The screen: a ready card glows and casts on tap; more than one element opens `#elPick` (weak/resist counts); `#chainBar` + 「N 연계!」.
+  The screen (1.7.1): a charged hero has no ring — its body glows in `HERO_COLOR` (`readyGlow`, per-unit emissive copy of `M.sharedMat`), a halo +
+  rising motes and a diamond crest (`drawReady`), and a one-time `readyburst` beam when it fills. A ready card glows and casts on tap; more than one element opens `#elPick` (weak/resist counts); `#chainBar` + 「N 연계!」.
   Call it 필살기 in all player-facing text.
 - 명당 (`S.vantage`, `pickVantage` at each prep): one high tile + one road tile from the better half; +20% damage, charge ×1.5, range +.5 / block +1.
 - 수정 조각: `S.shardIn` (first 18 s, then 40 s of battle) → `S.shard` + event `shard`; `S.giveShard(id|null)` → `shardGiven`, `u.shardT`=20.
