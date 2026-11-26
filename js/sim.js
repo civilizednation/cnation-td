@@ -73,6 +73,8 @@ function createSim(opts){
   u.interval=(1.6-def.spd*.03)*(def.melee?D.MELEE_INTERVAL:D.RANGED_INTERVAL)/(1+S.mods.haste+kit.haste);u.block=t.road?kit.block+(def.kind==='hero'&&def.melee?S.mods.heroBlock:0):0;u.splash=kit.splash;u.auras=kit.auras;u.ult=kit.ult;u.ultBoost=kit.ultBoost;u.eva=kit.eva;u.counter=kit.counter;
   u.onHigh=t.terrain==='high';u.vantage=!!(S.vantage&&S.vantage.some(v=>v.c===u.c&&v.r===u.r));u.range=def.range+(def.melee?0:(u.onHigh?.5:0)-(t.terrain==='forest'?.5:0)+S.mods.range+(u.vantage?.5:0));if(u.vantage&&def.melee&&u.block)u.block+=1;
   const old=u.skills||[];u.skills=kit.list.map(id=>old.find(s=>s.id===id)||{id,cd:1.5});}
+ function roadGap(a,b){if(a===b)return 0;let best=Infinity;for(const p in a.pd)if(b.pd[p]!=null)best=Math.min(best,Math.abs(a.pd[p]-b.pd[p]));if(best<Infinity)return best;
+  const seen=new Map([[a,0]]),q=[a];while(q.length){const t=q.shift(),dd=seen.get(t);if(t===b)return dd;for(const [dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]){const n=map.tile(t.c+dc,t.r+dr);if(n&&n.road&&!seen.has(n)){seen.set(n,dd+1);q.push(n);}}}return Infinity;}
  const costOf=(def,mult)=>{const d=D.UNITS[def];return Math.round(d.cost*mult*(1-(d.kind==='soldier'?S.mods.soldierCost:0)));};
  const deployCost=def=>S.hero[def]?.keep?0:costOf(def,D.RANK_COST[0]);
  function rankCost(u){const d=defOf(u);return u.rank>=d.maxRank?null:Math.round(costOf(u.def,D.RANK_COST[u.rank])*(d.kind==='soldier'?.92:1)*(1-S.mods.rankCost));}
@@ -88,7 +90,8 @@ function createSim(opts){
   // No melee on the road right by a monster gate, so monsters are not held the moment they appear.
   if(d.melee&&t.road&&map.gates.some(g=>Math.hypot(g.x-c,g.y-r)<D.GATE_GAP))return `적 출현 문 ${D.GATE_GAP}칸 안에는 근접 캐릭터를 세울 수 없습니다`;
   // Melee characters on the road must keep their distance, so monsters cannot be held in one spot by a crowd.
-  if(d.melee&&t.road&&S.units.some(u=>defOf(u).melee&&map.tile(u.c,u.r).road&&Math.hypot(u.c-c,u.r-r)<D.MELEE_GAP))return `길 위의 근접 캐릭터끼리는 ${D.MELEE_GAP}칸 이상 떨어져야 합니다`;
+  // Counted ALONG the road (1.7.5), not in a straight line: two bends of the road side by side do not block each other.
+  if(d.melee&&t.road&&S.units.some(u=>defOf(u).melee&&map.tile(u.c,u.r).road&&roadGap(map.tile(u.c,u.r),t)<D.MELEE_GAP))return `길 위의 근접 캐릭터끼리는 길을 따라 ${D.MELEE_GAP}칸 이상 떨어져야 합니다`;
   if(t.road)for(const p in t.pd){const first=map.paths[p].wp[0],inside=first[0]>=0&&first[1]>=0&&first[0]<map.w&&first[1]<map.h;if(t.pd[p]<(inside?1:2)||t.pd[p]>map.paths[p].total-1)return '적 출현 문과 수정 바로 앞은 비워 둬야 합니다';}
   if(d.kind==='hero'){if(S.units.some(u=>u.def===def))return `${d.name}은(는) 이미 전장에 있습니다`;if(S.hero[def].cd>0)return `${d.name} 재배치 대기 중`;}
   if(!slotFree(def))return `병사 자리(${S.soldierCap}칸)가 모두 찼습니다`;

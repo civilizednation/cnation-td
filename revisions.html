@@ -8,8 +8,8 @@
 <style>
 :root{color-scheme:dark;--bg:#0d1a1e;--card:#1f373d;--line:#ffffff1c;--ink:#e6eee6;--muted:#94aaa7;--gold:#f2cf72;--mint:#8fe5b4}
 *{box-sizing:border-box}
-@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=37") format("woff2");font-display:swap;size-adjust:118%}
-@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=37") format("woff2");font-display:swap;size-adjust:104%}
+@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=38") format("woff2");font-display:swap;size-adjust:118%}
+@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=38") format("woff2");font-display:swap;size-adjust:104%}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 "Gowun Dodum",-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif;padding:calc(16px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom))}
 main{max-width:680px;margin:0 auto}
 a{color:var(--gold)}
@@ -36,8 +36,13 @@ details.rev summary{cursor:pointer}
 <h1>Revision History</h1>
 <p class="lead">큰 변화는 두 번째 자리(1.1.0), 작은 수정은 세 번째 자리(1.0.1)를 올립니다.</p>
 
+<section class="rev" id="v1.7.5">
+<h2>ver.1.7.5 <span class="date">2026-11-26</span> <span class="tag">현재</span></h2>
+<h3>수정</h3><ul><li>길 위의 근접 동료 간격을 <b>길을 따라</b> 세도록 고쳤습니다(5칸). 이전에는 직선 반경으로 재서, 구부러진 길 건너편까지 통째로 막혔습니다. 금지 구역은 길 위 칸에만 X로 표시되고 둥근 원은 없앴습니다</li></ul>
+</section>
+
 <section class="rev" id="v1.7.4">
-<h2>ver.1.7.4 <span class="date">2026-11-26</span> <span class="tag">현재</span></h2>
+<h2>ver.1.7.4 <span class="date">2026-11-26</span></h2>
 <h3>밸런스</h3><ul><li>명당이 길을 잘 내려다보는 좋은 발판 중에서만 생기고, 그중 동료가 아직 없는 쪽을 고릅니다. 근접 명당은 원거리 발판이 도와줄 수 있는 길 가운데쯤에 생깁니다</li><li>명당 피해 보너스 +20% → +25%</li><li>몬스터 체력을 조금 올렸습니다 — 필살기를 아끼고 상성 · 연계 · 발판 위치를 신경 쓰면 깨지만, 아무렇게나 두면 지기 쉽습니다</li></ul>
 </section>
 

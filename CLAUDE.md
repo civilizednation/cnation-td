@@ -36,7 +36,9 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
 - Chapters are generated from `CHAPTER_DEFS` by `buildChapter` (waves from `POOLS`, roster from `JOIN_AT`). Maps in `MAPS` are grown
   around the road by `sim.buildMap` from each map's seed, so the same map always comes out the same.
 - Melee characters do not stop monsters: a monster inside a melee unit's tile (up to `block` at once) moves at `ENGAGE_SLOW` (2/3) and hits it.
-  Melee units on the road must stand at least `MELEE_GAP` (4 since 1.7.3) tiles apart (`canDeploy`); the screen shows the forbidden zone while placing.
+  Melee units on the road must stand at least `MELEE_GAP` (5) tiles apart counted ALONG the road (`roadGap` in sim.js: difference of
+  distance along a shared path, else BFS over road tiles; 1.7.5 — a straight-line radius blocked the parallel bends); the screen marks the
+  forbidden road tiles with X while placing (no circle).
 - 필살기 (1.7.0, the core of play): power arcaslash 8, meteor 7.2, eclipse 9.6, hawk 19 (×1.6 of 1.2.0); bosses take full damage. Ult damage events
   carry `ult`/`pct`/`aff` (the affinity share, shown as a second number) / `element` / `chain`; the screen shows a landing reticle, impact,
   an element flourish (`elemfx`), hit stop and big popping numbers.
