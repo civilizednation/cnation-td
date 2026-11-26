@@ -41,6 +41,9 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   Melee units on the road must stand at least `MELEE_GAP` (5) tiles apart counted ALONG the road (`roadGap` in sim.js: difference of
   distance along a shared path, else BFS over road tiles; 1.7.5 — a straight-line radius blocked the parallel bends); the screen marks the
   forbidden road tiles with X while placing (no circle).
+- Hit timing (1.7.12): damage lands when the visual arrives — `later(delay,fn)` queues it in `S.pending` (cleared at prep): `FLIGHT`
+  meteor .5 s, bolt .12, blast/shot .14 (area victims are picked at impact), ranged basic attacks `SHOT_FLIGHT` .17, monster shots .2.
+  The screen therefore needs no bar hold; the meteor's visual delay is divided by the game speed so it stays in step.
 - 필살기 (1.7.0, the core of play): power arcaslash 8, meteor 7.2, eclipse 9.6, hawk 19 (×1.6 of 1.2.0); bosses take full damage. Ult damage events
   carry `ult`/`pct`/`aff` (the affinity share, shown as a second number) / `element` / `chain`; the screen shows a landing reticle, impact,
   an element flourish (`elemfx`), hit stop and big popping numbers.

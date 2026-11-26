@@ -4,7 +4,7 @@
 const D=(typeof module!=='undefined'&&module.exports)?require('./data.js'):root.TDData;
 const STEP=1/30,PREP_TIME=30,ZONE_BACK=.8,ZONE_FRONT=.5;
 // 1.7.0 필살기 카드: chain window, shard timing, vantage bonuses, element side effects of a 필살기.
-const CHAIN_WINDOW=3,SHARD_EVERY=40,SHARD_FIRST=18,SHARD_TIME=20,SHARD_RATE=2,SHARD_WAIT=20,VANTAGE_DMG=1.25,VANTAGE_RATE=1.5;
+const FLIGHT={meteor:.5,bolt:.12,blast:.14,shot:.14},SHOT_FLIGHT=.17,CHAIN_WINDOW=3,SHARD_EVERY=40,SHARD_FIRST=18,SHARD_TIME=20,SHARD_RATE=2,SHARD_WAIT=20,VANTAGE_DMG=1.25,VANTAGE_RATE=1.5;
 const ULT_STATUS={fire:'burn',ice:'freeze',water:'freeze',wind:'slow',thunder:'stun',dark:'poison'};
 const seeded=D.seeded;
 const elementFamily=e=>e==='ice'?'water':e;
@@ -51,7 +51,7 @@ function createSim(opts){
  const legacy=opts.legacy||{},L=k=>legacy[k]||0,freshLife=chapter.life+3*L('life');
  const S={chapter,chapterIndex:opts.chapter||0,map,time:0,phase:'prep',prep:0,battle:snap?snap.battle:0,gold:snap?snap.gold:chapter.startGold+60*L('startGold'),life:snap?snap.life:freshLife,maxLife:snap?snap.maxLife:freshLife,legacy,soldierCap:chapter.soldiers+L('command'),
   units:[],enemies:[],queue:[],events:[],mods:{burn:0,soldierCost:0,heroBlock:0,bounty:0,haste:0,range:0,cdr:0,rankCost:0,armor:0,grip:0},blessings:snap?snap.blessings.slice():[],offer:null,fortress:0,
-  hero:{},nextId:1,leaks:0,leaksTotal:snap?snap.leaksTotal:0,kills:snap?snap.kills||0:0,rand:seeded((opts.seed??20261117)+(snap?snap.battle*7919:0)),acc:0,lastUlt:-99,chain:0,vantage:[],shard:null,shardIn:SHARD_FIRST,stats:snap&&snap.stats?JSON.parse(JSON.stringify(snap.stats)):{dealt:{},healed:0,healedBy:{},ults:0,goldEarned:0,goldSpent:0,time:0}};
+  hero:{},nextId:1,leaks:0,leaksTotal:snap?snap.leaksTotal:0,kills:snap?snap.kills||0:0,rand:seeded((opts.seed??20261117)+(snap?snap.battle*7919:0)),acc:0,pending:[],lastUlt:-99,chain:0,vantage:[],shard:null,shardIn:SHARD_FIRST,stats:snap&&snap.stats?JSON.parse(JSON.stringify(snap.stats)):{dealt:{},healed:0,healedBy:{},ults:0,goldEarned:0,goldSpent:0,time:0}};
  // Chapter record for the clear summary (kept in the snapshot so a resumed chapter keeps it).
  for(const [k,v] of Object.entries({dealt:{},healed:0,healedBy:{},ults:0,goldEarned:0,goldSpent:0,time:0}))if(S.stats[k]==null)S.stats[k]=v;
  S.mods.rankCost+=.08*L('rankDisc');S.mods.bounty+=.1*L('bounty');
@@ -178,13 +178,15 @@ function createSim(opts){
   if(s.self&&!forced&&!S.enemies.some(e=>!e.dead&&dist(u,e)<=s.area+.2&&(!e.flying||s.ult)))return false;
   const el=sk.element!==undefined?sk.element:s.element,status=sk.ult&&sk.element!==undefined?ULT_STATUS[el]||null:s.status,chain=sk.chain||0,
    centre=s.self?{x:u.x,y:u.y}:point||{x:target.x,y:target.y},o={type:s.type,power:s.power*pm*(1+.15*Math.min(2,chain))*(sk.ult&&el==='light'&&sk.element!==undefined?1.2:1),element:el,skill:true,ignore:s.ignore,ult:!!s.ult,chain};
-  const victims=s.area?S.enemies.filter(e=>!e.dead&&Math.hypot(e.x-centre.x,e.y-centre.y)<=s.area+.2&&(s.type==='magic'||!e.flying||s.ult||!def.melee)):[target];
   fx(centre.x,centre.y,{element:el,chain});
+  // 1.7.12: damage lands when the spell arrives (meteor falls 0.5 s, bolts/blasts fly ~0.12–0.14 s), not when it is cast
+  later(FLIGHT[s.fx]||0,()=>{
+  const victims=s.area?S.enemies.filter(e=>!e.dead&&Math.hypot(e.x-centre.x,e.y-centre.y)<=s.area+.2&&(s.type==='magic'||!e.flying||s.ult||!def.melee)):target&&!target.dead?[target]:[];
   for(const e of victims){const burning=!!e.st.burn;hit(u,e,o);if(e.dead)continue;
    if(status&&(sk.ult||S.rand()<(s.chance??1)))addStatus(e,status);
    if(s.knockback&&!e.boss)e.dist=Math.max(0,e.dist-s.knockback);
    // Combo 확산: a wind skill fans the flames to neighbours.
-   if(burning&&s.element==='wind'){let spread=0;for(const n of S.enemies)if(!n.dead&&n!==e&&!n.st.burn&&dist(n,e)<=1.3){addStatus(n,'burn');spread++;}if(spread)emit({t:'combo',x:e.x,y:e.y,name:'확산'});}}
+   if(burning&&s.element==='wind'){let spread=0;for(const n of S.enemies)if(!n.dead&&n!==e&&!n.st.burn&&dist(n,e)<=1.3){addStatus(n,'burn');spread++;}if(spread)emit({t:'combo',x:e.x,y:e.y,name:'확산'});}}});
   if(!s.self){u.face={dx:centre.x-u.x,dy:centre.y-u.y};u.faceT=S.time;}return done();}
  function ult(id,x,y,element){const u=S.units.find(v=>v.id===id);if(!u||!u.ult)return '필살기가 없습니다';if(u.ultCd>0)return '아직 준비되지 않았습니다';if(S.phase!=='battle')return '전투 중에만 쓸 수 있습니다';if(u.st.freeze||u.st.stun||u.st.silence)return '지금은 쓸 수 없는 상태입니다';
   const s=D.SKILLS[u.ult];if(s.aim&&(x==null||y==null))return '위치를 지정하세요';const els=ultElements(u);if(element===undefined||!els.includes(element))element=els[0];
@@ -216,7 +218,7 @@ function createSim(opts){
    const same=out.find(o=>!boss&&o.kind===kind&&o.elite===(flags==='elite'));if(same){same.count+=count;continue;}
    out.push({kind,name:boss?boss.name:(flags==='elite'?'정예 ':'')+m.name,count,element:(boss&&boss.element)||m.element||null,flying:boss?!!boss.fly:!!trait.flying,immunity:boss?boss.immunity||null:m.immunity||null,elite:flags==='elite',boss:!!boss,note:boss?boss.hint:trait.note||''});}return out;}
  function startBattle(){if(S.phase!=='prep')return;const bonus=S.battle>0?Math.floor(S.prep):0;if(bonus>0){S.gold+=bonus;S.stats.goldEarned+=bonus;emit({t:'bonus',gold:bonus,why:'조기 출발'});}S.phase='battle';loadBattle();emit({t:'battleStart',battle:S.battle});}
- function enterPrep(){S.phase='prep';S.prep=PREP_TIME;S.shard=null;for(const u of S.units){u.hp=u.maxHp;u.st={};release(u);}pickVantage();emit({t:'prep',battle:S.battle});}
+ function enterPrep(){S.pending=[];S.phase='prep';S.prep=PREP_TIME;S.shard=null;for(const u of S.units){u.hp=u.maxHp;u.st={};release(u);}pickVantage();emit({t:'prep',battle:S.battle});}
  function finishBattle(){const n=S.battle+1,clean=S.leaks===0,bonus=Math.round((30+n*8)*(clean?1.5:1));S.gold+=bonus;S.stats.goldEarned+=bonus;S.leaksTotal+=S.leaks;emit({t:'cleared',battle:S.battle,gold:bonus,clean});
   if(n>=chapter.battles.length){S.phase='won';emit({t:'won'});return;}
   S.battle=n;
@@ -236,7 +238,8 @@ function createSim(opts){
   if(c.clones&&!e.cloned&&e.hp<=e.maxHp*c.clones.at){e.cloned=true;for(let i=0;i<c.clones.count;i++)spawn({flags:'clone',parent:e,path:e.path,at:Math.max(0,e.dist-.6-i*.5)});emit({t:'bossPhase',id:e.id,x:e.x,y:e.y,name:'분신'});}
   if(c.phases&&e.phase<c.phases.length&&e.hp<=e.maxHp*c.phases[e.phase]){e.phase++;e.speed*=1.2;T.summon=0;T.wave=Math.min(T.wave,1.5);emit({t:'bossPhase',id:e.id,x:e.x,y:e.y,name:`${e.phase+1}단계`});}}
 
- function tick(dt){S.time+=dt;if(S.phase==='battle')S.stats.time+=dt;
+ function later(delay,fn){if(delay<=0)fn();else S.pending.push({t:S.time+delay,fn});}
+ function tick(dt){S.time+=dt;if(S.pending.length){const due=S.pending.filter(p=>p.t<=S.time);if(due.length){S.pending=S.pending.filter(p=>p.t>S.time);for(const p of due)p.fn();}}if(S.phase==='battle')S.stats.time+=dt;
   for(const id in S.hero)if(S.hero[id].cd>0)S.hero[id].cd=Math.max(0,S.hero[id].cd-dt);
   if(S.phase==='prep'){if(S.battle>0){S.prep-=dt;if(S.prep<=0){S.prep=0;startBattle();}}return;}
   if(S.phase!=='battle')return;
@@ -265,7 +268,7 @@ function createSim(opts){
    const out=st.freeze||st.stun||st.sleep,holder=e.engagedBy?S.units.find(v=>v.id===e.engagedBy):null;
    if(holder&&!out){e.cd-=dt;if(e.cd<=0){e.cd=1.6;emit({t:'eattack',id:e.id,unit:holder.id});hurt(holder,e.atk*.5,e.magic,e,true);if(!holder.gone&&e.inflict&&S.rand()<.4)allyStatus(holder,e.inflict);}}
    if(e.ranged&&!out&&!(st.silence&&e.magic)){e.rcd-=dt;if(e.rcd<=0){let target=null,bd=1e9;for(const u of S.units){const d=dist(u,e);if(d>e.range+.3)continue;const score=u.taunt>0?d-100:d+(map.tile(u.c,u.r).terrain==='forest'?2:0);if(score<bd){bd=score;target=u;}}
-     if(target){e.rcd=3;emit({t:'eshot',id:e.id,from:{x:e.x,y:e.y},to:{x:target.x,y:target.y},magic:e.magic,element:e.element});if(!(map.tile(target.c,target.r).terrain==='forest'&&S.rand()<.3)){hurt(target,e.atk*.2,e.magic,e,false);if(!target.gone&&e.inflict&&S.rand()<.25)allyStatus(target,e.inflict);}else emit({t:'dodge',x:target.x,y:target.y});}else e.rcd=.4;}}
+     if(target){e.rcd=3;emit({t:'eshot',id:e.id,from:{x:e.x,y:e.y},to:{x:target.x,y:target.y},magic:e.magic,element:e.element});const dodge=map.tile(target.c,target.r).terrain==='forest'&&S.rand()<.3,roll=S.rand(),atk=e.atk;later(.2,()=>{if(target.gone||!S.units.includes(target))return;if(!dodge){hurt(target,atk*.2,e.magic,e.dead?null:e,false);if(!target.gone&&e.inflict&&roll<.25)allyStatus(target,e.inflict);}else emit({t:'dodge',x:target.x,y:target.y});});}else e.rcd=.4;}}
    if(!out&&!st.root){const t=map.tile(Math.round(e.x),Math.round(e.y)),ground=!e.flying&&t?(t.terrain==='swamp'?.7:t.terrain==='sand'?.82:1):1,held=holder?(e.boss?.55:D.ENGAGE_SLOW)*(1-S.mods.grip):1;
     e.dist+=e.speed*(st.slow?.65:1)*ground*held*dt;
     if(e.dist>=map.paths[e.path].total){e.dead=true;e.leaked=true;S.life-=e.lifeCost;S.leaks++;emit({t:'leak',id:e.id,cost:e.lifeCost,boss:e.boss,name:e.name});if(S.life<=0){S.life=0;S.phase='lost';emit({t:'lost'});return;}continue;}}
@@ -284,7 +287,8 @@ function createSim(opts){
    for(const sk of u.skills){if(sk.cd>0){sk.cd-=dt;continue;}if(cast||u.cd>.25||st.silence)continue;if(tryCast(u,sk)){u.cd=Math.max(u.cd,.45);cast=true;}else sk.cd=.3;}
    if(cast||u.cd>0)continue;const target=pickTarget(u,u.range,!def.melee);if(!target)continue;
    u.cd=u.interval;u.face={dx:target.x-u.x,dy:target.y-u.y};u.faceT=S.time;const o={type:def.magic?'magic':'physical',power:(def.basic||1)*(def.melee?D.MELEE_POWER:D.RANGED_POWER),element:def.element};emit({t:'attack',unit:u.id,target:target.id,from:{x:u.x,y:u.y},to:{x:target.x,y:target.y},melee:def.melee,magic:!!def.magic});
-   if(u.splash){const c={x:target.x,y:target.y};for(const e of S.enemies.slice())if(!e.dead&&Math.hypot(e.x-c.x,e.y-c.y)<=u.splash)hit(u,e,e===target?o:{...o,power:.5});}else hit(u,target,o);}
+   const strike=()=>{if(u.splash){const c={x:target.x,y:target.y};for(const e of S.enemies.slice())if(!e.dead&&Math.hypot(e.x-c.x,e.y-c.y)<=u.splash)hit(u,e,e===target?o:{...o,power:.5});}else if(!target.dead)hit(u,target,o);};
+   if(def.melee)strike();else later(SHOT_FLIGHT,strike);}
   S.enemies=S.enemies.filter(e=>!e.dead);
   if(!S.queue.length&&!S.enemies.length&&S.phase==='battle')finishBattle();}
  function step(dt){S.acc+=dt;let n=0;while(S.acc>=STEP&&n<12){tick(STEP);S.acc-=STEP;n++;}if(n>=12)S.acc=0;}

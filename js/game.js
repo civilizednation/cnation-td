@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.7.11',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.12',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -653,7 +653,7 @@ function playDeaths(){if(!deaths.length)return;const count={};for(const k of dea
  sfx('coin',{force:true,gain:Math.min(1.4,1+.1*(deaths.length-1))});deaths=[];}
 function handleEvents(){deaths=[];for(const e of S.drain()){if(demo.on&&DEMO_SKIP.has(e.t))continue;
  if(e.t==='attack'){const o=objs.get('u'+e.unit);if(o)o.lunge=1;if(e.melee){shove(e.target,1);meleeSwing(e,o);}else addFx({k:'shot',from:e.from,to:e.to,dur:.17,color:e.magic?'#e2c4ff':'#fff1c4',glow:e.magic?'#a66bff':'#ffb347',magic:e.magic});sfx(e.melee?'hit_melee':!e.magic?'hit_arrow':D.UNITS[S.units.find(v=>v.id===e.unit)?.def]?.element==='light'?'hit_holy':'hit_magic');}
- else if(e.t==='skill'&&D.SKILLS[e.skill]?.ult){const s=D.SKILLS[e.skill],color=EL_COLOR[e.element]||'#fff3b0',area=e.area||s.area||.8,heal=s.type==='heal',delay=e.fx==='meteor'?.5:e.fx==='bolt'?.12:0;ultImpact=delay;
+ else if(e.t==='skill'&&D.SKILLS[e.skill]?.ult){const s=D.SKILLS[e.skill],color=EL_COLOR[e.element]||'#fff3b0',area=e.area||s.area||.8,heal=s.type==='heal',delay=(e.fx==='meteor'?.5:e.fx==='bolt'?.12:0)/(demo.on?1:speed);ultImpact=delay;
   if(!heal){const R=e.fx==='bolt'?.75:area+.2;addFx({k:'target',real:true,x:e.x,y:e.y,dur:Math.max(.35,delay+.1),color,r:R});
    addFx({k:'impact',real:true,x:e.x,y:e.y,dur:.75,delay,color,r:R,seed:Math.random()*6,life:delay+.75});
    setTimeout(()=>{if(!S)return;hitStop=.16;addFx({k:'flash2',real:true,dur:.28,color});},delay*1000);}
@@ -668,11 +668,11 @@ function handleEvents(){deaths=[];for(const e of S.drain()){if(demo.on&&DEMO_SKI
   if(e.fx==='slash')addFx({k:'slash',x:e.x,y:e.y,dur:.3,color,r:e.area?e.area:.55});else if(e.fx==='bolt'){addFx({k:'bolt',x:e.x,y:e.y,dur:.28,color});}
   else if(e.fx==='meteor'){addFx({k:'meteor',x:e.x,y:e.y,dur:.45,color,r:e.area});}else if(e.fx==='heal'){addFx({k:'ring',x:e.x,y:e.y,dur:.5,color:'#8fe5b4',r:.6,fill:true});sfx('heal');}else addFx({k:'ring',x:e.x,y:e.y,dur:.42,color,r:e.area||.6,fill:true});
   if(e.fx==='blast'||e.fx==='shot'||e.fx==='bolt')addFx({k:'shot',from:e.from,to:{x:e.x,y:e.y},dur:.14,color,magic:true});}
- else if(e.t==='dmg'&&e.ult&&e.v>0){{const hb=objs.get('e'+e.id);if(hb&&ultImpact>0){if(hb.shown==null){const en=S.enemies.find(x=>x.id===e.id);hb.shown=hb.trail=(en?en.hp:0)+e.v;}hb.hold=ultImpact;}}const ev=e,go=()=>{if(!S)return;const o=objs.get('e'+ev.id);const heavy=ev.pct>=.35;
+ else if(e.t==='dmg'&&e.ult&&e.v>0){const ev=e,go=()=>{if(!S)return;const o=objs.get('e'+ev.id);const heavy=ev.pct>=.35;
    addFx({k:'burst',real:true,x:ev.x,y:ev.y,dur:.5,color:ev.tag==='weak'?'#ffd257':'#fff2c9',seed:Math.random()*6,big:heavy});
    const jx=(Math.random()-.5)*.25;addFx({k:'num',real:true,pop:true,glow:ev.tag==='weak'?'#ffb020':null,x:ev.x+jx,y:ev.y,h:1.15,text:ev.v+(ev.crit?'!!':'!'),color:ev.tag==='resist'?'#cfd8da':heavy?'#ffcf4a':'#ffe9a8',size:heavy?30:23,dur:1.25});
    if(ev.aff)addFx({k:'num',real:true,pop:true,x:ev.x+jx,y:ev.y,h:.62,text:ev.aff>0?`+${ev.aff} ${D.ELEMENT_ICON[ev.element]||''}상성`:`−${-ev.aff} 상성 불리`,color:ev.aff>0?'#ffd257':'#a9b6ba',size:14,dur:1.25});
-   if(o){o.flash=.32;o.tremble=Math.max(o.tremble||0,.75);o.push=1.8;}};ultImpact>0?setTimeout(go,ultImpact*1000):go();continue;}
+   if(o){o.flash=.32;o.tremble=Math.max(o.tremble||0,.75);o.push=1.8;}};go();continue;}
  else if(e.t==='dmg'){if(e.combo==='암습')addFx({k:'xmark',x:e.x,y:e.y,dur:.45});if(e.tag==='miss'){addFx({k:'num',x:e.x,y:e.y,h:.9,text:'빗나감',color:'#9fb0b6',size:11,dur:.6});continue;}const big=e.crit||e.tag==='weak'||e.combo;if(e.v>0&&fx.length<120)addFx({k:'hit',x:e.x,y:e.y,dur:.16,color:e.tag==='weak'?'#ffd257':'#ffffff'});if(e.skill&&e.v>0){const prev=numOf.get(e.id);if(prev&&prev.t<.3&&fx.includes(prev)){prev.v+=e.v;prev.text=prev.v+(e.crit||prev.crit?'!':'');prev.t=0;prev.x=e.x;prev.y=e.y;if(e.tag==='weak')prev.color='#ffd257';prev.crit=prev.crit||e.crit;}
    else{const n={k:'num',x:e.x+(Math.random()-.5)*.3,y:e.y,h:.9,v:e.v,crit:e.crit,text:e.v+(e.crit?'!':''),color:e.tag==='weak'?'#ffd257':e.tag==='resist'?'#9fb0b6':e.crit?'#ffb199':'#fff',size:big?15:12,dur:.7};addFx(n);numOf.set(e.id,n);}}const o=objs.get('e'+e.id);if(o)o.flash=.12;}
  else if(e.t==='combo')addFx({k:'ring',x:e.x,y:e.y,dur:.35,color:'#ffd257',r:.6});
