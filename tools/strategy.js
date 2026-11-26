@@ -7,6 +7,8 @@ const V=[['기준 (근접 길 중간 · 원거리 길 많이 보는 곳 · 필�
  ['근접 영웅 입구 · 근접 병사 출구',{heroFrac:.15,soldierFrac:.85}],['근접 영웅 출구 · 근접 병사 입구',{heroFrac:.85,soldierFrac:.15}],
  ['원거리 아무 발판',{ranged:'random'}],['원거리 입구 쪽 발판',{ranged:'entrance'}],['원거리 출구 쪽 발판',{ranged:'exit'}],
  ['필살기 안 씀',{ult:'never'}],['필살기 준비되면 바로',{ult:'asap'}],['필살기 보스전에만',{ult:'boss'}],
+ ['명당 무시',{vantage:false}],['필살기 속성 고르지 않음',{element:'first'}],['수정 조각 방치(무작위 영웅)',{shard:'none'}],
+ ['초보 습관 모두 (원거리 아무 곳 · 근접 입구 · 필살기 바로 · 속성/명당/조각 무시)',{ranged:'random',meleeFrac:.15,ult:'asap',element:'first',shard:'none',vantage:false}],
  ['병사 랭크업 안 함',{upgrade:'heroesOnly'}],['병사 안 씀',{soldiers:false}],['먼저 전원 배치 후 랭크업',{upgrade:'spreadFirst'}]];
 const jobs=[];for(const [name,st] of V)for(const ch of chapters)jobs.push({name,st,ch});
 const res={};let next=0,active=0;

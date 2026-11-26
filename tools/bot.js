@@ -4,7 +4,7 @@
 const {createSim}=require('../js/sim.js'),D=require('../js/data.js');
 const ORDER=['kyle','hunter','ria','bran','sera','luna','militia','nero','apprentice','shield','acolyte','hunter','militia','apprentice'];
 // Strategy knobs for experiments (tools/strategy.js): STRAT='{"meleeFrac":.45,"heroFrac":null,"soldierFrac":null,"ranged":"cover","ult":"smart","upgrade":"balanced","soldiers":true}'
-const ST=Object.assign({meleeFrac:.45,heroFrac:null,soldierFrac:null,ranged:'cover',ult:'smart',upgrade:'balanced',soldiers:true},process.env.STRAT?JSON.parse(process.env.STRAT):{});
+const ST=Object.assign({meleeFrac:.45,heroFrac:null,soldierFrac:null,ranged:'cover',ult:'smart',upgrade:'balanced',soldiers:true,vantage:true,element:'best',shard:'smart'},process.env.STRAT?JSON.parse(process.env.STRAT):{});
 const CHOICE={kyle:'wind',ria:'fire',bran:'wind',sera:'fire',luna:'fire',nero:'wind'};
 function bestTile(S,def){const d=D.UNITS[def],map=S.map,roads=map.tiles.filter(t=>t.road);let best=null;
  for(const t of map.tiles){const err=S.canDeploy(def,t.c,t.r);if(err)continue;let score=0;
@@ -17,6 +17,7 @@ function bestTile(S,def){const d=D.UNITS[def],map=S.map,roads=map.tiles.filter(t
   else if(ST.ranged==='entrance'||ST.ranged==='exit'){let near=99,at=0;for(const q of roads){const dd=Math.hypot(q.c-t.c,q.r-t.r);if(dd<near){near=dd;at=Object.values(q.pd)[0]/map.paths[Object.keys(q.pd)[0]].total;}}score=(ST.ranged==='entrance'?1-at:at)*10-near;}
   else{const range=d.range+(t.terrain==='high'?.5:0)-(t.terrain==='forest'?.5:0);for(const q of roads){const dd=Math.hypot(q.c-t.c,q.r-t.r);if(dd<=range+.35&&dd>=(d.minRange||0))score+=1+(q.terrain==='swamp'||q.terrain==='sand'?.5:0);}
    for(const u of S.units)if(D.UNITS[u.def].melee&&Math.hypot(u.x-t.c,u.y-t.r)<=range)score+=1.5;}
+  if(ST.vantage&&S.vantage.some(v=>v.c===t.c&&v.r===t.r))score+=d.melee?2.5:3;
   if(!best||score>best.score)best={t,score};}
  return best&&best.t;}
 function play(chapter,seed,verbose,noBoss){
@@ -44,7 +45,10 @@ function play(chapter,seed,verbose,noBoss){
     else if(s.type==='fortress')go=S.units.some(a=>a.hp<a.maxHp*.5);else if(s.type==='heal')go=S.units.filter(a=>a.hp<a.maxHp*.6).length>=2;
     else if(s.pick)go=S.enemies.some(e=>e.boss||e.elite)||S.enemies.length>6;else go=S.enemies.filter(e=>Math.hypot(e.x-u.x,e.y-u.y)<s.area).length>=3;
     if(ST.ult==='asap'&&S.enemies.length){const t=S.enemies.slice().sort((a,b)=>b.dist-a.dist)[0];go=true;if(s.aim){x=t.x;y=t.y;}}
-    if(go&&!S.ult(u.id,x,y))ults++;}}
+    let el;const els=S.ultElements(u);if(go&&els.length>1&&ST.element==='best'){const cx=x??u.x,cy=y??u.y,near=S.enemies.filter(e=>Math.hypot(e.x-cx,e.y-cy)<3);
+     el=els.map(k=>({k,v:near.reduce((a,e)=>a+S.affinity(k,e.element)*(e.boss?4:1),0)})).sort((a,b)=>b.v-a.v)[0].k;}
+    if(go&&!S.ult(u.id,x,y,el))ults++;}}
+  if(S.shard&&ST.shard==='smart'){const h=S.units.filter(u=>u.ult&&!u.shardT).sort((a,b)=>b.ultCd-a.ultCd)[0];S.giveShard(h?h.id:null);}
   S.tick(1/30);
   for(const e of S.drain()){if(e.t==='leak')(log.leaks=log.leaks||[]).push(`${S.battle+1}:${e.name}`);if(e.t==='down')(log.downs=log.downs||[]).push(`${S.battle+1}:${e.def}`);if(e.t==='cleared'){const l=log[log.length-1];l.leaks=S.leaks;l.time=Math.round(S.battleTime);}}
  }

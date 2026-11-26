@@ -37,14 +37,26 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   around the road by `sim.buildMap` from each map's seed, so the same map always comes out the same.
 - Melee characters do not stop monsters: a monster inside a melee unit's tile (up to `block` at once) moves at `ENGAGE_SLOW` (2/3) and hits it.
   Melee units on the road must stand at least `MELEE_GAP` (3) tiles apart (`canDeploy`); the screen shows the forbidden zone while placing.
-- 필살기 power (1.2.0): arcaslash 5, meteor 4.5, eclipse 6, hawk 12 — area 필살기 take over half a normal monster's HP, hawk one-shots it;
-  bosses take full damage and boss HP is calibrated for that. Ult damage events carry `ult`/`pct`; the screen shows a landing reticle
-  (`target`), impact flash/cracks/debris (`impact`, `flash2`), a short hit stop (`hitStop`) and bursts with big popping numbers on struck monsters.
+- 필살기 (1.7.0, the core of play): power arcaslash 8, meteor 7.2, eclipse 9.6, hawk 19 (×1.6 of 1.2.0); bosses take full damage. Ult damage events
+  carry `ult`/`pct`/`aff` (the affinity share, shown as a second number) / `element` / `chain`; the screen shows a landing reticle, impact,
+  an element flourish (`elemfx`), hit stop and big popping numbers.
 - Soldier attack and magic are multiplied by `SOLDIER_POWER` (3.2, in `legacyScale`, so sim and the clear summary agree); soldiers have
   no extra abilities by the owner's choice. Target: a soldier deals ~20–30% of a damage hero's damage.
 - Soldiers use their own models (`model:{soldierId}` → `soldierParts` in models.js, a TD-only hook), not recoloured heroes.
-- Every hero has a 필살기 (`UNITS[id].ult`) from ★1, ~18–24 s cooldown, starting half charged; ★5 is `ultBoost` (+30% power, −15% cooldown).
-  A ready hero's dock card glows and casts on tap. Call it 필살기 in all player-facing text.
+- Every hero has a 필살기 (`UNITS[id].ult`) from ★1. Charge time = `SKILLS[ult].cd` (`S.ultTime(u)`: sera 32, kyle 38, nero 40, ria 45, bran/luna 48;
+  ★5 `ultBoost` −15%, legacy ultCdr). Charges only while deployed and only in `battle` phase; starts at 0, carries over between battles
+  (snapshot keeps `ultCd`), withdraw resets, going down keeps half. Rate ×1.5 on a vantage tile, ×2 while `u.shardT` > 0.
+  `S.ult(id,x,y,element)`: element must be in `S.ultElements(u)` (ult/basic/skill elements; [] for heal/fortress) and adds `ULT_STATUS`
+  (fire burn, ice/water freeze, wind slow, thunder stun, dark poison) or light +20%. 연계: within `CHAIN_WINDOW` 3 s of the last 필살기 → +15%/+30%.
+  The screen: a ready card glows and casts on tap; more than one element opens `#elPick` (weak/resist counts); `#chainBar` + 「N 연계!」.
+  Call it 필살기 in all player-facing text.
+- 명당 (`S.vantage`, `pickVantage` at each prep): one high tile + one road tile from the better half; +20% damage, charge ×1.5, range +.5 / block +1.
+- 수정 조각: `S.shardIn` (first 18 s, then 40 s of battle) → `S.shard` + event `shard`; `S.giveShard(id|null)` → `shardGiven`, `u.shardT`=20.
+  The screen drops it in a light pillar, floats it above the dock (`#shard` in #app), drag onto a card/field hero or tap → tap; 0.25× speed while
+  choosing, random after `SHARD_SECONDS` 5 real s. The sim gives it at random after 20 s by itself (bot/demo).
+- Battle chips show 「다음 전투」 (`nextChip`, `S.preview(S.battle+1)`). Waves mix elements; each group one kind, consecutive groups prefer another element.
+- Economy (1.7.0): soldiers −35% cost, soldier rank-up ×0.92 more (−40% total), start gold 150+15×chapter, battles 1/2 at 60%/75% HP.
+- `tools/strategy.js` compares habits (placement, 필살기 timing, element/vantage/shard use); target: ordinary play ≥90% clears, bad habits ≤50%.
 - Maps have their own size (`MAPS[id].w/h`): early chapters are smaller (9×9 … 9×12), 9×14 from chapter 4.
 - Basic attacks: ranged `RANGED_INTERVAL` 1.2 / `RANGED_POWER` 0.3, melee `MELEE_INTERVAL` 0.7 / `MELEE_POWER` 0.7 of the base numbers;
   skills, 필살기 and heals are not affected. No melee on the road within `GATE_GAP` (3) tiles of a monster gate (`map.gates`).
