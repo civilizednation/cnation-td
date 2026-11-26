@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.7.14',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.15',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -260,10 +260,12 @@ $('#chips').addEventListener('click',()=>{if(!S||modalOpen||S.phase!=='prep')ret
 function buildDock(){const dock=$('#dock');dock.innerHTML='';const rows=[D.HERO_ORDER,D.SOLDIER_ORDER].map(order=>order.filter(id=>S.chapter.roster.includes(id)));
  for(const ids of rows){const row=document.createElement('div');row.className='row';for(const id of ids){const d=D.UNITS[id],el=document.createElement('div');el.className='card';el.dataset.id=id;
    el.innerHTML=`<img alt="" src="${portraits[id]}"><div class="nm">${d.name}</div><div class="ct"></div>`;el.addEventListener('pointerdown',e=>cardDown(e,id));row.appendChild(el);}dock.appendChild(row);}refreshDock();}
+// raised pedestals (ranged spots) nobody stands on
+const freePedestals=()=>S.map.tiles.filter(t=>t.terrain==='high'&&!S.units.some(u=>u.c===t.c&&u.r===t.r)).length;
 function refreshDock(){for(const el of document.querySelectorAll('#dock .card')){const id=el.dataset.id,d=D.UNITS[id],hero=S.hero[id],unit=d.kind==='hero'&&S.units.find(u=>u.def===id),out=!!unit,cost=S.deployCost(id),cd=hero?Math.ceil(hero.cd):0,ready=out&&ultReady(unit);
-  const off=!out&&(S.gold<cost||!S.slotFree(id)||cd>0);const full=d.kind==='soldier'&&!out&&!S.slotFree(id);el.className='card'+(d.kind==='hero'?' hero':'')+(selCard===id?' sel':'')+(off?' off':'')+(full?' full':'')+(out?' out':'')+(ready?' ult':'')+(out&&unit.shardT>0?' shard':'')+(out&&unit.ult&&shardUi&&shardUi.phase!=='fall'?' take':'');
+  const off=!out&&(S.gold<cost||!S.slotFree(id)||cd>0);const noSlot=d.kind==='soldier'&&!S.slotFree(id),noPed=!d.melee&&!out&&freePedestals()===0,full=!out&&(noSlot||noPed);el.className='card'+(d.kind==='hero'?' hero':'')+(selCard===id?' sel':'')+(off?' off':'')+(full?' full':'')+(out?' out':'')+(ready?' ult':'')+(out&&unit.shardT>0?' shard':'')+(out&&unit.ult&&shardUi&&shardUi.phase!=='fall'?' take':'');
   let ub=el.querySelector('.ub');if(out&&unit.ult){if(!ub){ub=document.createElement('div');ub.className='ub';ub.innerHTML='<i></i>';el.appendChild(ub);}ub.firstChild.style.width=Math.round(100*(1-Math.min(1,unit.ultCd/S.ultTime(unit))))+'%';}else if(ub)ub.remove();
-  el.querySelector('.ct').textContent=full?'자리 없음':ready?'⚡ 필살기':out&&unit.ult&&S.phase==='battle'?Math.ceil(unit.ultCd)+'초':out?'출전 중':hero&&hero.keep&&!cd?'복귀':cost+'💰';
+  el.querySelector('.ct').textContent=full?(noSlot?'자리 없음':'발판 없음'):ready?'⚡ 필살기':out&&unit.ult&&S.phase==='battle'?Math.ceil(unit.ultCd)+'초':out?'출전 중':hero&&hero.keep&&!cd?'복귀':cost+'💰';
   let cool=el.querySelector('.cool');if(cd>0){if(!cool){cool=document.createElement('div');cool.className='cool';el.appendChild(cool);}cool.textContent=cd;}else if(cool)cool.remove();}}
 function nextRankText(u){const d=S.defOf(u),k=d.ranks[u.rank];if(!k)return '최대 랭크입니다.';const bits=['능력치↑'];if(k.skills)bits.push(k.skills.map(s=>D.SKILLS[s].name).join(', '));if(k.choice)bits.push('각인 선택');if(k.desc)bits.push(k.desc);if(k.ult)bits.push('필살기 '+D.SKILLS[k.ult].name);return `다음 ★${u.rank+1}: `+bits.join(' · ');}
 let panelKey='';
@@ -326,7 +328,10 @@ function openElPick(u,els){sfx('ui_tap');closePanel();clearCard();pickEl=u.id;co
  elPickEl.hidden=false;}
 function closeElPick(){pickEl=null;elPickEl.hidden=true;}
 elPickEl.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const u=S&&S.units.find(v=>v.id===pickEl);if(b.dataset.el==='x'||!u||!ultReady(u)){sfx('ui_tap');closeElPick();return;}fireUlt(u,b.dataset.el||null);});
-function selectCard(id){const out=D.UNITS[id].kind==='hero'&&S.units.find(u=>u.def===id);if(out){if(ultReady(out))castUlt(out);else openPanel(out.id);return;}closePanel();selCard=id;
+function selectCard(id){const out=D.UNITS[id].kind==='hero'&&S.units.find(u=>u.def===id);if(out){if(ultReady(out))castUlt(out);else openPanel(out.id);return;}
+ // 1.7.15: a full card says why instead of opening an empty placement
+ if(D.UNITS[id].kind==='soldier'&&!S.slotFree(id)){toast(`병사 자리(${S.soldierCap}칸)가 모두 찼습니다 · 병사를 철수하면 자리가 생깁니다`);sfx('ui_error');return;}
+ if(!D.UNITS[id].melee&&freePedestals()===0){toast('원거리 발판이 모두 찼습니다 · 원거리 병사를 철수하면 자리가 생깁니다');sfx('ui_error');return;}closePanel();selCard=id;
  validTiles=S.map.tiles.filter(t=>{const e=S.canDeploy(id,t.c,t.r);return !e||e==='골드가 부족합니다';});
  // Road tiles a melee card may not use because another melee character stands too close.
  spacedTiles=D.UNITS[id].melee?S.map.tiles.filter(t=>t.road&&/떨어져야|적 출현 문/.test(S.canDeploy(id,t.c,t.r)||'')):[];refreshDock();}

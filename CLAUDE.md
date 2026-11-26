@@ -90,7 +90,8 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   (4–7 per map; `high` only seeds the grown map).
 - Slots: every joined hero may be on the field at once (one of each); soldiers only up to `S.soldierCap` = `CHAPTER_DEFS[].soldiers`
   (3,3,2,2,1…1) + legacy 「지휘관의 위엄」 (`command`, +1 each, max 2). `S.slotFree(def)` / `S.soldierCount()`; HUD shows 👑 heroes and 🪖 soldiers. When the soldier slots are full the
-  unused soldier cards turn grey (`.card.full`, 「자리 없음」, 1.7.14).
+  unused soldier cards turn grey (`.card.full`, 「자리 없음」, 1.7.14). Ranged cards (heroes and soldiers) also turn grey with 「발판 없음」
+  when every pedestal is taken (`freePedestals`, 1.7.15); tapping a grey card toasts why instead of starting a placement.
 - Painted backgrounds (`docs/ART.md`): a map with an entry in `MAP_ART` (js/data.js) shows `art/<map>.webp` in an <img> behind the
   transparent WebGL canvas, placed by `placeArt()` from the guide frame (`artFrame`: map width + 1 tile, 9:16, centred). The tiles then
   become invisible shadow catchers (flat tile tops only); gate arch, crystal dais, trees and water are not drawn (only the gate glow and crystal beam/halo).
