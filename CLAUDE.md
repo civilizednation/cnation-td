@@ -24,6 +24,8 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
 - `manifest.webmanifest`, `sw.js`, `icons/` — home screen install (PWA). The service worker is network-first (music cache-first). `icons/*.png` are a
   placeholder drawn from the game models by `tools/icon.html` + `node tools/make-icons.js`; the owner will supply the final icon — then just replace the PNGs.
 - `helpTips()` in js/game.js builds the detailed tips under 「게임 방법」 from the data tables; update its hand-written parts when rules change.
+  Heroes use `heroTips(id)` (1.7.7): 필살기 block (power/area/reach/charge/element choices from ult+basic+rank skills, imprint additions),
+  per-rank skills (`skillOf`), and each ★3 imprint with the skill it gives and the 필살기 element it adds; `heroGuideIntro` explains units.
 - `js/data.js` — data tables (`SKILLS`, `UNITS`, `MONSTERS`, `MAPS`, `CHAPTERS`, `BOSSES`, `BLESSINGS`). Numbers come from TACTICS where one exists.
 - `js/sim.js` — the rules. No DOM; deterministic per seed. Commands: `deploy`, `rankUp`, `withdraw`, `ult`, `startBattle`,
   `chooseBlessing`; it reports through `drain()` events. Shared by the screen and the bot — keep rendering out of it.

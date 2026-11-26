@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.7.6',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.7',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -453,6 +453,61 @@ function unitTips(id){const d=D.UNITS[id],extra=[];
  const ranks=d.ranks.map((k,i)=>{const bits=[];if(k.skills)bits.push(...k.skills.map(skillDesc));if(k.ult)bits.push(skillDesc(k.ult));if(k.desc&&!k.choice)bits.push(k.desc);
   if(k.choice)bits.push('각인 선택: '+Object.values(k.choice).map(c=>`${c.label} ${c.desc}`).join(' / '));if(!bits.length)bits.push('능력치 상승');return `<li><span class="rk">★${i+1}</span> ${bits.join('<br>')}</li>`;}).join('');
  return `<div class="unit"><p class="uh"><b>${d.name}</b> ${d.job} · ${d.cost}💰 · HP ${d.hp} · 공격 ${d.magic?d.mag:d.atk}</p><p>${d.role}<br><small>${extra.join(' · ')}</small></p>${d.ult?`<p>⚡ 필살기 ${skillDesc(d.ult)}</p>`:''}<ul class="ranks">${ranks}</ul></div>`;}
+
+// 「게임 방법」 영웅 상세 (1.7.7): every hero's skills by rank, each ★3 imprint with the skill it gives and the 필살기 element it adds,
+// and the 필살기 itself (power, area, reach, charge, element choices and what each element does). Built from the data tables.
+const EL_KO={fire:'불',water:'물',ice:'얼음',wind:'바람',thunder:'번개',light:'빛',dark:'어둠'},ULT_EL_DO={fire:'화상',ice:'빙결',water:'빙결',wind:'둔화',thunder:'기절',dark:'독',light:'피해 +20%'};
+const STAT_KO={atk:'공격',def:'방어',haste:'공격 속도'};
+const elTag=e=>e?`${D.ELEMENT_ICON[e]}${EL_KO[e]}`:'';
+function heroGuideIntro(){return `<p><small>읽는 법 — <b>범위 N칸</b>: 맞은 지점(주변 = 자기 자리)에서 반지름 N칸 안의 적 전부 · <b>위력 N%</b>: 공격력(마법 캐릭터는 마법력)에 곱하는 배율 · 랭크마다 공격·마법·HP +25% · 상태이상: 화상 4초간 매초 최대 체력 2%(보스 0.5%), 빙결 1.5초 멈춤 뒤 둔화(보스는 둔화만), 둔화 3초 −35%, 기절 1.2초(보스 0.5초), 독 6초간 매초 1.2%(3번 겹침), 수면 4초(맞으면 깨고 2배 피해), 침묵 6초 특수 능력 봉인</small></p>`;}
+function skillOf(id){const s=D.SKILLS[id],bits=[];
+ if(s.type==='physical'||s.type==='magic')bits.push(`${s.type==='magic'?'마법':'물리'} 위력 ${pct(s.power)}`);
+ if(s.type==='heal')bits.push(s.all?`아군 전원 회복(마법력의 ${pct(s.power)})`:`가장 다친 아군 회복(마법력의 ${pct(s.power)})`);
+ if(s.type==='cleanse'||s.cleanse)bits.push('나쁜 상태 해제');
+ if(s.type==='taunt')bits.push(`주변 ${s.area}칸 적을 ${s.hold}초 붙들고 적 원거리 공격을 자신에게 끌어옴`);
+ if(s.type==='fortress')bits.push(`${s.dur}초 동안 아군 전원이 받는 피해 −60% · 나쁜 상태 해제 · 주변 ${s.area}칸 적 기절`);
+ if(s.element)bits.push(elTag(s.element));
+ if(s.area&&s.type!=='taunt'&&s.type!=='fortress')bits.push(`${s.self?'주변':'범위'} ${s.area}칸`);else if((s.type==='physical'||s.type==='magic')&&!s.ult)bits.push('한 명');
+ if(s.range)bits.push(`사거리 ${s.range}칸`);
+ if(s.status)bits.push(`${ST_NAME[s.status]} ${(s.chance??1)<1?pct(s.chance)+' 확률':'100%'}`);
+ if(s.ignore)bits.push(`방어 ${pct(s.ignore)} 무시`);if(s.knockback)bits.push('뒤로 밀어냄');if(s.pick==='strong')bits.push('체력이 가장 많은 적을 노림');
+ if(!s.ult)bits.push(`${s.cd}초마다 자동`);
+ return `<b>${s.name}</b> — ${bits.join(' · ')}`;}
+function heroTips(id){const d=D.UNITS[id],u=D.SKILLS[d.ult],extra=[];
+ if(d.melee)extra.push(`근접 · 길 위에서 적 ${d.block}마리 붙잡기`);else extra.push(`원거리 · 사거리 ${d.range}칸(발판 위 +0.5)${d.magic?' · 마법 공격':' · 물리 공격'}`);
+ if(d.minRange)extra.push('바로 옆 칸의 적은 쏘지 못함');if(d.highDmg)extra.push(`발판 위에서 피해 +${pct(d.highDmg)}`);
+ if(d.behind)extra.push(`자신을 지나친 적에게 피해 +${pct(d.behind)}(암습)`);if(d.steal)extra.push(`막타 골드 +${pct(d.steal)}`);
+ if(d.cooldown)extra.push(`철수 후 ${d.cooldown}초, 쓰러지면 15초 만에 복귀`);if(d.basic&&d.element)extra.push(`기본 공격 ${elTag(d.element)} ${pct(d.basic)}`);
+ // elements the 필살기 can carry: ult/basic element from ★1, then each rank skill, then the imprint
+ const els=[],add=(e,from)=>{if(e&&!els.some(x=>x.e===e))els.push({e,from});};
+ if(u.type!=='heal'&&u.type!=='fortress'){add(u.element,'★1');add(d.element,'★1');d.ranks.forEach((k,i)=>{if(i!==2)for(const sk of k.skills||[])add(D.SKILLS[sk].element,'★'+(i+1));});}
+ const fixed=els.map(x=>x.e);
+ const ranks=d.ranks.map((k,i)=>{const bits=[];
+  if(k.skills)bits.push(...k.skills.map(skillOf));
+  if(k.aura)bits.push(`<b>${(k.desc||'').split(':')[0]}</b> — 주변 ${k.aura.radius}칸 아군 ${STAT_KO[k.aura.stat]||k.aura.stat} +${pct(k.aura.mult-1)} (오라)`);
+  else if(k.props&&k.props.eva)bits.push(`<b>${(k.desc||'').split(':')[0]}</b> — 적의 공격을 ${pct(k.props.eva)} 확률로 피함`);
+  else if(k.ultBoost)bits.push('<b>필살기 강화</b> — 위력 +30% · 충전 −15%');
+  else if(k.desc&&!k.choice)bits.push(k.desc);
+  if(k.choice)bits.push('<b>각인 선택</b> — 아래 셋 중 하나, 바꿀 수 없음');
+  return `<li><span class="rk">★${i+1}</span> ${bits.join('<br>')}</li>`;}).join('');
+ const ch=d.ranks[2].choice,imprint=Object.values(ch).map(c=>{const parts=[];
+  for(const sk of c.skills||[])parts.push(skillOf(sk));
+  if(c.swap)parts.push(`${D.SKILLS[c.swap[0]].name} → ${skillOf(c.swap[1])}`);
+  if(c.aura)parts.push(`주변 ${c.aura.radius}칸 아군 ${STAT_KO[c.aura.stat]||c.aura.stat} +${pct(c.aura.mult-1)} (오라)`);
+  if(c.props&&c.props.counter)parts.push(`자신을 근접 공격한 적에게 공격력의 ${pct(c.props.counter)} 🔥불 반격`);
+  const newEl=[...(c.skills||[]),...(c.swap?[c.swap[1]]:[])].map(k=>D.SKILLS[k].element).filter(e=>e&&!fixed.includes(e)&&!(e==='ice'&&fixed.includes('water'))&&!(e==='water'&&fixed.includes('ice')));
+  const ultNote=u.type==='heal'||u.type==='fortress'?'':newEl.length?`<br><small>→ 필살기에 ${newEl.map(e=>`${elTag(e)}(${ULT_EL_DO[e]})`).join(', ')} 선택 추가</small>`:'<br><small>→ 필살기 속성 선택지는 그대로</small>';
+  return `<li><span class="rk">${c.label}</span> ${c.desc}<br>${parts.join('<br>')}${ultNote}</li>`;}).join('');
+ // the 필살기
+ const ub=[];if(u.type==='physical'||u.type==='magic')ub.push(`${u.type==='magic'?'마법':'물리'} 위력 ${pct(u.power)}`);
+ if(u.type==='heal')ub.push(`아군 전원 회복(마법력의 ${pct(u.power)}) · 모든 나쁜 상태 해제`);if(u.type==='fortress')ub.push(`${u.dur}초 동안 아군 전원이 받는 피해 −60% · 나쁜 상태 해제 · 주변 ${u.area}칸 적 기절`);
+ if(u.area&&u.type!=='fortress')ub.push(u.self?`자기 주변 ${u.area}칸`:`범위 ${u.area}칸`);
+ if(u.aim)ub.push('떨어뜨릴 곳을 직접 누름 · 전장 어디든');else if(u.pick==='strong')ub.push('전장 어디든 · 체력이 가장 많은 적 하나');else if(!d.melee&&u.type!=='heal')ub.push('전장 어디든');
+ if(u.ignore)ub.push(`방어 ${pct(u.ignore)} 무시`);
+ const elLine=els.length?`쓸 때 속성 선택: ${els.map(x=>`${elTag(x.e)}(${ULT_EL_DO[x.e]}, ${x.from})`).join(' · ')} — 맞은 적 전부에 100%, 상성이 맞으면 ×1.25`:u.type==='heal'||u.type==='fortress'?'속성 선택 없음 — 그대로 발동':'처음에는 속성 없이 발동 — ★3 각인으로 속성이 생기면 그 속성을 골라 쓸 수 있음';
+ return `<div class="unit"><p class="uh"><b>${d.name}</b> ${d.job} · ${d.cost}💰 · HP ${d.hp} · ${d.magic?'마법력':'공격'} ${d.magic?d.mag:d.atk}</p><p>${d.role}<br><small>${extra.join(' · ')}</small></p>
+<p><b>⚡ 필살기 · ${u.name}</b><br>${ub.join(' · ')}<br>충전 ${u.cd}초(전투 중에만 · 명당 ×1.5 · 수정 조각 ×2) · ★5 위력 +30%, 충전 −15%<br><small>${elLine}</small></p>
+<p><b>랭크별 기술</b></p><ul class="ranks">${ranks}</ul><p><b>★3 각인</b></p><ul class="ranks imprint">${imprint}</ul></div>`;}
 function helpTips(){const sec=(title,body)=>`<details><summary>${title}</summary><div class="tip">${body}</div></details>`;
  const byModel={};for(const m of D.MONSTERS)(byModel[m.model]=byModel[m.model]||[]).push(m.name+(m.element?D.ELEMENT_ICON[m.element]:''));
  const MODEL_NAME={slime:'슬라임',goblin:'고블린',wolf:'늑대',knight:'기사',archer:'궁수',ghost:'유령',golem:'골렘',flameSpirit:'임프',spider:'거미',dragon:'비룡',treant:'덩굴·고목',sentinel:'파수꾼'};
@@ -464,7 +519,7 @@ ${sec('⚡ 필살기 · 명당 · 수정 조각',`<ul><li>필살기는 출전한
 ${sec('🛡 물리·마법과 면역',`<ul><li>피해 = 공격력 × 배율 − 상대 방어 × 0.5 (최소 공격력의 20%). 물리는 방어(DEF), 마법은 마법 방어(RES)로 줄어듭니다.</li><li><b>유령</b>은 물리 피해를 35%만 받습니다. 속성이 실린 물리 스킬은 60%까지 들어갑니다.</li><li><b>골렘</b>은 마법 피해를 35%만 받습니다(보스는 50%).</li><li>마법 캐릭터: 리아·루나·수습 마도사·수습 사제. 나머지는 물리입니다. 두 가지를 섞어 두어야 어떤 적이 와도 막힙니다.</li><li>치명타는 피해 ×1.5입니다. 네로(18%)와 세라(12%)가 가장 잘 터뜨립니다.</li><li>방어↓(갑옷 가르기)가 걸린 적은 물리 피해를 25% 더 받습니다.</li></ul>`)}
 ${sec('🗺 지형',`<table><tr><th>지형</th><th>효과</th></tr><tr><td>길</td><td>근접 캐릭터만 설 수 있고, 지나가는 적을 붙잡습니다</td></tr><tr><td>평지</td><td>근접 캐릭터만 설 수 있습니다. 공격만 하고 붙잡지는 못합니다</td></tr><tr><td>고지대 (올라온 발판)</td><td>원거리 캐릭터만 설 수 있는 자리 · 사거리 +0.5칸 · 세라는 피해 +15%</td></tr><tr><td>수풀</td><td>근접 캐릭터만 · 적의 원거리 공격을 30% 확률로 피하고, 적이 덜 노립니다</td></tr><tr><td>늪</td><td>지나는 적 이동 속도 −30%</td></tr><tr><td>모래</td><td>지나는 적 이동 속도 −18%</td></tr><tr><td>다리</td><td>강을 건너는 길목. 근접 캐릭터를 세우기 좋습니다</td></tr><tr><td>물·절벽·바위·구조물</td><td>배치할 수 없습니다</td></tr></table><ul><li>적 출현 문과 수정 바로 앞 칸은 비워 둬야 합니다.</li><li>지형 칸을 누르면 효과가 표시됩니다.</li></ul>`)}
 ${sec('⛓ 근접 캐릭터의 붙잡기',`<ul><li>길 위의 근접 캐릭터는 자기 칸을 지나는 적을 붙잡아 <b>속도를 3분의 2</b>로 늦춥니다(보스는 55%). 적은 막히지 않고 천천히 스쳐 지나갑니다.</li><li>한 번에 붙잡는 수: 브란 3 · 카일 2 · 방패병 2 · 네로 1 · 민병 1. 민병·방패병은 ★3에서 +1. 골렘과 보스는 두 자리를 차지합니다.</li><li>붙잡힌 적은 1.6초마다 그 캐릭터를 때립니다. 4초 동안 맞지 않으면 캐릭터 체력이 초당 2.5%씩 회복됩니다.</li><li><b>비행</b>(비룡·매)과 <b>유령</b>은 붙잡을 수 없습니다.</li><li>길 위의 근접 캐릭터끼리는 <b>길을 따라 5칸 이상</b> 떨어져야 합니다. 근접 캐릭터를 고르면 기존 근접 캐릭터 둘레의 배치 금지 범위가 붉게 표시됩니다. 한곳에 몰아 세우지 말고 길 여러 곳에 나눠 세우세요.</li><li>적 출현 문에서 <b>2칸 안</b>의 길에는 근접 캐릭터를 세울 수 없습니다(나오자마자 붙잡는 배치 방지). 근접 캐릭터를 고르면 문 둘레도 붉게 표시됩니다.</li><li>붙잡힌 적 위에는 ⛓ 표시가 뜹니다. 근접 캐릭터를 여러 칸에 나눠 세우면 늦춰지는 구간이 길어집니다.</li></ul>`)}
-${sec('👑 영웅 6명',D.HERO_ORDER.map(unitTips).join('')+`<p><small>합류한 영웅은 모두 함께 출전할 수 있습니다(같은 영웅은 한 명씩). 철수하면 20초, 쓰러지면 30초 뒤 다시 배치할 수 있고, 쓰러진 영웅은 랭크와 각인을 그대로 가지고 공짜로 돌아옵니다.</small></p>`)}
+${sec('👑 영웅 6명',heroGuideIntro()+D.HERO_ORDER.map(heroTips).join('')+`<p><small>합류한 영웅은 모두 함께 출전할 수 있습니다(같은 영웅은 한 명씩). 철수하면 20초, 쓰러지면 30초 뒤 다시 배치할 수 있고, 쓰러진 영웅은 랭크와 각인을 그대로 가지고 공짜로 돌아옵니다.</small></p>`)}
 ${sec('🪖 연합군 병사 5종',D.SOLDIER_ORDER.map(unitTips).join('')+`<p><small>병사는 장마다 정해진 <b>병사 자리</b>만큼만 배치할 수 있습니다(프롤로그·1장 3칸, 2·3장 2칸, 4장부터 1칸 · 유산 「지휘관의 위엄」마다 +1). 화면 위 🪖 숫자가 남은 자리입니다. ★3까지 오릅니다. 쓰러지면 사라지니 다시 고용해야 합니다.</small></p>`)}
 ${sec('📈 랭크업과 철수',`<table><tr><th>랭크</th><th>비용(배치가 대비)</th></tr><tr><td>★2</td><td>×0.8</td></tr><tr><td>★3</td><td>×1.2 · 각인 선택</td></tr><tr><td>★4</td><td>×1.8</td></tr><tr><td>★5</td><td>×2.5 · 필살기 강화</td></tr></table><ul><li>랭크마다 HP·공격·마법 +25%, 방어·마법 방어 +15%.</li><li>★2는 가장 싸고 효과가 큽니다. 초반에는 새로 배치하기보다 핵심 캐릭터의 ★2를 먼저 올려 보세요.</li><li>★4의 오라(용기의 맹세·수호의 진·빛의 축복)는 주변 2칸 아군 모두에게 걸립니다. 화력 캐릭터를 오라 범위 안에 모으세요.</li><li>영웅 6명은 배치하자마자 <b>필살기</b>를 가지고 있습니다. 배치 후 재사용 시간의 절반이 지나면 처음 쓸 수 있고, 영웅마다 약 18~24초에 한 번 다시 찹니다.</li><li>준비되면 하단 초상화가 주황색으로 빛나며 「⚡ 필살기」로 바뀌고, 전장의 영웅 머리 위에도 ⚡가 뜹니다. 그 초상화를 누르면 바로 발동합니다(메테오는 떨어뜨릴 곳을 누름).</li><li>★5는 필살기 강화(위력 +30%, 재사용 −15%)입니다.</li><li>철수하면 쓴 골드의 70%를 돌려받습니다. 길 모양이 바뀌는 장에서는 자리를 옮기는 데 쓰세요.</li></ul>`)}
 ${sec('💫 상태이상',`<table><tr><th>상태</th><th>적에게</th></tr><tr><td>🔥 화상</td><td>4초간 초당 최대 체력 2% (보스 0.5%)</td></tr><tr><td>☠ 독</td><td>6초간 초당 최대 체력 1.2%, 3번까지 겹침</td></tr><tr><td>❄ 빙결</td><td>1.5초 멈춘 뒤 3초 둔화 (보스는 둔화만)</td></tr><tr><td>⚡ 기절</td><td>1.2초 멈춤 (보스 0.5초)</td></tr><tr><td>💤 수면</td><td>4초 멈춤, 맞으면 깨지만 그 공격은 피해 2배 (보스는 둔화)</td></tr><tr><td>🐌 둔화</td><td>3초간 이동 속도 −35%</td></tr><tr><td>🔇 침묵</td><td>6초간 특수 능력 봉인 — 재생·보호막·원거리 마법·보스 회복 (보스 2.5초)</td></tr><tr><td>🛡↓ 방어↓</td><td>6초간 받는 물리 피해 +25%</td></tr><tr><td>⛓ 속박</td><td>도발에 걸려 1.8초 멈춤</td></tr></table><ul><li>아군도 화상·독·빙결·기절·침묵에 걸립니다. 빙결·기절이면 행동하지 못하고, 침묵이면 스킬을 못 씁니다. 루나의 <b>정화</b>와 브란의 <b>철벽의 성채</b>로 지울 수 있습니다.</li><li>상태 아이콘은 체력 막대 위의 작은 점 색으로 표시됩니다.</li></ul>`)}

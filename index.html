@@ -13,8 +13,8 @@
 <meta name="apple-mobile-web-app-title" content="cnation TD">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <style>
-@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=39") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:118%}
-@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=39") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:104%}
+@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=40") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:118%}
+@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=40") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:104%}
 :root{--font-display:"Stylish",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--font-body:"Gowun Dodum",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--bg:#16282d;--panel:#1f373d;--panel2:#284850;--line:#3c636b;--ink:#eef4ea;--dim:#a9c0bb;--gold:#f2cf72;--good:#8fe5b4;--bad:#f08f7c;--accent:#8be1bf}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--ink);font-family:var(--font-display);overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -253,6 +253,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
 .sheet .tip table{width:100%;border-collapse:collapse;margin:6px 0;font-size:12.5px}.sheet .tip th{color:var(--gold);font-weight:400;font-family:var(--font-display);text-align:left;padding:4px 5px;border-bottom:1px solid var(--line)}
 .sheet .tip td{padding:4px 5px;border-bottom:1px solid rgba(60,99,107,.45);vertical-align:top}.sheet .tip td:first-child{white-space:nowrap;color:var(--ink)}
 .sheet .unit{margin:8px 0 12px;padding-bottom:8px;border-bottom:1px dashed var(--line)}.sheet .unit .uh{margin:0;color:var(--ink);font-size:13px}
+.sheet .tip ul.imprint li{margin:7px 0;padding-left:7px;border-left:2px solid var(--line)}
 .sheet .tip ul.ranks{list-style:none;padding:0}.sheet .tip ul.ranks li{margin:3px 0}.sheet .rk{display:inline-block;min-width:26px;color:var(--gold);font-family:var(--font-display)}
 .sheet p.scope{margin:6px 0 10px;padding:7px 10px;border-radius:9px;font-family:var(--font-display);font-size:15px}
 .sheet p.scope.now{background:rgba(111,208,255,.12);color:#9fdcff;border:1px dashed rgba(111,208,255,.55)}
@@ -294,10 +295,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
  <div id="modal" hidden></div>
 </div>
 <script src="vendor/three-r170.js"></script>
-<script src="js/data.js?v=1.7.6"></script>
-<script src="js/sim.js?v=1.7.6"></script>
-<script src="js/models.js?v=1.7.6"></script>
-<script src="js/game.js?v=1.7.6"></script>
+<script src="js/data.js?v=1.7.7"></script>
+<script src="js/sim.js?v=1.7.7"></script>
+<script src="js/models.js?v=1.7.7"></script>
+<script src="js/game.js?v=1.7.7"></script>
 <script>if('serviceWorker' in navigator&&location.protocol!=='file:')window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 </body>
 </html>
