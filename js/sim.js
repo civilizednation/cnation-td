@@ -4,7 +4,7 @@
 const D=(typeof module!=='undefined'&&module.exports)?require('./data.js'):root.TDData;
 const STEP=1/30,PREP_TIME=30,ZONE_BACK=.8,ZONE_FRONT=.5;
 // 1.7.0 필살기 카드: chain window, shard timing, vantage bonuses, element side effects of a 필살기.
-const CHAIN_WINDOW=3,SHARD_EVERY=40,SHARD_FIRST=18,SHARD_TIME=20,SHARD_RATE=2,SHARD_WAIT=20,VANTAGE_DMG=1.2,VANTAGE_RATE=1.5;
+const CHAIN_WINDOW=3,SHARD_EVERY=40,SHARD_FIRST=18,SHARD_TIME=20,SHARD_RATE=2,SHARD_WAIT=20,VANTAGE_DMG=1.25,VANTAGE_RATE=1.5;
 const ULT_STATUS={fire:'burn',ice:'freeze',water:'freeze',wind:'slow',thunder:'stun',dark:'poison'};
 const seeded=D.seeded;
 const elementFamily=e=>e==='ice'?'water':e;
@@ -193,11 +193,13 @@ function createSim(opts){
  // 필살기 ×1.5 and gets range +0.5 (ranged) or holds one more monster (melee). Picked at random from the better half of the candidates.
  function pickVantage(){const roads=map.tiles.filter(t=>t.road),cover=t=>roads.filter(q=>Math.hypot(q.c-t.c,q.r-t.r)<=3.6).length,
    // 1.7.2: away from where the characters already stand, so the spot pulls the line apart instead of piling it up
-   room=t=>S.units.length?Math.min(4,Math.min(...S.units.map(u=>Math.hypot(u.c-t.c,u.r-t.r))))*2:0;
-  const pickFrom=list=>{if(!list.length)return null;list.sort((a,b)=>b.s-a.s);const top=list.slice(0,Math.max(1,Math.ceil(list.length/2)));return top[Math.floor(S.rand()*top.length)].t;};
-  const high=pickFrom(map.tiles.filter(t=>t.terrain==='high').map(t=>({t,s:cover(t)+room(t)})));
-  const melee=pickFrom(roads.filter(t=>t.terrain!=='bridge'&&!map.gates.some(g=>Math.hypot(g.x-t.c,g.y-t.r)<D.GATE_GAP)).filter(t=>{for(const p in t.pd){const tot=map.paths[p].total,f=t.pd[p]/tot;if(f<.2||f>.85)return false;}return true;})
-   .map(t=>({t,s:Object.keys(t.pd).length*3+roads.filter(q=>Math.abs(q.c-t.c)+Math.abs(q.r-t.r)===1).length+(t.terrain==='swamp'||t.terrain==='sand'?1:0)+room(t)})));
+   room=(t,melee)=>{const us=S.units.filter(u=>!melee||defOf(u).melee);return us.length?Math.min(4,Math.min(...us.map(u=>Math.hypot(u.c-t.c,u.r-t.r))))*2:0;},
+   highs=map.tiles.filter(t=>t.terrain==='high');
+  // 1.7.4: first the better half by road cover only, then among those the ones farthest from the characters already placed
+  const pickFrom=list=>{if(!list.length)return null;list.sort((a,b)=>b.s-a.s);let top=list.slice(0,Math.max(2,Math.ceil(list.length/3)));top.sort((a,b)=>room(b.t,b.melee)-room(a.t,a.melee));top=top.slice(0,Math.max(1,Math.ceil(top.length/2)));return top[Math.floor(S.rand()*top.length)].t;};
+  const high=pickFrom(map.tiles.filter(t=>t.terrain==='high').map(t=>({t,s:cover(t)})));
+  const melee=pickFrom(roads.filter(t=>t.terrain!=='bridge'&&!map.gates.some(g=>Math.hypot(g.x-t.c,g.y-t.r)<D.GATE_GAP)).filter(t=>{for(const p in t.pd){const tot=map.paths[p].total,f=t.pd[p]/tot;if(f<.3||f>.62)return false;}return true;})
+   .map(t=>({t,melee:true,s:Object.keys(t.pd).length*3+highs.filter(h=>Math.hypot(h.c-t.c,h.r-t.r)<=2.9).length*2+(t.terrain==='swamp'||t.terrain==='sand'?1:0)})));
   S.vantage=[high,melee].filter(Boolean).map(t=>({c:t.c,r:t.r,kind:t.terrain==='high'?'ranged':'melee'}));for(const u of S.units)refresh(u);emit({t:'vantage',spots:S.vantage});}
  // ── 수정 조각 (crystal shard): every SHARD_EVERY s of battle a shard falls; the player gives it to a hero (giveShard), who then charges
  // its 필살기 ×2 for SHARD_TIME s. The screen gives a hero at random after 5 s; the sim does so itself after SHARD_WAIT s (bot, safety).

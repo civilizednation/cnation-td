@@ -54,8 +54,10 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   The screen (1.7.1): a charged hero has no ring — its body glows in `HERO_COLOR` (`readyGlow`, per-unit emissive copy of `M.sharedMat`), a halo +
   rising motes and a diamond crest (`drawReady`), and a one-time `readyburst` beam when it fills. A ready card glows and casts on tap; more than one element opens `#elPick` (weak/resist counts); `#chainBar` + 「N 연계!」.
   Call it 필살기 in all player-facing text.
-- 명당 (`S.vantage`, `pickVantage` at each prep): one high tile + one road tile from the better half (score = road cover + `room`, i.e. distance from
-  characters already placed, so it pulls the line apart); +20% damage, charge ×1.5, range +.5 / block +1.
+- 명당 (`S.vantage`, `pickVantage` at each prep, 1.7.4): one high tile from the top third by road cover, one road tile (path fraction .3–.62,
+  scored by crossings + pedestals within 2.9 + slow ground) from the top third; within those, the half farthest from characters already
+  placed (`room`; melee spot: from melee only). +25% damage (`VANTAGE_DMG`), charge ×1.5, range +.5 / block +1. The bot (STRAT `vantage`,
+  `vw`) gains little from chasing it because it never moves a placed unit; a player who re-plans each battle does.
 - Battle declutter (1.7.2): no name labels for auto skills (필살기 only), combos are a gold ring (암습 a red X), no numbers for basic attacks or
   damage to allies, skill hits on one monster within 0.3 s merge into one number (`numOf`, dmg events carry `skill`); character HP bars only
   when hurt and ★ only while preparing or selected.

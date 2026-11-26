@@ -17,7 +17,7 @@ function bestTile(S,def){const d=D.UNITS[def],map=S.map,roads=map.tiles.filter(t
   else if(ST.ranged==='entrance'||ST.ranged==='exit'){let near=99,at=0;for(const q of roads){const dd=Math.hypot(q.c-t.c,q.r-t.r);if(dd<near){near=dd;at=Object.values(q.pd)[0]/map.paths[Object.keys(q.pd)[0]].total;}}score=(ST.ranged==='entrance'?1-at:at)*10-near;}
   else{const range=d.range+(t.terrain==='high'?.5:0)-(t.terrain==='forest'?.5:0);for(const q of roads){const dd=Math.hypot(q.c-t.c,q.r-t.r);if(dd<=range+.35&&dd>=(d.minRange||0))score+=1+(q.terrain==='swamp'||q.terrain==='sand'?.5:0);}
    for(const u of S.units)if(D.UNITS[u.def].melee&&Math.hypot(u.x-t.c,u.y-t.r)<=range)score+=1.5;}
-  if(ST.vantage&&S.vantage.some(v=>v.c===t.c&&v.r===t.r))score+=d.melee?2.5:3;
+  if(ST.vantage&&(ST.vantage!=='ranged'||!d.melee)&&(ST.vantage!=='melee'||d.melee)&&S.vantage.some(v=>v.c===t.c&&v.r===t.r))score+=d.melee?(ST.vw??1.2):(ST.vw??1.5);
   if(!best||score>best.score)best={t,score};}
  return best&&best.t;}
 function play(chapter,seed,verbose,noBoss){
