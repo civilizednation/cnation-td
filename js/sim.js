@@ -36,6 +36,8 @@ function buildMap(id){
  for(const t of tiles){t.alt=t.terrain==='grass'&&rand()<.3;t.h=t.terrain==='high'?.45:t.terrain==='cliff'?.85+rand()*.5:t.terrain==='water'?-.2:t.terrain==='bridge'?-.02:t.road?-.07:t.terrain==='prop'||t.terrain==='rock'?.04:rand()*.07;t.v=rand();}
  // A painted background can hide a cell (e.g. behind the crystal): turn it into plain ground after everything else is grown, so the rest stays the same.
  for(const [c,r] of spec.noHigh||[]){const t=tiles.find(q=>q.c===c&&q.r===r);if(t&&t.terrain==='high'){t.terrain='grass';t.h=.03;}}
+ // highAt: the pedestals placed by hand (spread over the whole field, 1.7.2); every grown high cell becomes grass first
+ if(spec.highAt){for(const t of tiles)if(t.terrain==='high'){t.terrain='grass';t.h=.03;}for(const [c,r] of spec.highAt){const t=tiles.find(q=>q.c===c&&q.r===r);if(t&&!t.road){t.terrain='high';t.h=.45;}}}
  // Where each road enters the field: the gate tile, clamped inside.
  const gates=paths.map(p=>({x:Math.max(0,Math.min(W-1,p.wp[0][0])),y:Math.max(0,Math.min(H-1,p.wp[0][1]))}));
  return {id,w:W,h:H,tiles,tile,paths,posAt,gates,scene:D.SCENES[spec.scene],sceneId:spec.scene,seed:spec.seed};
