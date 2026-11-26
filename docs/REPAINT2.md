@@ -30,13 +30,13 @@ The red, gold and cyan marks themselves must NOT appear in the result.
 | 프롤로그 · 봄 들판 마을 (`prologue`) | 3행 6열 · 4행 3열 · 4행 5열 · 6행 4열 | 2행 9열 · 3행 2열 · 7행 6열 · 8행 1열 | 0 | plain spring grass with a few small wildflowers, matching the surrounding meadow |
 | 1장 · 해안가 요새 (`fort`) | 3행 4열 · 4행 6열 · 6행 5열 · 7행 6열 | 2행 1열 · 3행 7열 · 7행 3열 · 8행 9열 | 0 | plain green grass on the cliff top with a few small stones, matching the surroundings |
 | 2장 · 눈 덮인 산길 (`river`) | 3행 4열 · 4행 5열 · 7행 6열 · 9행 5열 | 3행 5열 · 4행 1열 · 5행 9열 · 9행 8열 | 1 | snow-covered ground with a few snowy rocks, matching the surroundings |
-| 3장 · 원시림 (`forest`) | 5행 3열 · 7행 5열 · 8행 4열 · 10행 6열 | 3행 1열 · 5행 7열 · 9행 7열 · 11행 1열 | 3 | mossy forest floor with ferns and small mushrooms, matching the surroundings |
-| 4장 · 가을 왕도 (`city`) | 5행 3열 · 6행 4열 · 8행 4열 · 9행 5열 | 3행 3열 · 3행 9열 · 6행 6열 · 9행 9열 | 2 | lawn covered with fallen red and orange maple leaves, matching the surroundings |
-| 5장 · 사막 오아시스 (`plain`) | 4행 5열 · 6행 4열 · 9행 5열 · 10행 6열 | 3행 3열 · 3행 8열 · 9행 9열 · 10행 2열 | 2 | golden sand with a small desert shrub, matching the surrounding dunes |
-| 6장 · 정글 유적 (`ruins`) | 4행 7열 · 10행 6열 · 11행 4열 | 2행 3열 · 2행 9열 · 10행 9열 | 3 | mossy jungle ground with ferns and low tropical plants, matching the surroundings |
-| 7장 · 화산 첨탑 (`tower`) | 4행 6열 · 8행 3열 · 8행 5열 · 11행 4열 · 11행 6열 | 2행 9열 · 3행 4열 · 7행 1열 · 12행 1열 · 12행 6열 | 1 | dark basalt ground with ash and small black rocks, matching the surroundings |
+| 3장 · 원시림 (`forest`) | 4행 4열 · 5행 3열 · 7행 3열 · 7행 5열 · 8행 4열 · 10행 4열 · 10행 6열 | 2행 6열 · 4행 3열 · 5행 7열 · 7행 4열 · 10행 1열 · 10행 5열 · 11행 8열 | 0 | mossy forest floor with ferns and small mushrooms, matching the surroundings |
+| 4장 · 가을 왕도 (`city`) | 5행 3열 · 6행 4열 · 8행 4열 · 9행 3열 · 9행 5열 · 12행 6열 | 3행 1열 · 3행 6열 · 8행 1열 · 8행 6열 · 12행 4열 · 12행 9열 | 0 | lawn covered with fallen red and orange maple leaves, matching the surroundings |
+| 5장 · 사막 오아시스 (`plain`) | 4행 5열 · 6행 4열 · 9행 5열 · 10행 6열 · 12행 6열 | 3행 3열 · 3행 8열 · 10행 1열 · 10행 9열 · 12행 5열 | 1 | golden sand with a small desert shrub, matching the surrounding dunes |
+| 6장 · 정글 유적 (`ruins`) | 4행 7열 · 5행 6열 · 8행 3열 · 10행 6열 · 11행 4열 · 12행 5열 | 4행 4열 · 4행 9열 · 8행 1열 · 8행 6열 · 12행 4열 · 13행 9열 | 0 | mossy jungle ground with ferns and low tropical plants, matching the surroundings |
+| 7장 · 화산 첨탑 (`tower`) | 4행 6열 · 7행 7열 · 8행 5열 · 11행 4열 · 11행 6열 | 3행 3열 · 3행 9열 · 8행 9열 · 12행 6열 · 13행 1열 | 1 | dark basalt ground with ash and small black rocks, matching the surroundings |
 | 8장 · 제국 수도 (`capital`) | 5행 5열 · 6행 6열 · 8행 6열 · 9행 5열 · 11행 4열 · 12행 5열 | 2행 7열 · 3행 2열 · 7행 8열 · 8행 3열 · 12행 7열 · 13행 2열 | 0 | wet dark stone paving with a small stone flower planter, matching the surrounding plaza |
-| FINAL · 수정 동굴 (`core`) | 3행 4열 · 5행 3열 · 6행 6열 · 11행 6열 | 3행 1열 · 5행 9열 · 9행 8열 · 13행 9열 | 2 | dark cave stone floor with a few tiny glowing crystal shards, matching the surroundings |
+| FINAL · 수정 동굴 (`core`) | 3행 4열 · 5행 3열 · 5행 5열 · 9행 4열 · 11행 6열 | 3행 3열 · 3행 9열 · 8행 1열 · 10행 9열 · 12행 5열 | 1 | dark cave stone floor with a few tiny glowing crystal shards, matching the surroundings |
 
 ## 게임 쪽 변경 (그림이 오면 함께 적용)
 `MAPS[id].highAt`에 아래 칸 [열, 행](0부터)을 넣으면 그 맵의 발판이 정확히 이 자리로 바뀝니다(나머지 지형은 그대로).
@@ -44,11 +44,11 @@ The red, gold and cyan marks themselves must NOT appear in the result.
 prologue: highAt [[8, 1], [1, 2], [5, 6], [0, 7]]
 fort: highAt [[0, 1], [6, 2], [2, 6], [8, 7]]
 river: highAt [[4, 2], [0, 3], [8, 4], [3, 6], [7, 8]]
-forest: highAt [[0, 2], [3, 3], [6, 4], [2, 6], [6, 8], [3, 9], [0, 10]]
-city: highAt [[2, 2], [8, 2], [5, 5], [2, 8], [8, 8], [5, 11]]
-plain: highAt [[2, 2], [7, 2], [4, 6], [8, 8], [1, 9], [5, 11]]
-ruins: highAt [[2, 1], [8, 1], [5, 4], [2, 7], [8, 9], [4, 11]]
-tower: highAt [[8, 1], [3, 2], [0, 6], [6, 6], [0, 11], [5, 11]]
+forest: highAt [[5, 1], [2, 3], [6, 4], [3, 6], [0, 9], [4, 9], [7, 10]]
+city: highAt [[0, 2], [5, 2], [0, 7], [5, 7], [3, 11], [8, 11]]
+plain: highAt [[2, 2], [7, 2], [4, 6], [0, 9], [8, 9], [4, 11]]
+ruins: highAt [[3, 3], [8, 3], [0, 7], [5, 7], [3, 11], [8, 12]]
+tower: highAt [[2, 2], [8, 2], [2, 7], [8, 7], [5, 11], [0, 12]]
 capital: highAt [[6, 1], [1, 2], [7, 6], [2, 7], [6, 11], [1, 12]]
-core: highAt [[0, 2], [4, 4], [8, 4], [3, 8], [7, 8], [8, 12]]
+core: highAt [[2, 2], [8, 2], [5, 5], [0, 7], [8, 9], [4, 11]]
 ```
