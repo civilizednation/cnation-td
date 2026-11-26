@@ -135,8 +135,8 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   monster gates) and replaces the chips while a boss is out (`#strip.has-boss`): element, name, red bar + trail with HP numbers inside.
   Hidden on the title demo.
 - Monster HP bar length = `hpBarScale(e)`: √(maxHp ÷ (69 × battle tune hp)), clamped 0.75–1.8 (bosses up to 2.4).
-- Monster HP bars (all red `#ee4f3f`, elites and bosses too): a pale trail shows the part just lost — held `BAR_HOLD` 0.25 s, then
-  shrinks over `BAR_DRAIN` 0.25 s, the same for every hit — and the bar flashes; a 필살기 holds the bar until
+- Monster HP bars (all red `#ee4f3f`, elites and bosses too) and, since 1.7.11, ally bars: a pale trail shows the part just lost
+  (`barTrail`) — held `BAR_HOLD` 0.1 s, then shrinks over `BAR_DRAIN` 0.15 s (owner: 0.5 s felt too long), the same for every hit — and the bar flashes; a 필살기 holds the bar until
   its impact (`hold`). Damage areas work on every monster in range (checked: 파이어 hits all of a cluster for ~16–30% of max HP each). Clear wrap-up, defeat and the
   in-game menu have 지도로 (`toWorld`). The altar view pauses a running battle (sets `modalOpen`).
 - World map chapter select (`showWorld`/`chapterInfo` in game.js, `#world` z15 under the modal): `WORLD_MAP` in data.js = painting file

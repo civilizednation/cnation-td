@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.7.10',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.11',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -266,7 +266,7 @@ function refreshDock(){for(const el of document.querySelectorAll('#dock .card'))
 function nextRankText(u){const d=S.defOf(u),k=d.ranks[u.rank];if(!k)return '최대 랭크입니다.';const bits=['능력치↑'];if(k.skills)bits.push(k.skills.map(s=>D.SKILLS[s].name).join(', '));if(k.choice)bits.push('각인 선택');if(k.desc)bits.push(k.desc);if(k.ult)bits.push('필살기 '+D.SKILLS[k.ult].name);return `다음 ★${u.rank+1}: `+bits.join(' · ');}
 let panelKey='';
 // Element matchups (same table as sim.affinity): fire > wind > water(+ice) > fire, light ↔ dark; thunder/none neutral.
-const BAR_HOLD=.25,BAR_DRAIN=.25;
+const BAR_HOLD=.1,BAR_DRAIN=.15;
 // Bar length follows the monster's max HP (square-root scale against an ordinary monster of this battle), so tougher monsters
 // carry visibly longer bars: about ×0.8 for the weakest, ×1.5–1.8 for elites and big ones, up to ×2.4 for bosses.
 // Big boss bar at the top of the battlefield: name, element, HP numbers, the same red bar with its pale trail.
@@ -278,6 +278,12 @@ function bossHud(b){const show=!!b&&!demo.on;if(bossEl.hidden===show)bossEl.hidd
  bossEl.querySelector('.bb-fill').style.width=pct(b.shown);bossEl.querySelector('.bb-trail').style.width=pct(b.trail);
  bossEl.querySelector('.bb-hp').textContent=`${Math.max(0,Math.ceil(e.hp)).toLocaleString('ko-KR')} / ${Math.round(e.maxHp).toLocaleString('ko-KR')}`;
  bossEl.classList.toggle('hit',b.flash>0);}
+// HP bar with a pale trail for the part just lost (monsters and, since 1.7.11, allies): held BAR_HOLD, then shrinks over BAR_DRAIN.
+// A 필살기 holds a monster's bar until its impact (ob.hold).
+function barTrail(ob,hp,realDt){if(!ob)return {shown:hp,trail:hp,flash:0};if(ob.shown==null){ob.shown=hp;ob.trail=hp;}
+ if((ob.hold||0)>0)ob.hold-=realDt;else if(hp<ob.shown-.01){ob.from=Math.max(ob.trail,ob.shown);ob.trail=ob.from;ob.shown=hp;ob.age=0;ob.barFlash=.15;}else if(hp>ob.shown)ob.shown=ob.trail=hp;
+ if(ob.trail>ob.shown){ob.age=(ob.age||0)+realDt;const k=Math.max(0,Math.min(1,(ob.age-BAR_HOLD)/BAR_DRAIN));ob.trail=ob.from+(ob.shown-ob.from)*k;}
+ ob.barFlash=Math.max(0,(ob.barFlash||0)-realDt);return {shown:ob.shown,trail:ob.trail,flash:ob.barFlash};}
 const BAR_REF_HP=69;function hpBarScale(e){const b=S.chapter.battles[S.battle]||S.chapter.battles[0],ref=BAR_REF_HP*(b.tune?b.tune[0]:1);
  return Math.max(.75,Math.min(e.boss?2.4:1.8,Math.sqrt(e.maxHp/ref)));}   // monster HP bar trail: same short time for every hit
 const ELF=e=>e==='ice'?'water':e,STRONG_VS={fire:'바람 적에게 강함',water:'불 적에게 강함',ice:'불 적에게 강함',wind:'물 적에게 강함',light:'어둠 적에게 강함',dark:'빛 적에게 강함',thunder:'상성 없음'};
@@ -727,10 +733,7 @@ function drawOverlay(dt,time,realDt=dt){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.cl
  for(const e of S.enemies){const sc=e.scale||1,p=proj(e.x,e.y,(e.flying?1.95:1.25)*Math.max(1,sc*.92)),w=pxU*.72*hpBarScale(e);
   // HP bar: the lost part stays as a bright "trail" for a moment and then drains, so every hit visibly bites into the bar.
   // A 필살기 holds the bar until its impact lands (meteor falls first). The bar flashes white on a hit.
-  const ob=objs.get('e'+e.id);let shown=e.hp,trail=e.hp,flash=0;
-  if(ob){if(ob.shown==null){ob.shown=e.hp;ob.trail=e.hp;}if((ob.hold||0)>0)ob.hold-=realDt;else if(e.hp<ob.shown-.01){ob.from=Math.max(ob.trail,ob.shown);ob.trail=ob.from;ob.shown=e.hp;ob.age=0;ob.barFlash=.18;}else if(e.hp>ob.shown)ob.shown=ob.trail=e.hp;
-   // every trail looks the same: held BAR_HOLD, then shrinks to the bar over BAR_DRAIN, whatever the monster's size or the hit
-   if(ob.trail>ob.shown){ob.age=(ob.age||0)+realDt;const k=Math.max(0,Math.min(1,(ob.age-BAR_HOLD)/BAR_DRAIN));ob.trail=ob.from+(ob.shown-ob.from)*k;}ob.barFlash=Math.max(0,(ob.barFlash||0)-realDt);shown=ob.shown;trail=ob.trail;flash=ob.barFlash;}
+  const ob=objs.get('e'+e.id),{shown,trail,flash}=barTrail(ob,e.hp,realDt);
   // Element badge left of the bar (TACTICS style). With a character selected: monsters it is strong against glow, weak ones dim.
   if(e.element){const r=e.boss?8:6.5,bx=p.x-w/2-r-2,by=p.y+3;let m=1;if(selUnit){const su=S.units.find(v=>v.id===selUnit);if(su){const ms=unitElements(su).map(x=>matchup(x,e.element));m=ms.length?Math.max(...ms):1;}}
    ctx.save();if(selUnit&&m<1)ctx.globalAlpha=.4;if(selUnit&&m>1){ctx.shadowColor=EL_COLOR[e.element]||'#fff';ctx.shadowBlur=10+4*Math.sin(time*6);}
@@ -748,7 +751,9 @@ function drawOverlay(dt,time,realDt=dt){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.cl
  // Character bars, rank, ultimate glow
  bossHud(bossShown);
  for(const u of S.units){const gy=groundY(u.x,u.y),p=proj(u.x,u.y,gy+1.45),w=pxU*.7,calm=S.phase!=='battle'||u.id===selUnit;
-  if(calm||u.hp<u.maxHp-.5){ctx.fillStyle='rgba(12,22,26,.75)';ctx.fillRect(p.x-w/2-1,p.y-1,w+2,7);ctx.fillStyle=u.hp/u.maxHp>.35?'#7fe0a6':'#ffb35c';ctx.fillRect(p.x-w/2,p.y,w*Math.max(0,u.hp/u.maxHp),5);}
+  {const bt=barTrail(objs.get('u'+u.id),u.hp,realDt),f=v=>w*Math.max(0,Math.min(1,v/u.maxHp));if(calm||u.hp<u.maxHp-.5||bt.trail>bt.shown+.01){ctx.fillStyle='rgba(12,22,26,.75)';ctx.fillRect(p.x-w/2-1,p.y-1,w+2,7);
+   ctx.fillStyle='#fff2c9';ctx.fillRect(p.x-w/2+f(bt.shown),p.y,f(bt.trail)-f(bt.shown),5);ctx.fillStyle=u.hp/u.maxHp>.35?'#7fe0a6':'#ffb35c';ctx.fillRect(p.x-w/2,p.y,f(bt.shown),5);
+   if(bt.flash>0){ctx.strokeStyle=`rgba(255,255,255,${bt.flash/.15})`;ctx.lineWidth=1.5;ctx.strokeRect(p.x-w/2-1.5,p.y-1.5,w+3,8);}}}
   {ctx.font=`400 10px ${FONT}`;ctx.fillStyle='#f2cf72';ctx.strokeStyle='rgba(12,22,26,.9)';ctx.lineWidth=3;const s='★'.repeat(u.rank);ctx.strokeText(s,p.x,p.y-3);ctx.fillText(s,p.x,p.y-3);}
   if(ultReady(u)){drawReady(u,gy,time);if(!ultSeen.has(u.id)){ultSeen.add(u.id);sfx('ult_ready');addFx({k:'readyburst',real:true,x:u.x,y:u.y,h:gy,color:heroColor(u),dur:.9});}}else ultSeen.delete(u.id);
   if(u.shardT>0){const g=proj(u.x,u.y,gy),rot=time*2.4;ctx.save();for(let j=0;j<4;j++){const ph=(time*.9+j/4)%1,an=rot+j*1.57,q=proj(u.x+Math.cos(an)*.5,u.y+Math.sin(an)*.5,gy+ph*1.6);ctx.globalAlpha=1-ph;ctx.fillStyle='#bdf8ff';ctx.beginPath();ctx.arc(q.x,q.y,2.6,0,7);ctx.fill();}ctx.restore();
