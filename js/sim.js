@@ -157,7 +157,7 @@ function createSim(opts){
   if(o.skill&&!magic&&(e.st.freeze||e.st.slow)){dmg*=1.3;combo='파쇄';}
   if(e.st.sleep){dmg*=2;delete e.st.sleep;combo='기습';}
   const crit=S.rand()<(sd.crit||0);if(crit)dmg*=1.5;
-  dmg=Math.max(1,Math.round(dmg));e.hp-=dmg;S.stats.dealt[src.def]=(S.stats.dealt[src.def]||0)+dmg;emit({t:'dmg',id:e.id,x:e.x,y:e.y,v:dmg,crit,tag,combo,ult:!!o.ult,pct:Math.min(1,dmg/e.maxHp),aff:affM!==1?Math.round(dmg-dmg/affM):0,element:o.element||null,chain:o.chain||0});
+  dmg=Math.max(1,Math.round(dmg));e.hp-=dmg;S.stats.dealt[src.def]=(S.stats.dealt[src.def]||0)+dmg;emit({t:'dmg',id:e.id,x:e.x,y:e.y,v:dmg,crit,tag,combo,skill:!!o.skill,ult:!!o.ult,pct:Math.min(1,dmg/e.maxHp),aff:affM!==1?Math.round(dmg-dmg/affM):0,element:o.element||null,chain:o.chain||0});
   if(e.hp<=0)killEnemy(e,src);return dmg;}
  function pickTarget(u,range,canFly,strong,element){let best=null;const reach=range+.35,min=defOf(u).minRange||0;
   for(const e of S.enemies){if(e.dead)continue;if(e.flying&&!canFly)continue;const d=dist(u,e);if(e.engagedBy!==u.id&&d>reach)continue;if(d<min&&e.engagedBy!==u.id)continue;const aff=element?affinity(element,e.element):1,score=(strong?e.hp:(e.engagedBy===u.id?1000:0)+(e.boss?400:0)+(e.st.sleep?-500:0)+e.dist)+(aff>1?300:aff<1?-300:0);if(!best||score>best.score)best={e,score};}
@@ -191,11 +191,13 @@ function createSim(opts){
   u.ultCd=ultTime(u);S.lastUlt=S.time;S.chain=chain;S.stats.ults++;emit({t:'ult',unit:u.id,name:s.name,element:holder.element??null,chain});return null;}
  // ── 명당 (vantage spots): each battle one high-ground tile and one road tile shine; a character standing there deals +20%, charges its
  // 필살기 ×1.5 and gets range +0.5 (ranged) or holds one more monster (melee). Picked at random from the better half of the candidates.
- function pickVantage(){const roads=map.tiles.filter(t=>t.road),cover=t=>roads.filter(q=>Math.hypot(q.c-t.c,q.r-t.r)<=3.6).length;
+ function pickVantage(){const roads=map.tiles.filter(t=>t.road),cover=t=>roads.filter(q=>Math.hypot(q.c-t.c,q.r-t.r)<=3.6).length,
+   // 1.7.2: away from where the characters already stand, so the spot pulls the line apart instead of piling it up
+   room=t=>S.units.length?Math.min(4,Math.min(...S.units.map(u=>Math.hypot(u.c-t.c,u.r-t.r))))*2:0;
   const pickFrom=list=>{if(!list.length)return null;list.sort((a,b)=>b.s-a.s);const top=list.slice(0,Math.max(1,Math.ceil(list.length/2)));return top[Math.floor(S.rand()*top.length)].t;};
-  const high=pickFrom(map.tiles.filter(t=>t.terrain==='high').map(t=>({t,s:cover(t)})));
+  const high=pickFrom(map.tiles.filter(t=>t.terrain==='high').map(t=>({t,s:cover(t)+room(t)})));
   const melee=pickFrom(roads.filter(t=>t.terrain!=='bridge'&&!map.gates.some(g=>Math.hypot(g.x-t.c,g.y-t.r)<D.GATE_GAP)).filter(t=>{for(const p in t.pd){const tot=map.paths[p].total,f=t.pd[p]/tot;if(f<.2||f>.85)return false;}return true;})
-   .map(t=>({t,s:Object.keys(t.pd).length*3+roads.filter(q=>Math.abs(q.c-t.c)+Math.abs(q.r-t.r)===1).length+(t.terrain==='swamp'||t.terrain==='sand'?1:0)})));
+   .map(t=>({t,s:Object.keys(t.pd).length*3+roads.filter(q=>Math.abs(q.c-t.c)+Math.abs(q.r-t.r)===1).length+(t.terrain==='swamp'||t.terrain==='sand'?1:0)+room(t)})));
   S.vantage=[high,melee].filter(Boolean).map(t=>({c:t.c,r:t.r,kind:t.terrain==='high'?'ranged':'melee'}));for(const u of S.units)refresh(u);emit({t:'vantage',spots:S.vantage});}
  // ── 수정 조각 (crystal shard): every SHARD_EVERY s of battle a shard falls; the player gives it to a hero (giveShard), who then charges
  // its 필살기 ×2 for SHARD_TIME s. The screen gives a hero at random after 5 s; the sim does so itself after SHARD_WAIT s (bot, safety).

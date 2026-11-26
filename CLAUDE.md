@@ -54,7 +54,13 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   The screen (1.7.1): a charged hero has no ring — its body glows in `HERO_COLOR` (`readyGlow`, per-unit emissive copy of `M.sharedMat`), a halo +
   rising motes and a diamond crest (`drawReady`), and a one-time `readyburst` beam when it fills. A ready card glows and casts on tap; more than one element opens `#elPick` (weak/resist counts); `#chainBar` + 「N 연계!」.
   Call it 필살기 in all player-facing text.
-- 명당 (`S.vantage`, `pickVantage` at each prep): one high tile + one road tile from the better half; +20% damage, charge ×1.5, range +.5 / block +1.
+- 명당 (`S.vantage`, `pickVantage` at each prep): one high tile + one road tile from the better half (score = road cover + `room`, i.e. distance from
+  characters already placed, so it pulls the line apart); +20% damage, charge ×1.5, range +.5 / block +1.
+- Battle declutter (1.7.2): no name labels for auto skills (필살기 only), combos are a gold ring (암습 a red X), no numbers for basic attacks or
+  damage to allies, skill hits on one monster within 0.3 s merge into one number (`numOf`, dmg events carry `skill`); character HP bars only
+  when hurt and ★ only while preparing or selected.
+- Pedestal spread (planned, docs/REPAINT2.md): `MAPS[id].highAt` = hand-placed pedestals (same count, spread out, 1–3 outer-bend spots);
+  applied together with the repainted art, then recalibrate.
 - 수정 조각: `S.shardIn` (first 18 s, then 40 s of battle) → `S.shard` + event `shard`; `S.giveShard(id|null)` → `shardGiven`, `u.shardT`=20.
   The screen drops it in a light pillar, floats it above the dock (`#shard` in #app), drag onto a card/field hero or tap → tap; 0.25× speed while
   choosing, random after `SHARD_SECONDS` 5 real s. The sim gives it at random after 20 s by itself (bot/demo).
@@ -63,7 +69,7 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
 - `tools/strategy.js` compares habits (placement, 필살기 timing, element/vantage/shard use); target: ordinary play ≥90% clears, bad habits ≤50%.
 - Maps have their own size (`MAPS[id].w/h`): early chapters are smaller (9×9 … 9×12), 9×14 from chapter 4.
 - Basic attacks: ranged `RANGED_INTERVAL` 1.2 / `RANGED_POWER` 0.3, melee `MELEE_INTERVAL` 0.7 / `MELEE_POWER` 0.7 of the base numbers;
-  skills, 필살기 and heals are not affected. No melee on the road within `GATE_GAP` (3) tiles of a monster gate (`map.gates`).
+  skills, 필살기 and heals are not affected. No melee on the road within `GATE_GAP` (2 since 1.7.2) tiles of a monster gate (`map.gates`).
 - Placement: melee on road/grass/forest/bridge; ranged (heroes and soldiers) only on high ground — raised tiles beside the road,
   `MAPS[id].high` of them (6–8), never two edge to edge (`buildMap`).
 - Slots: every joined hero may be on the field at once (one of each); soldiers only up to `S.soldierCap` = `CHAPTER_DEFS[].soldiers`
