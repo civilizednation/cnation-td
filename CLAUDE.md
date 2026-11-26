@@ -68,6 +68,9 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   when hurt; ★ always shown (1.7.6, owner: to see who needs ranks).
 - Ground marks under characters are 3D meshes (`decalGroup`/`syncDecals`, 1.7.6) so bodies hide the part behind them: 명당 tile (gold fill +
   square frame), 수정 조각 holder (three turning cyan arcs); the ally foot ring is part of the model. 2D overlay keeps only motes/labels.
+  Owner's rule: shapes around units always go behind bodies. Every ring is a 3D `groundRing(key,x,y,r,color,fill,dashed)` asked for each frame
+  (pruned by `pruneRings`): selected range + aura, placing hover range, melee gate zones, 필살기 aim area, 철벽의 성채 and beam-warning rings.
+  Shielded monsters (보호막 −30%) get a small shield badge right of the HP bar (`shieldBadge`), not a circle.
 - Pedestal spread (1.7.3, docs/REPAINT2.md): every map has `MAPS[id].highAt` = hand-placed pedestals (same count, spread as far apart as
   possible, 1–3 outer-bend spots; replaces the grown high cells), and the paintings were repainted to match. To move a pedestal: edit
   `highAt`, re-make the guide, repaint, `fit-art.py --apply`.

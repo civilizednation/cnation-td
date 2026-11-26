@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.7.9',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.10',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -426,7 +426,7 @@ function resultModal(won,gained){const ch=S.chapter,index=S.chapterIndex;if(won)
   if(next)m.querySelector('[data-a=next]').onclick=()=>{closeModal();startChapter(index+1,null);};m.querySelector('[data-a=title]').onclick=()=>{closeModal();showTitle();};}
  else{const m=modal(`<p class="sub">DEFEAT</p><h2>수정이 깨졌습니다</h2><p>전투 ${S.battle+1} 「${ch.battles[S.battle].name}」에서 막지 못했습니다.</p><button class="primary" data-a="retry">이 전투 다시 하기<small>전투를 시작했던 배치 그대로</small></button><button data-a="restart">장 처음부터</button><button data-a="map">지도로</button><button data-a="title">타이틀로</button>`);
   m.querySelector('[data-a=retry]').onclick=()=>{closeModal();startChapter(index,lastSnap);};m.querySelector('[data-a=restart]').onclick=()=>{closeModal();startChapter(index,null);};m.querySelector('[data-a=map]').onclick=()=>toWorld();m.querySelector('[data-a=title]').onclick=()=>{closeModal();showTitle();};}}
-const HELP=`<h2>게임 방법</h2><ul><li>아래 초상화를 <b>끌어서</b> 전장에 놓거나, 누른 뒤 색이 칠해진 칸을 누르면 배치됩니다.</li><li>몬스터는 <b>붉은 문</b>에서 나와 길을 따라 <b>아르카 수정</b>으로 갑니다. 닿으면 생명이 줄어듭니다.</li><li><b>근접</b> 캐릭터를 길 위에 세우면 지나가는 몬스터를 붙잡아 <b>속도를 3분의 2</b>로 늦춥니다. 한 번에 붙잡는 수는 캐릭터마다 다르고, 길 위의 근접 캐릭터끼리는 길을 따라 5칸 이상 떨어져 서야 하고, 적 출현 문 2칸 안에는 세울 수 없습니다.</li><li><b>원거리</b> 캐릭터는 길 옆의 <b>올라온 발판(고지대)</b>에만 설 수 있고, 그 위에서 사거리가 0.5칸 늘어납니다.</li><li>늪·모래를 지나는 몬스터는 느려집니다. 그 근처에 화력을 모으세요.</li><li>배치한 캐릭터를 누르면 <b>랭크업</b>·철수·필살기를 쓸 수 있습니다. ★3에서 각인을 고릅니다.</li><li><b>필살기</b>가 핵심입니다. 출전한 영웅의 필살기는 <b>전투 중에만</b> 차오르고, 다 차면 카드가 빛납니다. 누르면 배운 속성 중 하나를 골라 씁니다. 3초 안에 다른 필살기를 이어 쓰면 <b>연계</b>로 더 강해집니다.</li><li>금색으로 빛나는 <b>명당</b>(원거리 1칸·근접 1칸)에 서면 피해 +25%, 필살기 충전 ×1.5입니다.</li><li>하늘에서 <b>수정 조각</b>이 떨어지면 영웅에게 끌어다 놓으세요(또는 조각 → 영웅 순서로 누르기). 20초 동안 필살기 충전 ×2. 5초 안에 고르지 않으면 아무에게나 갑니다.</li><li>🔥불 &gt; 🪽바람 &gt; 💧물 &gt; 🔥불 순으로 강하고, ✨빛과 🌑암흑은 서로에게 강합니다.</li><li>유령은 물리, 골렘은 마법이 잘 안 먹힙니다. 「ⓘ 적 정보」에서 미리 확인하세요.</li><li>영웅은 한 명뿐입니다. 쓰러지면 잠시 뒤 랭크를 유지한 채 돌아옵니다.</li></ul>`;
+const HELP=`<h2>게임 방법</h2><ul><li>아래 초상화를 <b>끌어서</b> 전장에 놓거나, 누른 뒤 색이 칠해진 칸을 누르면 배치됩니다.</li><li>몬스터는 <b>붉은 문</b>에서 나와 길을 따라 <b>아르카 수정</b>으로 갑니다. 닿으면 생명이 줄어듭니다.</li><li><b>근접</b> 캐릭터를 길 위에 세우면 지나가는 몬스터를 붙잡아 <b>속도를 3분의 2</b>로 늦춥니다. 한 번에 붙잡는 수는 캐릭터마다 다르고, 길 위의 근접 캐릭터끼리는 길을 따라 5칸 이상 떨어져 서야 하고, 적 출현 문 2칸 안에는 세울 수 없습니다.</li><li><b>원거리</b> 캐릭터는 길 옆의 <b>올라온 발판(고지대)</b>에만 설 수 있고, 그 위에서 사거리가 0.5칸 늘어납니다.</li><li>늪·모래를 지나는 몬스터는 느려집니다. 그 근처에 화력을 모으세요.</li><li>배치한 캐릭터를 누르면 <b>랭크업</b>·철수·필살기를 쓸 수 있습니다. ★3에서 각인을 고릅니다.</li><li><b>필살기</b>가 핵심입니다. 출전한 영웅의 필살기는 <b>전투 중에만</b> 차오르고, 다 차면 카드가 빛납니다. 누르면 배운 속성 중 하나를 골라 씁니다. 3초 안에 다른 필살기를 이어 쓰면 <b>연계</b>로 더 강해집니다.</li><li>금색으로 빛나는 <b>명당</b>(원거리 1칸·근접 1칸)에 서면 피해 +25%, 필살기 충전 ×1.5입니다.</li><li>하늘에서 <b>수정 조각</b>이 떨어지면 영웅에게 끌어다 놓으세요(또는 조각 → 영웅 순서로 누르기). 20초 동안 필살기 충전 ×2. 5초 안에 고르지 않으면 아무에게나 갑니다.</li><li>🔥불 &gt; 🪽바람 &gt; 💧물 &gt; 🔥불 순으로 강하고, ✨빛과 🌑암흑은 서로에게 강합니다.</li><li>체력바 옆에 🛡 방패가 붙은 몬스터는 보호막 안에 있어 피해를 30% 덜 받습니다(보호막을 거는 파수꾼을 먼저 잡거나 침묵시키세요).</li><li>유령은 물리, 골렘은 마법이 잘 안 먹힙니다. 「ⓘ 적 정보」에서 미리 확인하세요.</li><li>영웅은 한 명뿐입니다. 쓰러지면 잠시 뒤 랭크를 유지한 채 돌아옵니다.</li></ul>`;
 // Detailed tips under 「게임 방법」. Hero, soldier, skill, monster and boss parts are built from the data tables so they stay in step with the rules.
 const pct=v=>Math.round(v*100)+'%';
 function skillDesc(id){const s=D.SKILLS[id],b=[];
@@ -711,17 +711,17 @@ function drawMarkers(time){const map=S.map,prep=S.phase==='prep';
   for(let d=path.total-2.6+flow*.8;d<path.total-.5;d+=.8){const p=map.posAt(pi,d);chevron(p.x,p.y,p.dx,p.dy,.18,'#7ff0d2',.75);}});
  const last=map.paths[0].wp[map.paths[0].wp.length-1],c=proj(last[0],Math.min(last[1],S.map.h-1)+.6,2.6),low=S.life<=S.maxLife*.35;if(!demo.on)pill(c.x,c.y,`아르카 수정 ♥${S.life}`,low?'rgba(170,40,30,.92)':'rgba(20,90,80,.92)','#fff');}
 function drawOverlay(dt,time,realDt=dt){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,vw,vh);ctx.textAlign='center';ctx.lineJoin='round';
- drawMarkers(time);drawVantage(time);
+ ringsUsed.clear();drawMarkers(time);drawVantage(time);
  // Where the selected card may go
  if(selCard&&validTiles){const d=D.UNITS[selCard];for(const t of validTiles){tileQuad(t.c,t.r,tileTop(t));ctx.fillStyle=t.road?'rgba(255,190,70,.5)':t.terrain==='high'?'rgba(90,215,255,.5)':'rgba(60,220,130,.34)';ctx.fill();ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=1.5;ctx.stroke();}
-  if(hover&&hover.c!=null){const t=S.map.tile(hover.c,hover.r),ok=validTiles.includes(t),range=d.range+(d.melee?0:(t.terrain==='high'?.5:0)-(t.terrain==='forest'?.5:0)+S.mods.range);ellipse(hover.c,hover.r,range+.35);ctx.fillStyle=ok?'rgba(255,255,255,.16)':'rgba(240,120,100,.2)';ctx.fill();ctx.strokeStyle=ok?'#fff':'#f08f7c';ctx.lineWidth=2;ctx.stroke();tileQuad(hover.c,hover.r,tileTop(t));ctx.strokeStyle=ok?'#fff':'#f08f7c';ctx.lineWidth=3;ctx.stroke();}}
- if(selCard&&D.UNITS[selCard].melee){for(const g of S.map.gates){ellipse(g.x,g.y,D.GATE_GAP-.05,tileTop(S.map.tile(g.x,g.y)));ctx.fillStyle='rgba(235,70,50,.13)';ctx.fill();ctx.setLineDash([7,6]);ctx.strokeStyle='rgba(255,110,90,.95)';ctx.lineWidth=2.5;ctx.stroke();ctx.setLineDash([]);const q=proj(g.x,g.y+1.2,1.4);pill(q.x,q.y,`입구 ${D.GATE_GAP}칸 근접 금지`,'rgba(170,40,30,.9)','#fff');}
+  if(hover&&hover.c!=null){const t=S.map.tile(hover.c,hover.r),ok=validTiles.includes(t),range=d.range+(d.melee?0:(t.terrain==='high'?.5:0)-(t.terrain==='forest'?.5:0)+S.mods.range);groundRing('hover',hover.c,hover.r,range+.35,ok?0xffffff:0xf08f7c,ok?.16:.2);tileQuad(hover.c,hover.r,tileTop(t));ctx.strokeStyle=ok?'#fff':'#f08f7c';ctx.lineWidth=3;ctx.stroke();}}
+ if(selCard&&D.UNITS[selCard].melee){for(const g of S.map.gates){groundRing('gate'+g.x+','+g.y,g.x,g.y,D.GATE_GAP-.05,0xff6e5a,.13,true);const q=proj(g.x,g.y+1.2,1.4);pill(q.x,q.y,`입구 ${D.GATE_GAP}칸 근접 금지`,'rgba(170,40,30,.9)','#fff');}
   // (1.7.5) the spacing runs along the road, so only the crossed-out road tiles show it — no circle
   for(const t of spacedTiles){tileQuad(t.c,t.r,tileTop(t));ctx.fillStyle='rgba(225,60,45,.42)';ctx.fill();const m=proj(t.c,t.r,tileTop(t)),q=pxU*.16;ctx.strokeStyle='rgba(255,235,230,.85)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(m.x-q,m.y-q*SIN);ctx.lineTo(m.x+q,m.y+q*SIN);ctx.moveTo(m.x+q,m.y-q*SIN);ctx.lineTo(m.x-q,m.y+q*SIN);ctx.stroke();}
   if(spacedTiles.length){const u=S.units.find(v=>S.defOf(v).melee&&S.map.tile(v.c,v.r).road);if(u){const g=proj(u.x,u.y,2.1);pill(g.x,g.y,`근접 배치 금지 ${D.MELEE_GAP}칸`,'rgba(170,40,30,.9)','#fff');}}}
  const su=selUnit&&S.units.find(u=>u.id===selUnit);
  // While aiming a 필살기 (meteor), no range circles: it can land anywhere, and a circle would suggest otherwise.
- if(su&&aiming!==su.id){ellipse(su.x,su.y,su.range+.35);ctx.fillStyle='rgba(255,255,255,.12)';ctx.fill();ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=2;ctx.stroke();for(const au of su.auras){ellipse(su.x,su.y,au.radius+.4);ctx.setLineDash([6,5]);ctx.strokeStyle='#f2cf72';ctx.stroke();ctx.setLineDash([]);}}
+ if(su&&aiming!==su.id){groundRing('range',su.x,su.y,su.range+.35,0xffffff,.12);su.auras.forEach((au,i)=>groundRing('aura'+i,su.x,su.y,au.radius+.4,0xf2cf72,0,true));}
  // Monster bars and status pips (the boss gets the big bar at the top instead, see bossHud)
  let bossShown=null;
  for(const e of S.enemies){const sc=e.scale||1,p=proj(e.x,e.y,(e.flying?1.95:1.25)*Math.max(1,sc*.92)),w=pxU*.72*hpBarScale(e);
@@ -744,7 +744,7 @@ function drawOverlay(dt,time,realDt=dt){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.cl
    if(flash>0){ctx.strokeStyle=`rgba(255,255,255,${flash/.18})`;ctx.lineWidth=1.5;ctx.strokeRect(p.x-w/2-1.5,p.y-1.5,w+3,bh+3);}}
   let i=0;for(const k in e.st){ctx.fillStyle=ST_COLOR[k]||'#fff';ctx.beginPath();ctx.arc(p.x-w/2+4+i*8,p.y-6,3,0,7);ctx.fill();i++;}
   if(e.engagedBy){ctx.fillStyle='#fff';ctx.font=`400 10px ${FONT}`;ctx.fillText('⛓',p.x+w/2+5,p.y+5);}
-  if(e.shielded){const g=proj(e.x,e.y,.5);ctx.beginPath();ctx.arc(g.x,g.y,pxU*.4,0,7);ctx.strokeStyle='rgba(140,230,230,.7)';ctx.lineWidth=2;ctx.stroke();}}
+  if(e.shielded)shieldBadge(p.x+w/2+(e.engagedBy?16:7),p.y+3);}
  // Character bars, rank, ultimate glow
  bossHud(bossShown);
  for(const u of S.units){const gy=groundY(u.x,u.y),p=proj(u.x,u.y,gy+1.45),w=pxU*.7,calm=S.phase!=='battle'||u.id===selUnit;
@@ -753,11 +753,11 @@ function drawOverlay(dt,time,realDt=dt){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.cl
   if(ultReady(u)){drawReady(u,gy,time);if(!ultSeen.has(u.id)){ultSeen.add(u.id);sfx('ult_ready');addFx({k:'readyburst',real:true,x:u.x,y:u.y,h:gy,color:heroColor(u),dur:.9});}}else ultSeen.delete(u.id);
   if(u.shardT>0){const g=proj(u.x,u.y,gy),rot=time*2.4;ctx.save();for(let j=0;j<4;j++){const ph=(time*.9+j/4)%1,an=rot+j*1.57,q=proj(u.x+Math.cos(an)*.5,u.y+Math.sin(an)*.5,gy+ph*1.6);ctx.globalAlpha=1-ph;ctx.fillStyle='#bdf8ff';ctx.beginPath();ctx.arc(q.x,q.y,2.6,0,7);ctx.fill();}ctx.restore();
 }
-  if(S.fortress>0){const g=proj(u.x,u.y,gy+.6);ctx.beginPath();ctx.arc(g.x,g.y,pxU*.55,0,7);ctx.strokeStyle='rgba(255,243,176,.8)';ctx.lineWidth=2.5;ctx.stroke();}
+  if(S.fortress>0)groundRing('fort'+u.id,u.x,u.y,.55,0xfff3b0,0);
   let i=0;for(const k in u.st){ctx.fillStyle=ST_COLOR[k]||'#fff';ctx.beginPath();ctx.arc(p.x-w/2+4+i*8,p.y+11,3.5,0,7);ctx.fill();i++;}
   if(u.buff>1||u.defBuff>1||u.hasteBuff>1){const g=proj(u.x,u.y,gy+1.78);ctx.font=`400 11px ${FONT}`;ctx.fillStyle='#f2cf72';ctx.fillText((u.buff>1?'⚔':'')+(u.defBuff>1?'🛡':'')+(u.hasteBuff>1?'»':''),g.x,g.y);}
-  const wn=warns.get(u.id);if(wn){wn.t-=dt;const g=proj(u.x,u.y,gy+.6),boss=S.enemies.find(en=>en.id===wn.boss);ctx.strokeStyle=`rgba(255,80,60,${.5+.5*Math.sin(time*16)})`;ctx.lineWidth=3;ctx.beginPath();ctx.arc(g.x,g.y,pxU*.6,0,7);ctx.stroke();if(boss){const b=proj(boss.x,boss.y,1.2);ctx.setLineDash([5,6]);ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(g.x,g.y);ctx.stroke();ctx.setLineDash([]);}if(wn.t<-1)warns.delete(u.id);}}
- if(aiming){const s=D.SKILLS[S.units.find(u=>u.id===aiming)?.ult];if(s&&hover&&hover.x!=null){ellipse(hover.x,hover.y,s.area);ctx.strokeStyle='#ff8a3d';ctx.lineWidth=2;ctx.stroke();}}
+  const wn=warns.get(u.id);if(wn){wn.t-=dt;const g=proj(u.x,u.y,gy+.3),boss=S.enemies.find(en=>en.id===wn.boss);groundRing('warn'+u.id,u.x,u.y,.6,0xff503c,.12+.12*Math.sin(time*16));ctx.strokeStyle=`rgba(255,80,60,${.5+.5*Math.sin(time*16)})`;ctx.lineWidth=3;if(boss){const b=proj(boss.x,boss.y,1.2);ctx.setLineDash([5,6]);ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(g.x,g.y);ctx.stroke();ctx.setLineDash([]);}if(wn.t<-1)warns.delete(u.id);}}
+ if(aiming){const s=D.SKILLS[S.units.find(u=>u.id===aiming)?.ult];if(s&&hover&&hover.x!=null)groundRing('aim',hover.x,hover.y,s.area,0xff8a3d,.12);}
  // Effects
  for(let i=fx.length-1;i>=0;i--){const f=fx[i];f.t+=f.real?realDt:dt;const k=Math.min(1,f.t/f.dur);if(f.t>=(f.life||f.dur)){fx.splice(i,1);continue;}
   if(f.k==='shot'){const a=proj(f.from.x,f.from.y,f.foe?.7:1),b=proj(f.to.x,f.to.y,f.foe?1:.6),x=a.x+(b.x-a.x)*k,y=a.y+(b.y-a.y)*k,tx=x-(b.x-a.x)*.28,ty=y-(b.y-a.y)*.28;ctx.lineCap='round';
@@ -837,7 +837,7 @@ function syncObjects(dt,time){
 const decalGroup=new THREE.Group();scene.add(decalGroup);
 const decalMat=color=>new THREE.MeshBasicMaterial({color,transparent:true,opacity:.8,depthWrite:false,side:THREE.DoubleSide});
 const decals={vkey:'',vant:[],shard:new Map()};
-function clearDecals(){for(const o of decals.vant)decalGroup.remove(o.g);decals.vant=[];decals.vkey='';for(const o of decals.shard.values())decalGroup.remove(o);decals.shard.clear();}
+function clearDecals(){if(typeof rings!=='undefined'){for(const o of rings.values())decalGroup.remove(o.g);rings.clear();}for(const o of decals.vant)decalGroup.remove(o.g);decals.vant=[];decals.vkey='';for(const o of decals.shard.values())decalGroup.remove(o);decals.shard.clear();}
 // a square frame: a 4-sided ring turned 45°
 const squareFrame=(half,w)=>{const g=new THREE.RingGeometry((half-w)*Math.SQRT2,half*Math.SQRT2,4,1);g.rotateZ(Math.PI/4);g.rotateX(-Math.PI/2);return g;};
 function syncDecals(time){if(!S||demo.on){if(decals.vant.length||decals.shard.size)clearDecals();return;}
@@ -853,6 +853,22 @@ function syncDecals(time){if(!S||demo.on){if(decals.vant.length||decals.shard.si
   if(!g){g=new THREE.Group();for(let i=0;i<3;i++){const a=new THREE.RingGeometry(.5,.58,16,1,i*Math.PI*2/3,Math.PI*.5);a.rotateX(-Math.PI/2);g.add(new THREE.Mesh(a,decalMat(0x8ff3ff)));}decalGroup.add(g);decals.shard.set(u.id,g);}
   g.position.set(wx(u.x),groundY(u.x,u.y)+.04,wz(u.y));g.rotation.y=-time*2.4;for(const m of g.children)m.material.opacity=.7+.3*Math.sin(time*8);}
  for(const [id,g] of decals.shard)if(!live.has(id)){decalGroup.remove(g);decals.shard.delete(id);}}
+
+// Rings on the ground around characters, monsters and gates (1.7.9): 3D meshes, so a body hides the part of the ring behind it.
+// groundRing(key,…) is called every frame while the ring should show; pruneRings drops the ones not asked for this frame.
+const rings=new Map(),ringsUsed=new Set();
+function groundRing(key,x,y,r,color,fill,dashed){ringsUsed.add(key);let o=rings.get(key);
+ if(!o||o.r!==r||o.dashed!==!!dashed){if(o)decalGroup.remove(o.g);const g=new THREE.Group(),w=Math.min(.07,r*.12);
+  if(dashed){const n=Math.max(8,Math.round(r*9));for(let i=0;i<n;i++){const a=new THREE.RingGeometry(r-w,r,6,1,i*Math.PI*2/n,Math.PI*2/n*.55);a.rotateX(-Math.PI/2);g.add(new THREE.Mesh(a,decalMat(color)));}}
+  else{const a=new THREE.RingGeometry(r-w,r,Math.max(24,Math.round(r*24)));a.rotateX(-Math.PI/2);g.add(new THREE.Mesh(a,decalMat(color)));}
+  const f=new THREE.CircleGeometry(r-w,Math.max(24,Math.round(r*24)));f.rotateX(-Math.PI/2);const fm=new THREE.Mesh(f,decalMat(color));fm.name='fill';g.add(fm);
+  decalGroup.add(g);o={g,r,dashed:!!dashed};rings.set(key,o);}
+ o.g.visible=true;o.g.position.set(wx(x),r<1?Math.max(.02,groundY(x,y)+.02):.02,wz(y));
+ for(const m of o.g.children){m.material.color.setHex(color);m.material.opacity=m.name==='fill'?fill:.9;m.visible=m.name!=='fill'||fill>0;}}
+function pruneRings(){for(const [k,o] of rings)if(!ringsUsed.has(k)){decalGroup.remove(o.g);rings.delete(k);}}
+// shield badge beside a monster's HP bar: it stands inside a 보호막 (takes 30% less damage)
+function shieldBadge(x,y){ctx.save();ctx.fillStyle='rgba(12,30,36,.9)';ctx.strokeStyle='#8fe8ff';ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(x,y-6);ctx.lineTo(x+5,y-4);ctx.lineTo(x+5,y+1);ctx.quadraticCurveTo(x+5,y+5,x,y+7);ctx.quadraticCurveTo(x-5,y+5,x-5,y+1);ctx.lineTo(x-5,y-4);ctx.closePath();ctx.fill();ctx.stroke();
+ ctx.strokeStyle='rgba(143,232,255,.85)';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x,y-3.5);ctx.lineTo(x,y+4.5);ctx.stroke();ctx.restore();}
 
 // ── 1.7.1: melee swings drawn as effects, and the 필살기-ready look ──
 const HERO_COLOR={kyle:'#ffd257',sera:'#7fe08a',ria:'#ff5a6e',nero:'#b07cff',bran:'#ff9a3c',luna:'#f4f6ff'};
@@ -989,7 +1005,7 @@ function frame(now){requestAnimationFrame(frame);const real=Math.min(.05,(now-la
  if(scale>0)S.step(real*scale);handleEvents();if(!S)return;shardTick(real,paused||modalOpen);chainTick();if(pickEl!=null&&!ultReady(S.units.find(v=>v.id===pickEl)))closeElPick();
  const t=now/1000;syncObjects(real*(scale>0?Math.max(1,scale):1),t);syncDecals(t);if(water)water.material.uniforms.uTime.value=t;for(const f of animated)f(t);
  if(shakeT>0){shakeT=Math.max(0,shakeT-real);const m=shakeT*14;viewport.style.transform=`translate(${(Math.random()-.5)*m}px,${(Math.random()-.5)*m}px)`;}else if(viewport.style.transform)viewport.style.transform='';
- renderer.render(scene,camera);drawOverlay(real*(scale>0?Math.max(.5,scale):.5),t,real);if(!demo.on)drawShardFall();updateHud();}
+ renderer.render(scene,camera);drawOverlay(real*(scale>0?Math.max(.5,scale):.5),t,real);if(!demo.on)drawShardFall();pruneRings();updateHud();}
 
 makePortraits();resize();showTitle();requestAnimationFrame(frame);
 if(document.fonts&&document.fonts.load){document.fonts.load('16px "Stylish"');document.fonts.load('16px "Gowun Dodum"');}
