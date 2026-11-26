@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.7.12',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.13',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -160,7 +160,9 @@ function renderGuide(index){S=createSim({chapter:index,seed:1});clearObjects();b
 
 // ── Models ──
 const protoCache=new Map();
-function modelFor(key,spec){let p=protoCache.get(key);if(!p){p=M.figure(spec);p.traverse(o=>{o.userData.shared=true;if(o.isMesh&&o.material!==M.ghostMat)o.castShadow=o.geometry.type!=='RingGeometry'&&o.geometry.type!=='CircleGeometry';});if(p.children[2])p.children[2].visible=false;protoCache.set(key,p);}return p.clone();}
+function modelFor(key,spec){let p=protoCache.get(key);if(!p){p=M.figure(spec);p.traverse(o=>{o.userData.shared=true;if(o.isMesh&&o.material!==M.ghostMat)o.castShadow=o.geometry.type!=='RingGeometry'&&o.geometry.type!=='CircleGeometry';
+  // 1.7.13: the TACTICS team ring under every figure is hidden (owner: it carries no information here); the shadow disc stays
+  if(o.isMesh&&o.geometry.type==='RingGeometry'&&o.geometry.parameters.innerRadius===.34)o.visible=false;});if(p.children[2])p.children[2].visible=false;protoCache.set(key,p);}return p.clone();}
 const unitSpec=def=>({...D.UNITS[def].model,team:'ally',name:D.UNITS[def].name});
 const enemySpec=e=>({model:e.model,color:e.color,name:D.MONSTERS[e.kind].name,elite:e.elite,team:'enemy',scale:e.scale,boss:e.bossId!=null,bossId:e.bossId});
 function clearObjects(){clearDecals();shardUi=null;if(typeof shardEl!=='undefined'){shardEl.hidden=true;shardEl.classList.remove('drag','picking');}if(typeof closeElPick==='function')closeElPick();for(const o of objs.values())unitGroup.remove(o.g);objs.clear();for(const d of dying)unitGroup.remove(d.g);dying.length=0;fx.length=0;warns.clear();}

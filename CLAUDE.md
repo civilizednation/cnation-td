@@ -70,7 +70,7 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   damage to allies, skill hits on one monster within 0.3 s merge into one number (`numOf`, dmg events carry `skill`); character HP bars only
   when hurt; ★ always shown (1.7.6, owner: to see who needs ranks).
 - Ground marks under characters are 3D meshes (`decalGroup`/`syncDecals`, 1.7.6) so bodies hide the part behind them: 명당 tile (gold fill +
-  square frame), 수정 조각 holder (three turning cyan arcs); the ally foot ring is part of the model. 2D overlay keeps only motes/labels.
+  square frame), 수정 조각 holder (three turning cyan arcs); the TACTICS team foot ring of every model is hidden in `modelFor` (1.7.13, owner's choice); only the shadow disc remains. 2D overlay keeps only motes/labels.
   Owner's rule: shapes around units always go behind bodies. Every ring is a 3D `groundRing(key,x,y,r,color,fill,dashed)` asked for each frame
   (pruned by `pruneRings`): selected range + aura, placing hover range, melee gate zones, 필살기 aim area, 철벽의 성채 and beam-warning rings.
   Shielded monsters (보호막 −30%) get a small shield badge right of the HP bar (`shieldBadge`), not a circle.
