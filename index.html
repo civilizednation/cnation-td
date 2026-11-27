@@ -13,8 +13,8 @@
 <meta name="apple-mobile-web-app-title" content="cnation TD">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <style>
-@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=46") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:118%}
-@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=46") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:104%}
+@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=47") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:118%}
+@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=47") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:104%}
 :root{--font-display:"Stylish",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--font-body:"Gowun Dodum",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--bg:#16282d;--panel:#1f373d;--panel2:#284850;--line:#3c636b;--ink:#eef4ea;--dim:#a9c0bb;--gold:#f2cf72;--good:#8fe5b4;--bad:#f08f7c;--accent:#8be1bf}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--ink);font-family:var(--font-display);overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -23,8 +23,9 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
 #hud .stat{display:flex;align-items:center;gap:3px;padding:4px 6px;border-radius:8px;background:var(--bg);white-space:nowrap}
 #hud .stat b{font-variant-numeric:tabular-nums}
 #hud .stat.units{gap:1px;padding:4px 5px;letter-spacing:-.02em}#hud .stat.units b+span,#hud .stat.units b{margin-right:2px}
-#hudBattle{flex:1;text-align:center;font-size:13px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#hud button{flex:none;min-width:36px;height:32px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--ink);font:inherit;font-size:13px}
+#hudBattle{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;cursor:pointer;color:var(--dim);overflow:hidden}
+#hudBattle b{font-weight:400;font-size:12px;color:var(--ink)}#hudBattle small{max-width:100%;font-size:11px;letter-spacing:-.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#hud button{flex:none;min-width:33px;height:32px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--ink);font:inherit;font-size:13px}
 #viewport{position:relative;flex:1;min-height:0;overflow:hidden;background:#0b1620}
 #viewport canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 #art{position:absolute;left:0;top:0;max-width:none;pointer-events:none;user-select:none;-webkit-user-drag:none}#art:not([src]){display:none}
@@ -85,8 +86,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
 .chip{flex:none;padding:5px 8px;border-radius:8px;background:var(--bg);font-size:12px;white-space:nowrap}
 .chip.elite{outline:1px solid var(--gold)}.chip.boss{background:#5a2a2a;outline:1px solid var(--bad)}
 .chip i{font-style:normal;color:var(--accent)}.chip.info{background:var(--panel2);outline:1px solid var(--line)}#app.title #hud,#app.title #strip,#app.title #dock{visibility:hidden}
-#potionBtn{flex:none;height:34px;min-width:52px;padding:0 9px;border:1px solid #4fbf7a;border-radius:9px;background:#173a2a;color:#d9ffe6;font:inherit;font-weight:400;font-size:15px}#potionBtn[hidden]{display:none}
-#potionBtn.on{background:#2f8f55;box-shadow:0 0 0 3px rgba(120,240,160,.5),0 0 14px rgba(120,240,160,.7)}#potionBtn.empty{filter:grayscale(1);opacity:.55}
+#potionBtn{flex:none;display:flex;align-items:center;gap:3px;height:34px;min-width:54px;padding:0 8px 0 5px;border:1px solid #e0606a;border-radius:9px;background:#3d1418;color:#ffe3e6;font:inherit;font-weight:400;font-size:15px}#potionBtn svg,.potico{width:24px;height:26px;flex:none}.potico{display:inline-block;vertical-align:-7px;width:18px;height:20px}#potionBtn[hidden]{display:none}
+#potionBtn.on{background:#9a2633;box-shadow:0 0 0 3px rgba(255,130,150,.5),0 0 14px rgba(255,120,140,.75)}#potionBtn.empty{filter:grayscale(1);opacity:.55}
 #startBtn{flex:none;height:34px;padding:0 12px;border:0;border-radius:9px;background:var(--gold);color:#2b2410;font:inherit;font-weight:400;font-size:14px}
 #startBtn[hidden]{display:none}
 #dock,#panel{flex:none;height:calc(126px + env(safe-area-inset-bottom));padding:5px 6px calc(5px + env(safe-area-inset-bottom));background:var(--panel);border-top:1px solid var(--line)}
@@ -277,7 +278,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
 <body>
 <div id="app">
  <header id="hud">
-  <div class="stat">♥ <b id="hudLife">20</b></div>
+  <b id="hudLife" hidden></b>
   <div class="stat">💰 <b id="hudGold">0</b></div>
   <div class="stat units" title="영웅 · 병사">👑<b id="hudHeroes">0/0</b> 🪖<b id="hudSoldiers">0/0</b></div>
   <div id="hudBattle"></div>
@@ -302,10 +303,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
  <div id="modal" hidden></div>
 </div>
 <script src="vendor/three-r170.js"></script>
-<script src="js/data.js?v=1.7.20"></script>
-<script src="js/sim.js?v=1.7.20"></script>
-<script src="js/models.js?v=1.7.20"></script>
-<script src="js/game.js?v=1.7.20"></script>
+<script src="js/data.js?v=1.7.21"></script>
+<script src="js/sim.js?v=1.7.21"></script>
+<script src="js/models.js?v=1.7.21"></script>
+<script src="js/game.js?v=1.7.21"></script>
 <script>if('serviceWorker' in navigator&&location.protocol!=='file:')window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 </body>
 </html>

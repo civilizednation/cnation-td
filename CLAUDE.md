@@ -89,7 +89,7 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   strip shows `#cancelBar` 「✕ 취소 · <what> · ⏱ 느리게」 in place of chips/boss bar/buttons (`selectionLabel`, `cancelTick`). One
   `cancelSelection()` clears every state; tapping the bar, an empty spot of the field, or the same card again cancels. `#aimHint` is retired.
 - 체력 물약 (1.7.17): `POTIONS` 5 per chapter (`S.potions`, kept in the snapshot, not carried to the next chapter); `S.usePotion(id)` in
-  battle only: +50% max HP, clears bad states, one ally every `POTION_CD` 10 s. Screen: `#potionBtn` 「🧪 N」 in the strip → tap an ally
+  battle only: +50% max HP, clears bad states, one ally every `POTION_CD` 10 s. Screen: `#potionBtn` (heart-shaped red bottle `POTION_SVG` + count, red button since 1.7.21) in the strip → tap an ally
   (field or card; quarter speed while choosing) or the ally panel's 물약 button; event `potion` → green bubbles + number. The bot uses one
   on a hero under 30% HP.
 - Battle chips show 「다음 전투」 (`nextChip`, `S.preview(S.battle+1)`). Waves mix elements; each group one kind, consecutive groups prefer another element.
@@ -112,7 +112,9 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   `MAPS[id].noHigh` turns listed high cells back into grass after the map is grown (rest of the map unchanged) — used where a painting
   hides a cell (tower: behind the crystal) and (1.6.13) to retire surplus pedestals: high = prologue/fort 4, river 5, forest 7, the
   rest 6 (≈ max ranged units + 1–2). Those paintings were repainted with the pedestals turned into ground (docs/REPAINT.md).
-- Waves use half as many monsters with twice the HP and twice the gold each (`buildChapter`, `spawn`).
+- Waves use half as many monsters with twice the HP and twice the gold each (`buildChapter`, `spawn`). Groups of one kind (1.7.21): each
+  starts ≥ `GROUP_GAP` 5 s after the previous group's last monster, plus the time a faster group would need to catch up over ~15 tiles
+  (max 10 s), so groups of different elements stay apart.
 - Sound: one Web Audio context (`audioCtx`). Music is fetched and decoded into mono 22 kHz AudioBuffers (`bgm.load`, at most 3 kept) and played
   through gain nodes — <audio>.volume does not work on iPhone. `bgm/*.webm` (Opus) first, `bgm/*.m4a` (AAC copy) when WebM cannot be decoded,
   an <audio> element only if neither decodes. Crossfade 1 s,
@@ -134,6 +136,8 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   While `demo.on`: no sfx except ui_*, no toast/banner, events in `DEMO_SKIP` ignored (no saves/results), gate and crystal labels hidden.
   Title type scale: logo 40, tagline 18, buttons 16, small 12; menu = 게임 시작 (gold) / 이어하기, three round SVG icon buttons, footer.
   `art/title.webp` (ruins + crystal) is no longer used on the title; kept for a future loading/ending screen.
+- HUD (1.7.21): no life chip (the crystal label on the field shows ♥); `#hudBattle` is two lines 「전투 n/N」 + battle name (tap → full
+  chapter/battle name toast); HUD buttons min-width 33px so the longest battle name (10 chars) fits at 390 px.
 - iOS home-screen apps: status bar style is `black` (opaque), so iOS lays the page out below the status bar with the right height
   and #app simply fills the viewport. With `black-translucent` every sizing trick (bottom:0, 100lvh, +safe-area-inset-top, screen.height)
   was off by the status bar on a real iPhone (1.5–1.6.3). `fitApp()` is now a no-op kept for the resize hook.
