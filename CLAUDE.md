@@ -176,8 +176,15 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
 - Legacy icons (1.7.26): painted round medallions `art/legacy/<id>.webp` (256 px, circular alpha, cropped from the owner's 768 px art;
   prompts in docs/LEGACY_ICONS.md). `legacyInfo(id).icon` is an `<img class="licon">` (the emoji stays in `.emoji`/alt), so every
   place that shows a legacy (altar sockets, map badges, offer, clear pages, totals) uses the picture.
+- 수호자 카드 (1.7.27): all chapters ★3 → 「아르카의 수호자」, all 빛나는 ★3 → 「빛의 수호자」 (`guardianCheck` after each clear, stored in
+  `GUARD_KEY` with date, stars, shine, total kills/time from records and the MVP hero from `HERO_DEALT_KEY` = hero damage summed over
+  clears). `art/card_guardian.webp` / `card_light.webp` (owner's art, 2:3); `CARDS[kind].plate` = the empty nameplate as fractions, where the
+  title, optional engraved name (`GUARD_KEY.name`, ≤10 chars, `askName`, asked once when first earned), date and stats are written.
+  `#gcard` overlay: beam, falling motes, flip-in, shine sweep, tilt on drag; buttons other card / 이름 / 이미지로 저장 (`saveCard` draws
+  the card + text on a canvas → share sheet or download) / 받기·닫기. Shown over the last clear page when earned; the title shows the
+  honour (`.gtitle`, light wins) and tapping it reopens the card.
 - Resets (1.7.22): the legacy view's 「유산 초기화」 clears only `LEGACY_KEY` (confirm says stars/clears stay and re-clearing a chapter
-  offers its legacy again). The world map footer 「⟲ 처음부터 새로 시작」 (two-step confirm) removes clears, records, legacies, auto save
+  offers its legacy again). The world map footer 「⟲ 처음부터 새로 시작」 (two-step confirm) removes clears, shine, records, legacies, guardian cards/name, hero damage, auto save
   and slots (settings stay) and returns to the title, which then offers 「⚔ 모험 시작」.
 - No dialogue in play (owner's choice, 1.6.3): chapter start shows a banner, the boss battle a one-line hint toast; `dialogue()` and
   the intro/bossIntro/outro texts in data.js are unused.

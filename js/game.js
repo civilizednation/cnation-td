@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.7.26',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.27',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -414,9 +414,11 @@ function countUp(root){root.querySelectorAll('[data-count]').forEach((el,i)=>{co
  const draw=v=>{el.textContent=fmt==='time'?fmtTime(v):Math.round(v).toLocaleString('ko-KR');};draw(0);
  const tick=now=>{const k=Math.min(1,Math.max(0,(now-t0)/dur));draw(to*(1-Math.pow(1-k,3)));if(k<1&&!root.hidden)requestAnimationFrame(tick);};requestAnimationFrame(tick);});}
 function clearFlow(index){const ch=S.chapter,next=D.CHAPTERS[index+1],pages=next?4:3,st=S.stats,lifeGoal=Math.ceil(ch.life*.75);
- const n=S.leaksTotal===0?3:S.life>=lifeGoal?2:1,best=cleared(),prevStars=best[ch.id]||0;best[ch.id]=Math.max(prevStars,n);saveJSON(CLEAR_KEY,best);const shine=markShine(ch.id,n);try{localStorage.removeItem(SAVE_KEY);}catch(e){}
+ const n=S.leaksTotal===0?3:S.life>=lifeGoal?2:1,best=cleared(),prevStars=best[ch.id]||0;best[ch.id]=Math.max(prevStars,n);saveJSON(CLEAR_KEY,best);const shine=markShine(ch.id,n);
+ {const hd=loadJSON(HERO_DEALT_KEY,{});for(const [k,v] of Object.entries(st.dealt||{}))if(D.UNITS[k]&&D.UNITS[k].kind==='hero')hd[k]=(hd[k]||0)+v;saveJSON(HERO_DEALT_KEY,hd);}try{localStorage.removeItem(SAVE_KEY);}catch(e){}
  const recs=loadJSON(RECORD_KEY,{}),old=recs[ch.id],rec={stars:n,life:S.life,time:Math.round(st.time),kills:S.kills};
  const better=old?(n>old.stars||(n===old.stars&&(S.life>old.life||(S.life===old.life&&rec.time<old.time)))):false;if(!old||better){recs[ch.id]=rec;saveJSON(RECORD_KEY,recs);}
+ const earned=guardianCheck();
  const before=legacyNow();
  // Page 1 — 결산
  const dealt=Object.entries(st.dealt).sort((a,b)=>b[1]-a[1]),healed=Object.entries(st.healedBy||{}).sort((a,b)=>b[1]-a[1]),top=dealt[0]&&dealt[0][1]||1;
@@ -450,10 +452,11 @@ function clearFlow(index){const ch=S.chapter,next=D.CHAPTERS[index+1],pages=next
  const p4=gained=>{const m=modal(`${pageDots(pages-1,pages)}<p class="sub">${ch.label} CLEAR</p><h2>${ch.name}</h2><p class="stars">${starsText(n,shine)}</p>
   ${gained?`<p class="scope keep">♾ 얻은 유산: ${gained.icon} ${gained.name} — ${gained.desc}</p>`:''}
   ${next?`<button class="primary" data-a="next">다음 장으로<small>${next.label} · ${next.name}</small></button>`:`<p class="line">아르카 연대기 · 방어전<br>모든 장을 지켜냈습니다. 함께해 주셔서 고맙습니다.</p>`}<button data-a="map">지도로</button>`);
-  if(next)m.querySelector('[data-a=next]').onclick=()=>{closeModal();startChapter(index+1,null);};m.querySelector('[data-a=map]').onclick=()=>{sfx('ui_tap');toWorld();};};
+  if(next)m.querySelector('[data-a=next]').onclick=()=>{closeModal();startChapter(index+1,null);};m.querySelector('[data-a=map]').onclick=()=>{sfx('ui_tap');toWorld();};
+  if(earned.length)setTimeout(()=>playCards(earned.splice(0)),700);};
  p1();}
 function resultModal(won,gained){const ch=S.chapter,index=S.chapterIndex;if(won){const n=S.leaksTotal===0?3:S.life>=Math.ceil(ch.life*.75)?2:1,best=cleared();best[ch.id]=Math.max(best[ch.id]||0,n);saveJSON(CLEAR_KEY,best);const shine=markShine(ch.id,n);try{localStorage.removeItem(SAVE_KEY);}catch(e){}
-  const next=D.CHAPTERS[index+1];
+  const next=D.CHAPTERS[index+1],earned=guardianCheck();if(earned.length)setTimeout(()=>playCards(earned),900);
   const m=modal(`<p class="sub">${ch.label} CLEAR</p><h2>${ch.name}</h2><p class="stars">${starsText(n,shine)}</p><p>남은 생명 ${S.life} · 놓친 적 ${S.leaksTotal} · 처치 ${S.kills}</p>${gained?`<p class="scope keep">♾ 얻은 유산: ${gained.icon} ${gained.name} — ${gained.desc}</p>`:''}${next?`<button class="primary" data-a="next">다음 장으로<small>${next.label} · ${next.name}</small></button>`:`<p class="line">아르카 연대기 · 방어전<br>모든 장을 지켜냈습니다. 함께해 주셔서 고맙습니다.</p>`}<button data-a="title">타이틀로</button>`);
   if(next)m.querySelector('[data-a=next]').onclick=()=>{closeModal();startChapter(index+1,null);};m.querySelector('[data-a=title]').onclick=()=>{closeModal();showTitle();};}
  else{const m=modal(`<p class="sub">DEFEAT</p><h2>수정이 깨졌습니다</h2><p>전투 ${S.battle+1} 「${ch.battles[S.battle].name}」에서 막지 못했습니다.</p><button class="primary" data-a="retry">이 전투 다시 하기<small>전투를 시작했던 배치 그대로</small></button><button data-a="restart">장 처음부터</button><button data-a="map">지도로</button><button data-a="title">타이틀로</button>`);
@@ -558,7 +561,7 @@ ${sec('💫 상태이상',`<table><tr><th>상태</th><th>적에게</th></tr><tr>
 ${sec('✨ 콤보',`<table><tr><th>콤보</th><th>조건</th><th>효과</th></tr><tr><td>파쇄</td><td>빙결·둔화된 적에게 물리 스킬</td><td>피해 +30%</td></tr><tr><td>확산</td><td>화상 중인 적에게 🪽바람 스킬</td><td>1.3칸 안의 다른 적에게 화상이 옮겨 붙음</td></tr><tr><td>기습</td><td>잠든 적을 공격</td><td>피해 2배</td></tr><tr><td>암습</td><td>네로가 자신을 지나친 적을 공격</td><td>피해 +25%</td></tr></table><ul><li>예) 리아 프로스트(빙결) → 카일 얼음 베기·세라 관통 사격으로 파쇄.</li><li>예) 카일 화염검·리아 파이어로 불을 붙이고 → 리아 회오리 폭풍·카일 폭풍 베기로 확산.</li><li>예) 네로 수면 단검 → 세라 매의 심판으로 기습. 아군은 잠든 적을 마지막에 노립니다.</li></ul>`)}
 ${sec('👾 몬스터 유형',`<table><tr><th>유형</th><th>특징 · 대응</th></tr>`+Object.keys(byModel).map(k=>`<tr><td>${MODEL_NAME[k]||k}</td><td>${(D.MODEL_TRAITS[k]||{}).note||''} · <i>${MODEL_TIP[k]||''}</i><br><small>${byModel[k].join(', ')}</small></td></tr>`).join('')+`</table><ul><li><b>정예</b>(이름 앞 「정예」, 크기가 큼): 체력 ×4, 공격 ×1.4, 수정에 닿으면 생명 −2. 노란 체력 막대로 표시됩니다.</li><li>슬라임이 갈라진 「꼬마」는 빠르지만 약합니다.</li><li>몬스터를 누르면 체력·속성·특징이 표시됩니다.</li></ul>`)}
 ${sec('🐉 장별 보스',D.CHAPTERS.map(c=>{const b=c.boss;return `<p><b>${c.label} · ${b.name}</b>${b.element?' '+D.ELEMENT_ICON[b.element]:''}${b.immunity==='magic'?' · 마법↓':b.immunity==='physical'?' · 물리↓':''}${b.fly?' · 비행':''}<br><small>${b.hint}${b.wave?` 주기적으로 「${b.wave.name}」: 주변 ${b.wave.radius}칸 동료를 공격하고 ${ST_NAME[b.wave.status]} 상태로 만듭니다.`:''}${b.summon?' 부하를 불러냅니다.':''}</small></p>`;}).join('')+`<p><small>보스가 수정에 닿으면 생명과 관계없이 바로 패배합니다. 필살기는 보스가 나올 때까지 아껴 두세요.</small></p>`)}
-${sec('💰 골드와 진행',`<ul><li>처치 골드는 몬스터 체력에 비례합니다. 정예는 4배, 보스는 큰 보너스를 줍니다.</li><li>전투 승리 보너스: 30 + 전투 번호 × 8. 한 마리도 놓치지 않으면 1.5배.</li><li><b>조기 출발</b>: 준비 시간이 남았을 때 「전투 시작」을 누르면 남은 초만큼 골드를 받습니다.</li><li>네로가 마무리하면 골드 +30%. 네로를 적이 많이 지나가는 길목 뒤쪽에 세우세요.</li><li>몇 전투마다 <b>에테르 축복</b> 3개 중 하나를 고릅니다. <b>이번 장에서만</b> 효력이 있고 장이 끝나면 사라집니다: ${D.BLESSINGS.map(b=>`${b.name}(${b.desc})`).join(', ')}.</li><li>장을 클리어하면 <b>아르카의 유산</b> 3개 중 하나를 고릅니다. 유산은 <b>영구 효과</b>로 다음 장부터 계속 쌓입니다(아래 「아르카의 유산」 참고).</li><li>별 평가: 클리어 ★ · 생명 75% 이상 ★★ · 한 마리도 놓치지 않으면 ★★★. 뒤 장의 유산 없이(그 장 당시의 전력으로) ★★★을 따면 반짝이는 <b>빛나는 ★3</b>이 됩니다.</li></ul>`)}
+${sec('💰 골드와 진행',`<ul><li>처치 골드는 몬스터 체력에 비례합니다. 정예는 4배, 보스는 큰 보너스를 줍니다.</li><li>전투 승리 보너스: 30 + 전투 번호 × 8. 한 마리도 놓치지 않으면 1.5배.</li><li><b>조기 출발</b>: 준비 시간이 남았을 때 「전투 시작」을 누르면 남은 초만큼 골드를 받습니다.</li><li>네로가 마무리하면 골드 +30%. 네로를 적이 많이 지나가는 길목 뒤쪽에 세우세요.</li><li>몇 전투마다 <b>에테르 축복</b> 3개 중 하나를 고릅니다. <b>이번 장에서만</b> 효력이 있고 장이 끝나면 사라집니다: ${D.BLESSINGS.map(b=>`${b.name}(${b.desc})`).join(', ')}.</li><li>장을 클리어하면 <b>아르카의 유산</b> 3개 중 하나를 고릅니다. 유산은 <b>영구 효과</b>로 다음 장부터 계속 쌓입니다(아래 「아르카의 유산」 참고).</li><li>별 평가: 클리어 ★ · 생명 75% 이상 ★★ · 한 마리도 놓치지 않으면 ★★★. 뒤 장의 유산 없이(그 장 당시의 전력으로) ★★★을 따면 반짝이는 <b>빛나는 ★3</b>이 됩니다. 모든 장을 ★3으로 깨면 「아르카의 수호자」, 모두 빛나는 ★3으로 깨면 「빛의 수호자」 칭호와 카드를 받습니다(타이틀의 칭호를 누르면 다시 볼 수 있음).</li></ul>`)}
 ${sec('♾ 아르카의 유산 (영구 효과)',`<ul><li>장을 클리어할 때마다 3개 중 하나를 고르고, 그 효과는 <b>이후 모든 장에 계속 적용</b>됩니다. 에테르 축복(이번 장에서만)과 다릅니다.</li><li>장마다 유산 칸이 하나 있어 최대 10개까지 모입니다. 같은 장을 다시 클리어하면 그 장의 유산을 다른 것으로 바꿀 수 있습니다.</li><li>같은 유산을 여러 장에서 고르면 효과가 겹칩니다(유산마다 최대 횟수가 있습니다).</li><li>타이틀의 「아르카의 유산」에서 모은 유산을 볼 수 있습니다.</li></ul><table><tr><th>유산</th><th>효과 · 최대</th></tr>`+D.LEGACIES.map(l=>`<tr><td>${l.icon} ${l.name}</td><td>${l.desc} · 최대 ${l.max}번${l.hero?` <small>(${D.UNITS[l.hero].name} 합류 후)</small>`:''}</td></tr>`).join('')+`</table><p><small>장 난이도는 앞 장들에서 유산을 모아 온 것을 기준으로 맞춰져 있습니다.</small></p>`)}
 ${sec('🎯 배치 공략',`<ul><li><b>굽이 안쪽이 명당</b>: 길이 꺾이는 안쪽 칸은 길 두세 구간을 동시에 사거리에 넣습니다. 리아·세라를 세우세요.</li><li><b>늦추고 → 모으고 → 터뜨린다</b>: 브란이 붙잡아 적이 뭉치면 리아의 범위 마법이 여러 마리를 한꺼번에 맞힙니다.</li><li><b>늪·모래 끝에 근접 캐릭터</b>: 느려진 구간과 붙잡기가 겹치면 적이 머무는 시간이 크게 늘어납니다.</li><li><b>네로는 벽 뒤에</b>: 브란을 지나친 적은 네로에게 등을 보여 암습 피해를 받고, 흘린 적도 마무리합니다.</li><li><b>세라는 길에서 조금 떨어진 발판</b>: 바로 옆 칸을 쏘지 못하니 한 칸 띄우고, 고지대에서 사거리와 피해를 모두 챙기세요.</li><li><b>루나는 전선과 화력 사이</b>: 회복 사거리에 근접 캐릭터, 오라 범위에 화력 캐릭터가 함께 들어오는 칸이 좋습니다.</li><li><b>입구가 두 개인 장</b>(4장·8장): 두 길이 합쳐지는 곳에 화력을 모으면 한 번에 막을 수 있습니다.</li><li>배치나 캐릭터 메뉴를 여는 동안에는 시간이 1/4로 느려집니다. 급할 때는 일시정지(⏸)를 쓰세요.</li></ul>`)}`;}
 function settingsModal(back){const vols=[0,.25,.5,.75,1],m=modal(`<h2>소리 설정</h2><p>배경 음악</p><div class="seg">${vols.map(v=>`<button data-v="${v}" class="${settings.bgm===v?'primary':''}">${v?Math.round(v*100):'끔'}</button>`).join('')}</div><p>효과음</p><div class="seg">${vols.map(v=>`<button data-e="${v}" class="${settings.sfxVol===v?'primary':''}">${v?Math.round(v*100):'끔'}</button>`).join('')}</div><button class="primary" data-a="back">확인</button>`);
@@ -639,8 +642,8 @@ function showWorld(){closeModal();const W=D.WORLD_MAP,best=cleared(),picks=legac
  worldEl.querySelector('[data-a=back]').onclick=()=>{sfx('ui_tap');closeWorld();showTitle();};
  worldEl.querySelector('[data-a=legacy]').onclick=()=>{sfx('ui_tap');legacyView(()=>{});};
  // 1.7.22: wipe all progress (stars, records, legacies, saves) and start over from the prologue — behind a two-step confirmation
- worldEl.querySelector('[data-a=restart]').onclick=()=>{sfx('ui_tap');const c=modal(`<h2>처음부터 새로 시작</h2><p>게임을 완전히 처음 상태로 되돌립니다.</p><ul class="wipe"><li>모든 장의 ★ 별(빛나는 ★3 포함)과 클리어 기록</li><li>모아 둔 아르카의 유산 전부</li><li>이어하기 자동 저장과 저장 슬롯 3개</li></ul><p class="small">소리 설정만 남습니다. 되돌릴 수 없습니다.</p><p><b>정말 모두 지우고 처음부터 시작할까요?</b></p><button class="primary" data-a="n">취소</button><button class="dev" data-a="y">모두 지우고 새로 시작</button>`);
-  c.querySelector('[data-a=n]').onclick=closeModal;c.querySelector('[data-a=y]').onclick=()=>{for(const k of [CLEAR_KEY,SHINE_KEY,RECORD_KEY,LEGACY_KEY,SAVE_KEY,SLOT_KEY])try{localStorage.removeItem(k);}catch(e){}
+ worldEl.querySelector('[data-a=restart]').onclick=()=>{sfx('ui_tap');const c=modal(`<h2>처음부터 새로 시작</h2><p>게임을 완전히 처음 상태로 되돌립니다.</p><ul class="wipe"><li>모든 장의 ★ 별(빛나는 ★3 포함)과 클리어 기록, 수호자 칭호와 카드</li><li>모아 둔 아르카의 유산 전부</li><li>이어하기 자동 저장과 저장 슬롯 3개</li></ul><p class="small">소리 설정만 남습니다. 되돌릴 수 없습니다.</p><p><b>정말 모두 지우고 처음부터 시작할까요?</b></p><button class="primary" data-a="n">취소</button><button class="dev" data-a="y">모두 지우고 새로 시작</button>`);
+  c.querySelector('[data-a=n]').onclick=closeModal;c.querySelector('[data-a=y]').onclick=()=>{for(const k of [CLEAR_KEY,SHINE_KEY,RECORD_KEY,LEGACY_KEY,SAVE_KEY,SLOT_KEY,GUARD_KEY,HERO_DEALT_KEY])try{localStorage.removeItem(k);}catch(e){}
    closeModal();worldEl.hidden=true;toast('모든 기록을 지웠습니다 · 프롤로그부터 새로 시작합니다');showTitle();};};
  worldEl.querySelectorAll('.wstop').forEach(b=>b.onclick=()=>{sfx('ui_tap');chapterInfo(+b.dataset.i,open(+b.dataset.i));});}
 function chapterInfo(i,ok){const c=D.CHAPTERS[i],st=cleared()[c.id]||0,rec=loadJSON(RECORD_KEY,{})[c.id],l=legacyPicks()[i]&&legacyInfo(legacyPicks()[i]);
@@ -653,14 +656,14 @@ function showTitle(){closeWorld();closeAltar();demo.stop();S=null;clearObjects()
  const best=cleared(),stars=Object.values(best).reduce((a,b)=>a+b,0),next=D.CHAPTERS.find((c,i)=>(i===0||best[D.CHAPTERS[i-1].id])&&!best[c.id]),
   ICON={load:'<path d="M3 7h6l2 2h10v10H3z"/>',sound:'<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>',help:'<path d="M4 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-4a2 2 0 0 0-2 2"/><path d="M20 5v13h-6"/>'},
   icon=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>`;
- const m=modal(`<div class="logo"><p class="sub">ARCA CHRONICLE</p><h1>cnation <em>TD</em></h1><p class="tag">아르카 방어전</p></div>
+ const m=modal(`<div class="logo"><p class="sub">ARCA CHRONICLE</p><h1>cnation <em>TD</em></h1><p class="tag">아르카 방어전</p>${(()=>{const g=loadJSON(GUARD_KEY,{}),k=g.light?'light':g.guardian?'guardian':null;return k?`<button class="gtitle gt-${k}" data-a="card">${k==='light'?SHINE_STAR+' 빛의 수호자 '+SHINE_STAR:'★ 아르카의 수호자 ★'}</button>`:'';})()}</div>
   <div class="tmenu">${(()=>{const fresh=!save&&!stars&&!Object.keys(legacyPicks()).length,map=`🗺 모험 지도<small>${next?`다음 · ${next.label} ${next.name}`:'모든 장 클리어'}${stars?` · ★ ${stars}/${D.CHAPTERS.length*3}`:''}</small>`;
      return save?`<button class="tbtn main" data-a="continue">▶ 전투 계속하기<small>${D.CHAPTERS[save.chapter].label} ${D.CHAPTERS[save.chapter].name} · 전투 ${save.battle+1}/${D.CHAPTERS[save.chapter].battles.length}부터</small></button><button class="tbtn alt" data-a="start">${map}</button>`
       :fresh?`<button class="tbtn main" data-a="first">⚔ 모험 시작<small>PROLOGUE · ${D.CHAPTERS[0].name}</small></button>`:`<button class="tbtn main" data-a="start">${map}</button>`;})()}
    <div class="trow"><button data-a="load" ${any?'':'disabled'}>${icon('load')}<span>저장 슬롯</span></button><button data-a="sound">${icon('sound')}<span>소리</span></button><button data-a="help">${icon('help')}<span>게임 방법</span></button></div>
    <div class="tfoot"><button class="dev" data-a="dev">개발자 모드</button><span class="verbar">ver.${GAME_VERSION} (<a href="revisions.html">rev. history</a>)</span></div></div>`,'title');const rv=m.querySelector('.verbar a');if(rv)rv.onclick=e=>{if(e.button||e.metaKey||e.ctrlKey||e.shiftKey)return;e.preventDefault();sfx('ui_tap');showRevisions();};
  const on=(a,f)=>{const b=m.querySelector(`[data-a=${a}]`);if(b)b.onclick=()=>{sfx('ui_tap');f();};};
- on('start',showWorld);on('first',()=>{closeModal();devMode=false;startChapter(0,null);});on('continue',()=>{closeModal();startChapter(save.chapter,save);});on('dev',()=>chapterList(true));
+ on('card',()=>{const g=loadJSON(GUARD_KEY,{});showCard(g.light?'light':'guardian',null,false);});on('start',showWorld);on('first',()=>{closeModal();devMode=false;startChapter(0,null);});on('continue',()=>{closeModal();startChapter(save.chapter,save);});on('dev',()=>chapterList(true));
  on('load',()=>slotModal('load',showTitle));on('sound',()=>settingsModal(showTitle));on('help',()=>{const h=modal(HELP+helpTips()+`<button class="primary">닫기</button>`,'help');h.querySelector('button').onclick=showTitle;});}
 
 // ── Saves ──
@@ -935,6 +938,55 @@ function cancelTick(){const label=!demo.on&&S&&(S.phase==='battle'||S.phase==='p
  if(key===cancelKey)return;cancelKey=key;cancelEl.hidden=!label;$('#strip').classList.toggle('selecting',!!label);
  if(label){cancelEl.querySelector('span').textContent=label;cancelEl.querySelector('i').hidden=!slow;}}
 
+// ── 수호자 카드 (1.7.27): every chapter at ★3 → 「아르카의 수호자」, every chapter at 빛나는 ★3 → 「빛의 수호자」. The card flips in with a
+// beam of light when earned (over the last clear page), and the title shows the honour; tapping it brings the card back.
+const GUARD_KEY='cnation-td-guardian-v1',HERO_DEALT_KEY='cnation-td-herodealt-v1';
+const CARDS={guardian:{img:'art/card_guardian.webp',title:'아르카의 수호자',sub:'모든 장을 ★3으로 지켜낸 자',plate:[.1,.755,.9,.872]},
+ light:{img:'art/card_light.webp',title:'빛의 수호자',sub:'모든 장을 빛나는 ★3으로 지켜낸 자',plate:[.12,.685,.88,.818]}};
+function guardianCheck(){const g=loadJSON(GUARD_KEY,{}),best=cleared(),sh=shined(),now=[];
+ const snap=()=>{const recs=loadJSON(RECORD_KEY,{}),hd=loadJSON(HERO_DEALT_KEY,{}),mvp=Object.entries(hd).sort((a,b)=>b[1]-a[1])[0];
+  return {date:Date.now(),stars:Object.values(best).reduce((a,b)=>a+b,0),shine:Object.keys(sh).length,time:Object.values(recs).reduce((a,r)=>a+(r.time||0),0),kills:Object.values(recs).reduce((a,r)=>a+(r.kills||0),0),mvp:mvp?mvp[0]:null};};
+ if(D.CHAPTERS.every(c=>best[c.id]===3)&&!g.guardian){g.guardian=snap();now.push('guardian');}
+ if(D.CHAPTERS.every(c=>sh[c.id])&&!g.light){g.light=snap();now.push('light');}
+ if(now.length)saveJSON(GUARD_KEY,g);return now;}
+const cardEl=(()=>{const el=document.createElement('div');el.id='gcard';el.hidden=true;app.appendChild(el);return el;})();
+function cardLines(kind){const g=loadJSON(GUARD_KEY,{})[kind],d=new Date(g.date);
+ return {date:`${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()}.`,stats:`★ ${g.stars}/${D.CHAPTERS.length*3} · 빛나는 별 ${g.shine}/${D.CHAPTERS.length}`,
+  more:`처치 ${g.kills.toLocaleString('ko-KR')} · 전투 ${fmtTime(g.time)}${g.mvp&&D.UNITS[g.mvp]?` · 최고 활약 ${D.UNITS[g.mvp].name}`:''}`};}
+function playCards(list,done){if(!list.length){done&&done();return;}showCard(list[0],()=>playCards(list.slice(1),done),true);}
+function showCard(kind,done,fresh){const C=CARDS[kind],G=loadJSON(GUARD_KEY,{});if(!G[kind]){done&&done();return;}const L=cardLines(kind),other=kind==='light'&&G.guardian?'guardian':kind==='guardian'&&G.light?'light':null;
+ cardEl.className='gc-'+kind+(fresh?' fresh':'');const P=C.plate;
+ cardEl.innerHTML=`<div class="gc-beam"></div><div class="gc-parts">${Array.from({length:28},()=>`<i style="--x:${(Math.random()*100).toFixed(1)}%;--d:${(Math.random()*3).toFixed(2)}s;--s:${(.6+Math.random()*.9).toFixed(2)};--t:${(2.4+Math.random()*2).toFixed(2)}s"></i>`).join('')}</div>
+  ${fresh?`<p class="gc-get">${kind==='light'?'최고 명예 달성!':'명예 달성!'}</p>`:''}
+  <div class="gc-wrap"><div class="gc-card"><img src="${C.img}?v=${GAME_VERSION}" alt="${C.title} 카드"><div class="gc-plate" style="left:${P[0]*100}%;top:${P[1]*100}%;width:${(P[2]-P[0])*100}%;height:${(P[3]-P[1])*100}%"><b>${C.title}</b>${G.name?`<i class="gc-name">${esc(G.name)}</i><small>${L.stats} · ${L.date}<br>${L.more}</small>`:`<span>${C.sub} · ${L.date}</span><small>${L.stats}<br>${L.more}</small>`}</div><div class="gc-shine"></div></div></div>
+  <div class="gc-btns">${other?`<button data-a="other">${CARDS[other].title} 카드</button>`:''}<button data-a="name">✎ ${G.name?'이름 바꾸기':'이름 새기기'}</button><button data-a="save">이미지로 저장</button><button class="primary" data-a="close">${fresh?'받기':'닫기'}</button></div>`;
+ cardEl.hidden=false;modalOpen=true;if(fresh){sfx('legacy',{force:true});setTimeout(()=>sfx('wave_clear',{force:true}),450);}
+ const wrap=cardEl.querySelector('.gc-wrap'),card=cardEl.querySelector('.gc-card');
+ wrap.onpointermove=e=>{const r=wrap.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;wrap.style.transform=`perspective(900px) rotateY(${x*16}deg) rotateX(${-y*12}deg)`;card.style.setProperty('--gx',(50+x*90)+'%');};
+ wrap.onpointerleave=()=>{wrap.style.transform='';};
+ const close=()=>{cardEl.hidden=true;cardEl.innerHTML='';modalOpen=!$('#modal').hidden;done&&done();};
+ cardEl.querySelector('[data-a=close]').onclick=()=>{sfx('ui_tap');close();};
+ if(other)cardEl.querySelector('[data-a=other]').onclick=()=>{sfx('ui_tap');showCard(other,done,false);};
+ cardEl.querySelector('[data-a=save]').onclick=()=>{sfx('ui_tap');saveCard(kind);};
+ cardEl.querySelector('[data-a=name]').onclick=()=>{sfx('ui_tap');askName(kind,done);};
+ if(fresh&&!G.name)setTimeout(()=>{if(!cardEl.hidden&&!cardEl.querySelector('.gc-ask'))askName(kind,done,true);},2200);}
+// 카드에 새길 이름 (1.7.27): one name for both cards, up to 10 characters, kept in GUARD_KEY.name; empty = no name
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function askName(kind,done,fresh){const G=loadJSON(GUARD_KEY,{}),box=document.createElement('div');box.className='gc-ask';
+ box.innerHTML=`<div><b>카드에 새길 이름</b><p>수호자의 이름(닉네임)을 새겨 드립니다 · 최대 10자</p><input maxlength="10" value="${esc(G.name||'')}" placeholder="이름 또는 닉네임"><div class="gc-ab"><button data-a="skip">${fresh?'나중에':'취소'}</button><button class="primary" data-a="ok">새기기</button></div></div>`;
+ cardEl.appendChild(box);const inp=box.querySelector('input');setTimeout(()=>inp.focus(),50);
+ const finish=save=>{if(save){const g=loadJSON(GUARD_KEY,{}),v=inp.value.trim().slice(0,10);if(v)g.name=v;else delete g.name;saveJSON(GUARD_KEY,g);sfx('rank_up',{force:true});}box.remove();if(save)showCard(kind,done,false);};
+ box.querySelector('[data-a=ok]').onclick=()=>finish(true);box.querySelector('[data-a=skip]').onclick=()=>{sfx('ui_tap');finish(false);};inp.onkeydown=e=>{if(e.key==='Enter')finish(true);};}
+// draws the card with its text into an image and shares it (phone) or downloads it
+function saveCard(kind){const C=CARDS[kind],L=cardLines(kind),img=new Image();img.onload=async()=>{const W=img.width,H=img.height,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');g.drawImage(img,0,0);
+  const P=C.plate,x0=P[0]*W,y0=P[1]*H,w=(P[2]-P[0])*W,h=(P[3]-P[1])*H,fd=getComputedStyle(document.body).getPropertyValue('--font-display')||FONT,ink=kind==='light'?'#e9fdff':'#ffe9a8';
+  g.textAlign='center';g.textBaseline='middle';g.shadowColor=kind==='light'?'#39d6ff':'#ffb020';
+  const line=(t,size,y,color)=>{g.font=`400 ${size}px ${fd}`;g.fillStyle=color;g.shadowBlur=size*.5;g.fillText(t,x0+w/2,y0+h*y,w*.94);};
+  const nm=loadJSON(GUARD_KEY,{}).name;if(nm){line(C.title,W*.05,.19,ink);g.shadowBlur=0;line(nm,W*.036,.44,'#ffffff');}else{line(C.title,W*.058,.2,ink);g.shadowBlur=0;line(C.sub+' · '+L.date,W*.026,.45,'#ffffff');}line(nm?L.stats+' · '+L.date:L.stats,W*.023,nm?.67:.65,ink);line(L.more,W*.021,nm?.85:.84,'#dfe9ee');
+  c.toBlob(async b=>{const name=(kind==='light'?'빛의_수호자':'아르카의_수호자')+'.png';try{const f=new File([b],name,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:C.title});return;}}catch(e){}
+   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);toast('카드 이미지를 저장했습니다');},'image/png');};
+ img.src=C.img+'?v='+GAME_VERSION;}
+
 // ── 1.7.1: melee swings drawn as effects, and the 필살기-ready look ──
 const HERO_COLOR={kyle:'#ffd257',sera:'#7fe08a',ria:'#ff5a6e',nero:'#b07cff',bran:'#ff9a3c',luna:'#f4f6ff'};
 const heroColor=u=>HERO_COLOR[u.def]||'#ffd257';
@@ -1085,5 +1137,5 @@ function showRevisions(){if($('#revisionsView'))return;const view=document.creat
  const close=()=>{view.remove();window.removeEventListener('message',onMessage);document.removeEventListener('keydown',onKey);},onKey=e=>{if(e.key==='Escape')close();},
   onMessage=e=>{if(e.origin===location.origin&&e.data==='td:close-revisions')close();};
  document.addEventListener('keydown',onKey);window.addEventListener('message',onMessage);$('#closeRevisions').onclick=close;}
-window.TD={bgm,closeModal,get sim(){return S;},get objs(){return objs;},startChapter,renderGuide,version:GAME_VERSION,proj:(x,y,h)=>proj(x,y,h)};
+window.TD={bgm,closeModal,showCard,guardianCheck,get sim(){return S;},get objs(){return objs;},startChapter,renderGuide,version:GAME_VERSION,proj:(x,y,h)=>proj(x,y,h)};
 })();
