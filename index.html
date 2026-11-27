@@ -13,8 +13,8 @@
 <meta name="apple-mobile-web-app-title" content="cnation TD">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <style>
-@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=47") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:118%}
-@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=47") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:104%}
+@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=48") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:118%}
+@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=48") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:104%}
 :root{--font-display:"Stylish",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--font-body:"Gowun Dodum",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--bg:#16282d;--panel:#1f373d;--panel2:#284850;--line:#3c636b;--ink:#eef4ea;--dim:#a9c0bb;--gold:#f2cf72;--good:#8fe5b4;--bad:#f08f7c;--accent:#8be1bf}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--ink);font-family:var(--font-display);overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -181,6 +181,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
 .whead{flex:none;display:flex;align-items:center;gap:8px;height:calc(48px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 10px 0;background:var(--panel);border-bottom:1px solid var(--line);font-size:16px}
 .whead b{flex:1;font-weight:400}.whead button{height:34px;min-width:38px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--ink);font:inherit;font-size:14px;padding:0 10px}
 .whead .wleg{border-color:rgba(242,207,114,.6);color:var(--gold)}.wstars{color:var(--gold);font-size:14px}
+.wfoot{flex:none;display:flex;justify-content:center;padding:6px 10px calc(6px + env(safe-area-inset-bottom));background:var(--panel);border-top:1px solid var(--line)}.wfoot button{height:32px;padding:0 14px;border:1px solid rgba(220,110,100,.55);border-radius:9px;background:transparent;color:#f0b8b0;font:inherit;font-size:13px}
+.sheet ul.wipe,#modal ul.wipe{margin:6px 0 8px;padding-left:18px;text-align:left;font-size:13px;color:#ffd6cf}
 .wmapwrap{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .wblur{position:absolute;inset:-6%;width:112%;height:112%;object-fit:cover;filter:blur(18px) brightness(.5);pointer-events:none}
 .wmap{position:relative;flex:none}.wart,.wph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -303,10 +305,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
  <div id="modal" hidden></div>
 </div>
 <script src="vendor/three-r170.js"></script>
-<script src="js/data.js?v=1.7.21"></script>
-<script src="js/sim.js?v=1.7.21"></script>
-<script src="js/models.js?v=1.7.21"></script>
-<script src="js/game.js?v=1.7.21"></script>
+<script src="js/data.js?v=1.7.22"></script>
+<script src="js/sim.js?v=1.7.22"></script>
+<script src="js/models.js?v=1.7.22"></script>
+<script src="js/game.js?v=1.7.22"></script>
 <script>if('serviceWorker' in navigator&&location.protocol!=='file:')window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 </body>
 </html>

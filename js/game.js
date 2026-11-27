@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.7.21',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.22',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -394,8 +394,8 @@ function legacyView(back){if(D.ALTAR&&D.ALTAR.file)return altarView(back);const 
  const m=modal(`<p class="sub">ARCA LEGACY</p><h2>아르카의 유산 <span class="cnt">${n}/${D.CHAPTERS.length}</span></h2><p class="scope keep">♾ 영구 효과 · 장을 클리어할 때마다 하나씩, 모든 장에 적용</p>
   <h3 class="sec">지금 적용 중인 효과</h3>${totals?`<ul class="totals">${totals}</ul>`:'<p class="small">아직 없습니다. 장을 클리어하면 하나씩 얻습니다.</p>'}
   <h3 class="sec">장별 유산 <small>클리어한 장을 다시 깨면 그 장의 유산을 바꿀 수 있습니다</small></h3><div class="lslots">${slotsHTML}</div>
-  <button class="primary" data-a="back">돌아가기</button><button class="dev" data-a="reset">유산 모두 초기화</button>`,'help legacyview');
- m.querySelector('[data-a=back]').onclick=back;m.querySelector('[data-a=reset]').onclick=()=>{const c=modal(`<h2>유산 초기화</h2><p>모아 둔 아르카의 유산을 모두 지웁니다. 되돌릴 수 없습니다.</p><button class="primary" data-a="n">취소</button><button class="dev" data-a="y">모두 지우기</button>`);c.querySelector('[data-a=n]').onclick=()=>legacyView(back);c.querySelector('[data-a=y]').onclick=()=>{saveJSON(LEGACY_KEY,{picks:{}});legacyView(back);};};}
+  <button class="primary" data-a="back">돌아가기</button><button class="dev" data-a="reset">유산 초기화</button>`,'help legacyview');
+ m.querySelector('[data-a=back]').onclick=back;m.querySelector('[data-a=reset]').onclick=()=>{const c=modal(`<h2>유산 초기화</h2><p>모아 둔 아르카의 유산을 모두 지웁니다.</p><p class="small">★ 별과 클리어한 장은 그대로 남습니다. 이미 깬 장을 다시 깨면 그 장의 새 유산을 고를 수 있습니다.</p><p><b>정말 유산을 초기화할까요?</b></p><button class="primary" data-a="n">취소</button><button class="dev" data-a="y">유산 초기화</button>`);c.querySelector('[data-a=n]').onclick=()=>legacyView(back);c.querySelector('[data-a=y]').onclick=()=>{saveJSON(LEGACY_KEY,{picks:{}});legacyView(back);};};}
 // ── Chapter clear: four pages, one after another — 1 결산 · 2 아르카의 유산 · 3 다음 장 준비(능력치 변화) · 4 마무리 ──
 const RECORD_KEY='cnation-td-records-v1';
 const fmtTime=t=>`${Math.floor(t/60)}분 ${String(Math.floor(t%60)).padStart(2,'0')}초`;
@@ -580,11 +580,11 @@ function altarView(back){closeModal();modalOpen=true;const A=D.ALTAR,picks=legac
   <div class="wmapwrap"><img class="wblur" alt="" src="${A.file}?v=${GAME_VERSION}"><div class="wmap"><img class="wart" alt="" src="${A.file}?v=${GAME_VERSION}">
    ${D.CHAPTERS.map((c,i)=>{const [x,y]=A.sockets[i],l=picks[i]&&legacyInfo(picks[i]);return `<div class="asock${l?' got':''}" style="left:${x}%;top:${y}%;width:${A.size}%" title="${l?l.name+' — '+l.desc:''}">${l?`<b>${l.icon}</b>`:''}<span>${l?l.name:short(c)}</span></div>`;}).join('')}
    <div class="afloor"><p class="scope keep">♾ 영구 효과 · 장을 클리어할 때마다 하나씩, 모든 장에 적용</p><h3 class="sec">지금 적용 중인 효과</h3>${totals?`<ul class="totals">${totals}</ul>`:'<p class="small">아직 없습니다. 장을 클리어하면 제단에 하나씩 채워집니다.</p>'}
-    <p class="small">클리어한 장을 다시 깨면 그 장의 유산을 바꿀 수 있습니다.</p><button class="dev" data-a="reset">유산 모두 초기화</button></div>
+    <p class="small">클리어한 장을 다시 깨면 그 장의 유산을 바꿀 수 있습니다.</p><button class="dev" data-a="reset">유산 초기화</button></div>
   </div></div>`;
  altarEl.hidden=false;paintFirst(altarEl);fitWorld();window.addEventListener('resize',fitWorld);
  altarEl.querySelector('[data-a=back]').onclick=()=>{sfx('ui_tap');closeAltar();back();};
- altarEl.querySelector('[data-a=reset]').onclick=()=>{const c=modal(`<h2>유산 초기화</h2><p>모아 둔 아르카의 유산을 모두 지웁니다. 되돌릴 수 없습니다.</p><button class="primary" data-a="n">취소</button><button class="dev" data-a="y">모두 지우기</button>`);c.querySelector('[data-a=n]').onclick=closeModal;c.querySelector('[data-a=y]').onclick=()=>{saveJSON(LEGACY_KEY,{picks:{}});closeModal();altarView(back);};};}
+ altarEl.querySelector('[data-a=reset]').onclick=()=>{const c=modal(`<h2>유산 초기화</h2><p>모아 둔 아르카의 유산을 모두 지웁니다.</p><p class="small">★ 별과 클리어한 장은 그대로 남습니다. 이미 깬 장을 다시 깨면 그 장의 새 유산을 고를 수 있습니다.</p><p><b>정말 유산을 초기화할까요?</b></p><button class="primary" data-a="n">취소</button><button class="dev" data-a="y">유산 초기화</button>`);c.querySelector('[data-a=n]').onclick=closeModal;c.querySelector('[data-a=y]').onclick=()=>{saveJSON(LEGACY_KEY,{picks:{}});closeModal();altarView(back);};};}
 // ── Title attract mode: a real battle plays by itself behind the title (same camera, painted map and models as the game).
 // No sounds, toasts, saves or result screens; when it ends it starts again on another map.
 const DEMO_SKIP=new Set(['shard','shardGiven','leak','down','withdraw','ult','bonus','battleStart','cleared','prep','bless','won','lost','deploy','rank','bossWave','bossPhase']);
@@ -624,10 +624,14 @@ function showWorld(){closeModal();const W=D.WORLD_MAP,best=cleared(),picks=legac
    ${D.CHAPTERS.map((c,i)=>{const [x,y]=W.stops[i],st=best[c.id]||0,ok=open(i),l=picks[i]&&legacyInfo(picks[i]);
     return `<button class="wstop${ok?'':' locked'}${st?' clear':''}${i===cur?' cur':''}${W.file?' painted':''}" data-i="${i}" style="left:${x}%;top:${y}%;--ink:${(W.ink||[])[i]||'#fff3c4'}">${i===cur?`<img class="wme" alt="" src="${portraits.kyle}">`:''}
      <span class="wnum">${ok?short(c):W.file?'':'🔒'}</span>${l?`<span class="wbadge" title="${l.name}">${l.icon}</span>`:''}<span class="wst">${ok&&st?(W.file?'★'.repeat(st)+`<i>${'★'.repeat(3-st)}</i>`:'★'.repeat(st)+'☆'.repeat(3-st)):''}</span><span class="wname">${c.name}</span></button>`;}).join('')}
-  </div></div>`;
+  </div></div><footer class="wfoot"><button data-a="restart">⟲ 처음부터 새로 시작</button></footer>`;
  worldEl.hidden=false;paintFirst(worldEl);fitWorld();window.addEventListener('resize',fitWorld);
  worldEl.querySelector('[data-a=back]').onclick=()=>{sfx('ui_tap');closeWorld();showTitle();};
  worldEl.querySelector('[data-a=legacy]').onclick=()=>{sfx('ui_tap');legacyView(()=>{});};
+ // 1.7.22: wipe all progress (stars, records, legacies, saves) and start over from the prologue — behind a two-step confirmation
+ worldEl.querySelector('[data-a=restart]').onclick=()=>{sfx('ui_tap');const c=modal(`<h2>처음부터 새로 시작</h2><p>게임을 완전히 처음 상태로 되돌립니다.</p><ul class="wipe"><li>모든 장의 ★ 별과 클리어 기록(최고 기록 포함)</li><li>모아 둔 아르카의 유산 전부</li><li>이어하기 자동 저장과 저장 슬롯 3개</li></ul><p class="small">소리 설정만 남습니다. 되돌릴 수 없습니다.</p><p><b>정말 모두 지우고 처음부터 시작할까요?</b></p><button class="primary" data-a="n">취소</button><button class="dev" data-a="y">모두 지우고 새로 시작</button>`);
+  c.querySelector('[data-a=n]').onclick=closeModal;c.querySelector('[data-a=y]').onclick=()=>{for(const k of [CLEAR_KEY,RECORD_KEY,LEGACY_KEY,SAVE_KEY,SLOT_KEY])try{localStorage.removeItem(k);}catch(e){}
+   closeModal();worldEl.hidden=true;toast('모든 기록을 지웠습니다 · 프롤로그부터 새로 시작합니다');showTitle();};};
  worldEl.querySelectorAll('.wstop').forEach(b=>b.onclick=()=>{sfx('ui_tap');chapterInfo(+b.dataset.i,open(+b.dataset.i));});}
 function chapterInfo(i,ok){const c=D.CHAPTERS[i],st=cleared()[c.id]||0,rec=loadJSON(RECORD_KEY,{})[c.id],l=legacyPicks()[i]&&legacyInfo(legacyPicks()[i]);
  const m=modal(`<p class="sub">${c.label}</p><h2>${c.name}</h2><p class="stars">${'★'.repeat(st)}${'☆'.repeat(3-st)}</p><p>${c.place} · 전투 ${c.battles.length}회 · 보스 ${c.boss.name}</p>

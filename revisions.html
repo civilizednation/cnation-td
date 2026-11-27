@@ -8,8 +8,8 @@
 <style>
 :root{color-scheme:dark;--bg:#0d1a1e;--card:#1f373d;--line:#ffffff1c;--ink:#e6eee6;--muted:#94aaa7;--gold:#f2cf72;--mint:#8fe5b4}
 *{box-sizing:border-box}
-@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=47") format("woff2");font-display:swap;size-adjust:118%}
-@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=47") format("woff2");font-display:swap;size-adjust:104%}
+@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=48") format("woff2");font-display:swap;size-adjust:118%}
+@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=48") format("woff2");font-display:swap;size-adjust:104%}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 "Gowun Dodum",-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif;padding:calc(16px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom))}
 main{max-width:680px;margin:0 auto}
 a{color:var(--gold)}
@@ -36,8 +36,13 @@ details.rev summary{cursor:pointer}
 <h1>Revision History</h1>
 <p class="lead">큰 변화는 두 번째 자리(1.1.0), 작은 수정은 세 번째 자리(1.0.1)를 올립니다.</p>
 
+<section class="rev" id="v1.7.22">
+<h2>ver.1.7.22 <span class="date">2026-11-27</span> <span class="tag">현재</span></h2>
+<h3>변경</h3><ul><li>유산 화면의 「유산 초기화」를 누르면 별과 클리어한 장은 그대로 남고, 이미 깬 장을 다시 깨면 새 유산을 고를 수 있다고 안내한 뒤 한 번 더 확인합니다</li><li>모험 지도 아래에 「⟲ 처음부터 새로 시작」을 추가했습니다 — 별 · 클리어 기록 · 유산 · 저장을 모두 지우고 프롤로그부터 다시 시작합니다(확인 후, 소리 설정은 유지)</li></ul>
+</section>
+
 <section class="rev" id="v1.7.21">
-<h2>ver.1.7.21 <span class="date">2026-11-27</span> <span class="tag">현재</span></h2>
+<h2>ver.1.7.21 <span class="date">2026-11-27</span></h2>
 <h3>변경</h3><ul><li>화면 위쪽에서 생명(하트) 칸을 뺐습니다(생명은 전장의 아르카 수정에 표시). 그 자리에 「전투 n/N」과 전투 이름을 두 줄로 보여 주어 이름이 잘리지 않습니다. 누르면 장 이름까지 전체가 뜹니다</li><li>체력 물약을 하트 모양 빨간 물병 아이콘으로 바꿨고, 쓰면 붉은 빛과 작은 하트가 피어오릅니다</li></ul>
 <h3>밸런스</h3><ul><li>속성이 다른 몬스터 무리 사이에 간격을 두었습니다 — 앞 무리가 다 나온 뒤 최소 5초, 뒤 무리가 더 빠르면 따라잡지 않도록 더 늦게 나옵니다. 무리마다 속성을 보고 대응하기 쉬워졌습니다</li><li>간격이 생겨 쉬워진 만큼 장별 몬스터 체력을 다시 맞췄습니다</li></ul>
 </section>
