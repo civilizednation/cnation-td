@@ -44,6 +44,14 @@ function play(chapter,seed,verbose,noBoss){
     if(s.aim){const t=S.enemies.slice().sort((a,b)=>b.dist-a.dist)[Math.min(2,S.enemies.length-1)];if(t&&S.enemies.length>=4){go=true;x=t.x;y=t.y;}}
     else if(s.type==='fortress')go=S.units.some(a=>a.hp<a.maxHp*.5);else if(s.type==='heal')go=S.units.filter(a=>a.hp<a.maxHp*.6).length>=2;
     else if(s.pick)go=S.enemies.some(e=>e.boss||e.elite)||S.enemies.length>6;else go=S.enemies.filter(e=>Math.hypot(e.x-u.x,e.y-u.y)<s.area).length>=3;
+    // expert (1.7.32): aim the meteor at the densest cluster, hold damage 필살기 for a crowd, an elite/boss or a leak threat, and fire
+    // several together to chain them (+15%/+30%)
+    if(ST.ult==='expert'&&S.enemies.length&&s.type!=='heal'&&s.type!=='fortress'){const W=e=>e.boss?4:e.elite?2:1,ready=S.units.filter(v=>v.ult&&v.ultCd<=0&&!['heal','fortress'].includes(D.SKILLS[v.ult].type)).length,
+      danger=S.enemies.some(e=>{const p=S.map.paths[e.path];return p&&e.dist>p.total*.82;}),chain=S.time-S.lastUlt<=2.6;let val=0;
+     if(s.aim){let best=null;for(const c of S.enemies){const v=S.enemies.filter(e=>Math.hypot(e.x-c.x,e.y-c.y)<=s.area+.2).reduce((a,e)=>a+W(e),0);if(!best||v>best.v)best={v,c};}val=best.v;x=best.c.x;y=best.c.y;}
+     else if(s.pick)val=S.enemies.some(e=>e.boss||e.elite)?5:S.enemies.length>=5?4:1;
+     else val=S.enemies.filter(e=>Math.hypot(e.x-u.x,e.y-u.y)<s.area+.2).reduce((a,e)=>a+W(e),0);
+     go=val>=5||(val>=3&&(danger||chain||ready>=2))||(val>=1&&S.enemies.some(e=>e.boss));}
     if(ST.ult==='asap'&&S.enemies.length){const t=S.enemies.slice().sort((a,b)=>b.dist-a.dist)[0];go=true;if(s.aim){x=t.x;y=t.y;}}
     let el;const els=S.ultElements(u);if(go&&els.length>1&&ST.element==='best'){const cx=x??u.x,cy=y??u.y,near=S.enemies.filter(e=>Math.hypot(e.x-cx,e.y-cy)<3);
      el=els.map(k=>({k,v:near.reduce((a,e)=>a+S.affinity(k,e.element)*(e.boss?4:1),0)})).sort((a,b)=>b.v-a.v)[0].k;}
@@ -57,7 +65,7 @@ function play(chapter,seed,verbose,noBoss){
  const won=S.phase==='won',stars=!won?0:S.leaksTotal===0?3:S.life>=Math.ceil(S.chapter.life*.75)?2:1;   // same rule as the clear screen
  return {won,battle:S.battle+1,life:S.life,max:S.maxLife,leaks:S.leaksTotal,stars};
 }
-function run(ch,runs,verbose,noBoss){const res=[];for(let i=0;i<runs;i++)res.push(play(ch,1000+i*37,verbose&&i===(+process.env.BOT_RUN||0),noBoss));return {wins:res.filter(r=>r.won).length,life:res.reduce((s,r)=>s+(r.won?r.life:0),0)/runs,res};}
+function run(ch,runs,verbose,noBoss){const res=[];for(let i=0;i<runs;i++)res.push(play(ch,1000+((+process.env.SEED0||0)+i)*37,verbose&&i===(+process.env.BOT_RUN||0),noBoss));return {wins:res.filter(r=>r.won).length,life:res.reduce((s,r)=>s+(r.won?r.life:0),0)/runs,res};}
 const args=process.argv.slice(2),verbose=args.includes('-v'),pos=args.filter(a=>a!=='-v');
 if(pos[0]==='calibrate'){const list=pos[1]==null||pos[1]==='all'?D.CHAPTERS.map((_,i)=>i):[+pos[1]],runs=+(pos[2]||4),out=[];
  for(const ch of list){const C=D.CHAPTERS[ch],base=C.battles.map(b=>b.tune[0]/C.diff[0]);let lo=.2,hi=4,k=C.diff[0];
