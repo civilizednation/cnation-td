@@ -170,8 +170,8 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   Legacy view: with `ALTAR.file` (`art/altar.webp`) a full-screen `altarView` (`#altar` z16) puts each chapter's legacy in its socket
   (`ALTAR.sockets` [x%,y%]) and the totals (`D.legacyTotal(id,n)`) on the floor panel; without it the old modal list. Prompts in docs/ART.md.
 - 빛나는 ★3 (1.7.23): a ★3 clear while holding no legacy from a LATER chapter (`eraFor(i)`, decided at `startChapter`, never in developer
-  mode) is stored in `SHINE_KEY` and shown with `.shine` (1.7.24: SVG stars `SHINE_STAR` with a cyan-white-gold gradient `#sgrad` on a glowing cyan capsule + twinkles, so
-  they differ clearly from plain gold ★) on the clear pages, chapter info, map stops and the map
+  mode) is stored in `SHINE_KEY` and shown with `.shine` (1.7.25: SVG crystal-blue faceted stars `SHINE_STAR` with gradient `#sgrad`, a turning light cross behind each,
+  cyan glow + twinkles — no plate, owner found it messy; plain ★ stays gold) on the clear pages, chapter info, map stops and the map
   header count. Legacies always apply in full when replaying (owner: players want to come back stronger for ★3).
 - Legacy icons: emoji for now; painted medallions requested in docs/LEGACY_ICONS.md (19 files, `art/legacy/<id>.webp` when they arrive).
 - Resets (1.7.22): the legacy view's 「유산 초기화」 clears only `LEGACY_KEY` (confirm says stars/clears stay and re-clearing a chapter
