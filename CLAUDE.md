@@ -173,7 +173,9 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   mode) is stored in `SHINE_KEY` and shown with `.shine` (1.7.25: SVG crystal-blue faceted stars `SHINE_STAR` with gradient `#sgrad`, a turning light cross behind each,
   cyan glow + twinkles — no plate, owner found it messy; plain ★ stays gold) on the clear pages, chapter info, map stops and the map
   header count. Legacies always apply in full when replaying (owner: players want to come back stronger for ★3).
-- Legacy icons: emoji for now; painted medallions requested in docs/LEGACY_ICONS.md (19 files, `art/legacy/<id>.webp` when they arrive).
+- Legacy icons (1.7.26): painted round medallions `art/legacy/<id>.webp` (256 px, circular alpha, cropped from the owner's 768 px art;
+  prompts in docs/LEGACY_ICONS.md). `legacyInfo(id).icon` is an `<img class="licon">` (the emoji stays in `.emoji`/alt), so every
+  place that shows a legacy (altar sockets, map badges, offer, clear pages, totals) uses the picture.
 - Resets (1.7.22): the legacy view's 「유산 초기화」 clears only `LEGACY_KEY` (confirm says stars/clears stay and re-clearing a chapter
   offers its legacy again). The world map footer 「⟲ 처음부터 새로 시작」 (two-step confirm) removes clears, records, legacies, auto save
   and slots (settings stay) and returns to the title, which then offers 「⚔ 모험 시작」.
