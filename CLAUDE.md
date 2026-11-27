@@ -21,8 +21,9 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   opens revisions.html inside the game (`showRevisions`, iframe; its back link posts `td:close-revisions`).
 - Landscape (`orientation:landscape` and ≥640px wide): grid with the battlefield left and `#side` (strip, panel, dock) right; portrait
   phones keep the single column (`#side{display:contents}`). Painted maps also fill empty space with a blurred copy (`#artBlur`).
-- `manifest.webmanifest`, `sw.js`, `icons/` — home screen install (PWA). The service worker is network-first (music cache-first). `icons/*.png` are a
-  placeholder drawn from the game models by `tools/icon.html` + `node tools/make-icons.js`; the owner will supply the final icon — then just replace the PNGs.
+- `manifest.webmanifest`, `sw.js`, `icons/` — home screen install (PWA). The service worker is network-first (music cache-first). `icons/*.png` are the owner's final
+  icon (1.7.31: Kyle with sword, shield and crystal tower; 512/192/180/64, 256-colour PNG; maskable = same full-bleed art). `tools/icon.html`
+  + `node tools/make-icons.js` made the old placeholder and are no longer used. Bump the `?v=` on the icon links in index.html when replacing.
 - `helpTips()` in js/game.js builds the detailed tips under 「게임 방법」 from the data tables; update its hand-written parts when rules change.
   Heroes use `heroTips(id)` (1.7.7): 필살기 block (power/area/reach/charge/element choices from ult+basic+rank skills, imprint additions),
   per-rank skills (`skillOf`), and each ★3 imprint with the skill it gives and the 필살기 element it adds; `heroGuideIntro` explains units.
