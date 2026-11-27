@@ -155,6 +155,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
 #panel button.x{flex:none;width:34px}
 #modal{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(8,16,19,.72)}
 #modal[hidden]{display:none}
+#modal.enter{animation:mFade .45s ease both}#modal.enter .sheet{animation:mDrop .65s cubic-bezier(.2,1.25,.4,1) both}
+@keyframes mFade{from{background:rgba(8,16,19,0)}}@keyframes mDrop{0%{opacity:0;transform:translateY(-70px) scale(.82)}60%{opacity:1}100%{opacity:1;transform:none}}
 /* Title: the attract-mode battle fills the screen; logo on top, a compact menu at the bottom. One display font, four sizes (40/18/16/12). */
 #app.title #viewport{position:absolute;inset:0}
 #app #modal.title{background:linear-gradient(rgba(6,12,22,.82) 0%,rgba(6,12,22,.25) 22%,rgba(6,12,22,0) 34%,rgba(6,12,22,0) 58%,rgba(6,12,22,.7) 76%,rgba(6,12,22,.92) 100%);padding:0;align-items:stretch}
@@ -349,10 +351,10 @@ img.licon{display:inline-block;width:1.45em;height:1.45em;vertical-align:-.42em;
  <div id="modal" hidden></div>
 </div>
 <script src="vendor/three-r170.js"></script>
-<script src="js/data.js?v=1.7.35"></script>
-<script src="js/sim.js?v=1.7.35"></script>
-<script src="js/models.js?v=1.7.35"></script>
-<script src="js/game.js?v=1.7.35"></script>
+<script src="js/data.js?v=1.7.36"></script>
+<script src="js/sim.js?v=1.7.36"></script>
+<script src="js/models.js?v=1.7.36"></script>
+<script src="js/game.js?v=1.7.36"></script>
 <script>if('serviceWorker' in navigator&&location.protocol!=='file:')window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 </body>
 </html>

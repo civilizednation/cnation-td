@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.7.35',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.36',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -367,6 +367,10 @@ $('#pauseBtn').addEventListener('click',()=>{paused=!paused;hudKey='';sfx('ui_ta
 $('#menuBtn').addEventListener('click',()=>{if(S&&!modalOpen){sfx('ui_tap');gameMenu();}});
 
 // ── Modals ──
+// 1.7.36: the result / blessing window waits until the last deaths and effects have played (real ms, skipped if the battle was left),
+// then drops in from above and grows (#modal.enter).
+function afterBattle(ms,fn){const s=S;setTimeout(()=>{if(S===s&&!demo.on)fn();},ms);}
+function enterModal(){const m=$('#modal');m.classList.remove('enter');void m.offsetWidth;m.classList.add('enter');setTimeout(()=>m.classList.remove('enter'),800);}
 function modal(html,cls){const m=$('#modal');m.className=cls||'';m.innerHTML=`<div class="sheet">${html}</div>`;m.hidden=false;modalOpen=true;return m;}
 function closeModal(){$('#modal').hidden=true;modalOpen=false;}
 function dialogue(lines,done){let i=0;const show=()=>{const [who,text]=lines[i],m=modal(`<p class="sub">${S.chapter.label} · ${S.chapter.name}</p><p class="who">${who}</p><p class="line">${text}</p><button class="primary">${i<lines.length-1?'다음':'확인'}</button><button data-skip>건너뛰기</button>`);
@@ -734,9 +738,9 @@ function handleEvents(){deaths=[];for(const e of S.drain()){if(demo.on&&DEMO_SKI
  else if(e.t==='battleStart'){saveGame();const b=S.chapter.battles[e.battle];if(S.chapter.battles[e.battle+1]?.boss)bgm.preload(7);if(b.boss)bgm.preload(D.CHAPTERS[S.chapterIndex+1]?10:12);banner(`전투 ${e.battle+1}`,b.name);clearCard();bgm.play(battleTrack());sfx(b.boss?'boss_appear':'battle_start');if(b.boss)setTimeout(()=>{if(S)toast(`👑 ${S.chapter.boss.name} · ${S.chapter.boss.hint||''}`);},1800);}
  else if(e.t==='cleared'){if(S.phase!=='won')sfx('wave_clear');toast(`전투 ${e.battle+1} 승리 +${e.gold}💰${e.clean?' (무누수 보너스)':''}`);}
  else if(e.t==='prep'){saveGame();showPreview();}
- else if(e.t==='bless')blessingModal();
- else if(e.t==='won'){bgm.play(D.CHAPTERS[S.chapterIndex+1]?10:12,!D.CHAPTERS[S.chapterIndex+1]);const index=S.chapterIndex;clearFlow(index);}
- else if(e.t==='lost'){bgm.stop(1.5);sfx('defeat');resultModal(false);}
+ else if(e.t==='bless')afterBattle(1200,()=>{blessingModal();enterModal();});
+ else if(e.t==='won'){bgm.play(D.CHAPTERS[S.chapterIndex+1]?10:12,!D.CHAPTERS[S.chapterIndex+1]);const index=S.chapterIndex;banner('CLEAR',S.chapter.name);afterBattle(2200,()=>{clearFlow(index);enterModal();});}
+ else if(e.t==='lost'){bgm.stop(1.5);sfx('defeat');afterBattle(1600,()=>{resultModal(false);enterModal();});}
  hudKey='';}
  playDeaths();}
 function ellipse(x,y,r,h=0){const p=proj(x,y,h);ctx.beginPath();ctx.ellipse(p.x,p.y,r*pxU,r*pxU*SIN,0,0,Math.PI*2);}

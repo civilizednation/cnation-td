@@ -137,6 +137,8 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   and bump the `?v=` on the font URLs in index.html, or new characters fall back to the system font.
 - Saves: auto save `cnation-td-save-v2` (taken at each battle start), slots `cnation-td-slots-v1` (3), clears `cnation-td-clear-v1`,
   Arca legacies `cnation-td-legacy-v1` = {picks:{chapterIndex: legacyId}}.
+- Battle end (1.7.36): the sim ends a battle only when no hit is still in flight (`S.pending` empty); the screen waits real time
+  (`afterBattle`: won 2.2 s after a 「CLEAR」 banner, lost 1.6 s, blessing 1.2 s) and the window drops in and grows (`enterModal`, `#modal.enter`).
 - Chapter clear (`clearFlow` in game.js): pages 결산 → 유산 (`legacyModal`) → 다음 장 준비 → 마무리 (3 pages on FINAL). Uses `S.stats`
   (dealt/healedBy per unit, ults, goldEarned/goldSpent, battle time; kept in the snapshot) and `D.unitStats`/`D.legacyScale` (the same
   legacy formula sim.refresh uses). Best record per chapter: `cnation-td-records-v1` = {chapterId:{stars,life,time,kills}}.

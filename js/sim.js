@@ -294,7 +294,7 @@ function createSim(opts){
    const strike=()=>{if(u.splash){const c={x:target.x,y:target.y};for(const e of S.enemies.slice())if(!e.dead&&Math.hypot(e.x-c.x,e.y-c.y)<=u.splash)hit(u,e,e===target?o:{...o,power:.5});}else if(!target.dead)hit(u,target,o);};
    if(def.melee)strike();else later(SHOT_FLIGHT,strike);}
   S.enemies=S.enemies.filter(e=>!e.dead);
-  if(!S.queue.length&&!S.enemies.length&&S.phase==='battle')finishBattle();}
+  if(!S.queue.length&&!S.enemies.length&&!S.pending.length&&S.phase==='battle')finishBattle();}
  function step(dt){S.acc+=dt;let n=0;while(S.acc>=STEP&&n<12){tick(STEP);S.acc-=STEP;n++;}if(n>=12)S.acc=0;}
 
  function snapshot(){return {v:2,potions:S.potions,vantage:(S.vantage||[]).map(v=>({...v})),chapter:S.chapterIndex,battle:S.battle,gold:S.gold,life:S.life,maxLife:S.maxLife,blessings:S.blessings.slice(),leaksTotal:S.leaksTotal,kills:S.kills,stats:JSON.parse(JSON.stringify(S.stats)),
