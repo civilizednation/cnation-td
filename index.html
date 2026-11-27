@@ -272,7 +272,7 @@ img.licon{display:inline-block;width:1.45em;height:1.45em;vertical-align:-.42em;
 @keyframes rayTurn{0%,100%{transform:rotate(0) scale(.55);opacity:.25}50%{transform:rotate(45deg) scale(1);opacity:.95}}
 .shine::before,.shine::after{content:'✦';position:absolute;font-size:.5em;line-height:1;color:#fff;-webkit-text-stroke:0;text-shadow:0 0 4px #fff,0 0 8px #7ff3ff;animation:twinkle 1.8s ease-in-out infinite;pointer-events:none}
 .shine::before{left:-.3em;top:-.3em}.shine::after{right:-.3em;bottom:-.1em;animation-delay:.9s}.shine.one::before,.shine.one::after{display:none}
-@keyframes shineGlow{0%,100%{filter:drop-shadow(0 0 1.5px #bff8ff) drop-shadow(0 0 4px rgba(60,210,255,.6))}50%{filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 9px #39d6ff)}}
+@keyframes shineGlow{0%,100%{filter:drop-shadow(0 0 .7px #000) drop-shadow(0 0 .7px #000) drop-shadow(0 0 1.5px #bff8ff) drop-shadow(0 0 4px rgba(60,210,255,.6))}50%{filter:drop-shadow(0 0 .7px #000) drop-shadow(0 0 .7px #000) drop-shadow(0 0 3px #fff) drop-shadow(0 0 9px #39d6ff)}}
 @keyframes twinkle{0%,100%{opacity:0;transform:scale(.4) rotate(0)}40%,60%{opacity:1;transform:scale(1) rotate(45deg)}}
 .sheet .stars.big.shine span.got{color:#fff1a6;filter:drop-shadow(0 0 6px #ffd257)}
 .sheet p.shinenote{color:#fff1a6;font-family:var(--font-display);font-size:14px}
@@ -349,10 +349,10 @@ img.licon{display:inline-block;width:1.45em;height:1.45em;vertical-align:-.42em;
  <div id="modal" hidden></div>
 </div>
 <script src="vendor/three-r170.js"></script>
-<script src="js/data.js?v=1.7.33"></script>
-<script src="js/sim.js?v=1.7.33"></script>
-<script src="js/models.js?v=1.7.33"></script>
-<script src="js/game.js?v=1.7.33"></script>
+<script src="js/data.js?v=1.7.34"></script>
+<script src="js/sim.js?v=1.7.34"></script>
+<script src="js/models.js?v=1.7.34"></script>
+<script src="js/game.js?v=1.7.34"></script>
 <script>if('serviceWorker' in navigator&&location.protocol!=='file:')window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 </body>
 </html>

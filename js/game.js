@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.7.33',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.34',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -378,7 +378,7 @@ const cleared=()=>loadJSON(CLEAR_KEY,{});
 const SHINE_KEY='cnation-td-shine-v1',shined=()=>loadJSON(SHINE_KEY,{});let eraOK=false;
 const eraFor=i=>{const p=legacyPicks();return !Object.keys(p).some(k=>+k>i&&p[k]);};
 // 빛나는 ★ (1.7.24): drawn as SVG — white-gold star with a white core and a pulsing cyan Arca halo, so it can't be mistaken for a plain gold ★
-const SHINE_STAR='<svg class="sstar" viewBox="-4 -4 32 32" aria-hidden="true"><path class="ray" d="M12 -3.5L13 10 26.5 12 13 14 12 27.5 11 14 -2.5 12 11 10z" fill="#e9fdff" opacity=".85"/><path d="M12 1.6l3.1 6.5 7.1.9-5.2 4.9 1.3 7-6.3-3.5-6.3 3.5 1.3-7L1.8 9l7.1-.9z" fill="url(#sgrad)" stroke="#06324a" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 1.6L12 13.6 22.2 9z" fill="#ffffff" opacity=".35"/><path d="M12 13.6L5.7 20.9 7 13.9z" fill="#0a4f7a" opacity=".35"/><circle cx="12" cy="11.6" r="1.6" fill="#fff"/></svg>';
+const SHINE_STAR='<svg class="sstar" viewBox="-4 -4 32 32" aria-hidden="true"><path class="ray" d="M12 -3.5L13 10 26.5 12 13 14 12 27.5 11 14 -2.5 12 11 10z" fill="#e9fdff" opacity=".85"/><path d="M12 1.6l3.1 6.5 7.1.9-5.2 4.9 1.3 7-6.3-3.5-6.3 3.5 1.3-7L1.8 9l7.1-.9z" fill="url(#sgrad)" stroke="#000" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke"/><path d="M12 1.6L12 13.6 22.2 9z" fill="#ffffff" opacity=".35"/><path d="M12 13.6L5.7 20.9 7 13.9z" fill="#0a4f7a" opacity=".35"/><circle cx="12" cy="11.6" r="1.6" fill="#fff"/></svg>';
 document.body.insertAdjacentHTML('beforeend','<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="sgrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2ffff"/><stop offset=".4" stop-color="#7fe9ff"/><stop offset="1" stop-color="#1f8fd6"/></linearGradient></defs></svg>');
 const SHINE3=`<span class="shine">${SHINE_STAR.repeat(3)}</span>`;
 const starsText=(n,shine)=>shine&&n===3?SHINE3:'★'.repeat(n)+'☆'.repeat(3-n);
