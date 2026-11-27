@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.7.23',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.24',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -377,7 +377,11 @@ const cleared=()=>loadJSON(CLEAR_KEY,{});
 // 빛나는 ★3 (1.7.23): ★3 earned without any legacy from a LATER chapter (= with the strength of that time). Kept per chapter forever.
 const SHINE_KEY='cnation-td-shine-v1',shined=()=>loadJSON(SHINE_KEY,{});let eraOK=false;
 const eraFor=i=>{const p=legacyPicks();return !Object.keys(p).some(k=>+k>i&&p[k]);};
-const starsText=(n,shine)=>shine&&n===3?'<span class="shine">★★★</span>':'★'.repeat(n)+'☆'.repeat(3-n);
+// 빛나는 ★ (1.7.24): drawn as SVG — white-gold star with a white core and a pulsing cyan Arca halo, so it can't be mistaken for a plain gold ★
+const SHINE_STAR='<svg class="sstar" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6l3.1 6.5 7.1.9-5.2 4.9 1.3 7-6.3-3.5-6.3 3.5 1.3-7L1.8 9l7.1-.9z" fill="url(#sgrad)" stroke="#05303d" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 6.2l1.7 3.6 3.9.5-2.9 2.7.7 3.9L12 15l-3.4 1.9.7-3.9-2.9-2.7 3.9-.5z" fill="#fff"/></svg>';
+document.body.insertAdjacentHTML('beforeend','<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="sgrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9ff6ff"/><stop offset=".45" stop-color="#ffffff"/><stop offset="1" stop-color="#ffd24a"/></linearGradient></defs></svg>');
+const SHINE3=`<span class="shine">${SHINE_STAR.repeat(3)}</span>`;
+const starsText=(n,shine)=>shine&&n===3?SHINE3:'★'.repeat(n)+'☆'.repeat(3-n);
 function markShine(id,n){if(n!==3||!eraOK)return false;const sh=shined();sh[id]=true;saveJSON(SHINE_KEY,sh);return true;}
 // ── Arca legacies: permanent, one slot per chapter (picked after a clear; a replay may swap that chapter's pick) ──
 const legacyPicks=()=>loadJSON(LEGACY_KEY,{picks:{}}).picks||{};
@@ -623,12 +627,12 @@ function showWorld(){closeModal();const W=D.WORLD_MAP,best=cleared(),picks=legac
  const done=W.stops.slice(1).map((_,i)=>best[D.CHAPTERS[i].id]?seg(i,i+1):'').join('');
  const bg=W.file?`<img class="wart" alt="" src="${W.file}?v=${GAME_VERSION}">`:`<div class="wph" style="background:linear-gradient(to top,${W.tint.map((c,i)=>`${c} ${4+i*10}%`).join(',')})"></div>`;
  const short=c=>c.id==='prologue'?'P':c.id==='final'?'F':String(+c.id.slice(1));
- worldEl.innerHTML=`<header class="whead"><button data-a="back" aria-label="뒤로">←</button><b>장 선택</b><span class="wstars">★ ${stars}/${D.CHAPTERS.length*3}${Object.keys(shined()).length?` · <span class="shine">✨</span> ${Object.keys(shined()).length}`:''}</span><button data-a="legacy" class="wleg">♾ 유산 ${nLeg}/${D.CHAPTERS.length}</button></header>
+ worldEl.innerHTML=`<header class="whead"><button data-a="back" aria-label="뒤로">←</button><b>장 선택</b><span class="wstars">★ ${stars}/${D.CHAPTERS.length*3}${Object.keys(shined()).length?` · <span class="shine one">${SHINE_STAR}</span>${Object.keys(shined()).length}`:''}</span><button data-a="legacy" class="wleg">♾ 유산 ${nLeg}/${D.CHAPTERS.length}</button></header>
   <div class="wmapwrap">${W.file?`<img class="wblur" alt="" src="${W.file}?v=${GAME_VERSION}">`:''}<div class="wmap">${bg}
    <svg class="wpath" viewBox="0 0 100 177.78" preserveAspectRatio="none">${W.file?'':`<polyline class="all" points="${pts.join(' ')}"/>`}<g class="done">${W.file?'':done}</g></svg>
    ${D.CHAPTERS.map((c,i)=>{const [x,y]=W.stops[i],st=best[c.id]||0,ok=open(i),l=picks[i]&&legacyInfo(picks[i]);
     return `<button class="wstop${ok?'':' locked'}${st?' clear':''}${i===cur?' cur':''}${W.file?' painted':''}" data-i="${i}" style="left:${x}%;top:${y}%;--ink:${(W.ink||[])[i]||'#fff3c4'}">${i===cur?`<img class="wme" alt="" src="${portraits.kyle}">`:''}
-     <span class="wnum">${ok?short(c):W.file?'':'🔒'}</span>${l?`<span class="wbadge" title="${l.name}">${l.icon}</span>`:''}<span class="wst">${ok&&st?(shined()[c.id]&&st===3?'<span class="shine">★★★</span>':W.file?'★'.repeat(st)+`<i>${'★'.repeat(3-st)}</i>`:'★'.repeat(st)+'☆'.repeat(3-st)):''}</span><span class="wname">${c.name}</span></button>`;}).join('')}
+     <span class="wnum">${ok?short(c):W.file?'':'🔒'}</span>${l?`<span class="wbadge" title="${l.name}">${l.icon}</span>`:''}<span class="wst">${ok&&st?(shined()[c.id]&&st===3?SHINE3:W.file?'★'.repeat(st)+`<i>${'★'.repeat(3-st)}</i>`:'★'.repeat(st)+'☆'.repeat(3-st)):''}</span><span class="wname">${c.name}</span></button>`;}).join('')}
   </div></div><footer class="wfoot"><button data-a="restart">⟲ 처음부터 새로 시작</button></footer>`;
  worldEl.hidden=false;paintFirst(worldEl);fitWorld();window.addEventListener('resize',fitWorld);
  worldEl.querySelector('[data-a=back]').onclick=()=>{sfx('ui_tap');closeWorld();showTitle();};
