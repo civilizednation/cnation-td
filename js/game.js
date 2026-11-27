@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.7.34',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.35',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -762,7 +762,7 @@ function drawOverlay(dt,time,realDt=dt){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.cl
  const su=selUnit&&S.units.find(u=>u.id===selUnit);
  // While aiming a 필살기 (meteor), no range circles: it can land anywhere, and a circle would suggest otherwise.
  if(su&&aiming!==su.id){groundRing('range',su.x,su.y,su.range+.35,0xffffff,.12);su.auras.forEach((au,i)=>groundRing('aura'+i,su.x,su.y,au.radius+.4,0xf2cf72,0,true));}
- // Monster bars and status pips (the boss gets the big bar at the top instead, see bossHud)
+ // Monster bars and status pips (1.7.35: the boss has its overhead bar too, always shown, besides the big bar in the strip — bossHud)
  let bossShown=null;
  for(const e of S.enemies){const sc=e.scale||1,p=proj(e.x,e.y,(e.flying?1.95:1.25)*Math.max(1,sc*.92)),w=pxU*.72*hpBarScale(e);
   // HP bar: the lost part stays as a bright "trail" for a moment and then drains, so every hit visibly bites into the bar.
@@ -775,9 +775,10 @@ function drawOverlay(dt,time,realDt=dt){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.cl
    ctx.font=`${Math.round(r*1.35)}px sans-serif`;ctx.textBaseline='middle';ctx.fillText(D.ELEMENT_ICON[e.element]||'',bx,by+.5);ctx.textBaseline='alphabetic';
    if(selUnit&&m>1){ctx.font=`400 10px ${FONT}`;ctx.fillStyle='#ffd257';ctx.strokeStyle='rgba(12,22,26,.9)';ctx.lineWidth=3;ctx.strokeText('▲',bx,by-r-4);ctx.fillText('▲',bx,by-r-4);}ctx.restore();}
   if(e.boss&&!bossShown)bossShown={e,shown,trail,flash};
-  if(!e.boss&&(e.hp<e.maxHp||e.elite)){const bh=e.boss?8:6,f=v=>w*Math.max(0,Math.min(1,v/e.maxHp));ctx.fillStyle='rgba(12,22,26,.8)';ctx.fillRect(p.x-w/2-1,p.y-1,w+2,bh+2);
+  if(e.boss||e.hp<e.maxHp||e.elite){const bh=e.boss?8:6,f=v=>w*Math.max(0,Math.min(1,v/e.maxHp));ctx.fillStyle='rgba(12,22,26,.8)';ctx.fillRect(p.x-w/2-1,p.y-1,w+2,bh+2);
    ctx.fillStyle='#fff2c9';ctx.fillRect(p.x-w/2+f(shown),p.y,f(trail)-f(shown),bh);
    ctx.fillStyle=e.elite?'#a8141c':'#ee4f3f';ctx.fillRect(p.x-w/2,p.y,f(shown),bh);
+   if(e.boss){ctx.strokeStyle='#f2cf72';ctx.lineWidth=1.5;ctx.strokeRect(p.x-w/2-1.5,p.y-1.5,w+3,bh+3);}
    if(flash>0){ctx.strokeStyle=`rgba(255,255,255,${flash/.18})`;ctx.lineWidth=1.5;ctx.strokeRect(p.x-w/2-1.5,p.y-1.5,w+3,bh+3);}}
   let i=0;for(const k in e.st){ctx.fillStyle=ST_COLOR[k]||'#fff';ctx.beginPath();ctx.arc(p.x-w/2+4+i*8,p.y-6,3,0,7);ctx.fill();i++;}
   if(e.engagedBy){ctx.fillStyle='#fff';ctx.font=`400 10px ${FONT}`;ctx.fillText('⛓',p.x+w/2+5,p.y+5);}

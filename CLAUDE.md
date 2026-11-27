@@ -161,7 +161,7 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
 - Elements (1.6.9): monsters with an element show its icon in a coloured ring left of the HP bar; with a character selected,
   `unitElements(u)` × `matchup()` (same table as sim.affinity) makes strong matchups glow with ▲ and weak ones dim. The ★3 imprint
   choice gets its own button row (`#panel.choosing`) with `STRONG_VS` hints. An imprint adds/upgrades one skill of that element only.
-- Boss HP: no overhead bar; `bossHud()` fills `#bossBar`, which sits in `#strip` under the battlefield (1.7.8: at the top it hid the
+- Boss HP: an overhead bar like other monsters, always shown, red with a gold frame (1.7.35, owner: a boss without one looked odd in its escort); `bossHud()` also fills `#bossBar`, which sits in `#strip` under the battlefield (1.7.8: at the top it hid the
   monster gates) and replaces the chips while a boss is out (`#strip.has-boss`): element, name, red bar + trail with HP numbers inside.
   Hidden on the title demo.
 - Monster HP bar length = `hpBarScale(e)`: √(maxHp ÷ (69 × battle tune hp)), clamped 0.75–1.8 (bosses up to 2.4).
