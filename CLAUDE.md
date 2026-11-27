@@ -168,7 +168,8 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   stars (missing ones dark), locked = a lock only, legacy icon beside the pedestal. Sizes are in `cqw` (.wmap is a size container): the
   pedestal top is ~10.5cqw × 4.8cqw and the number (5.6cqw) / lock (3.6cqw) fit inside it.
   Legacy view: with `ALTAR.file` (`art/altar.webp`) a full-screen `altarView` (`#altar` z16) puts each chapter's legacy in its socket
-  (`ALTAR.sockets` [x%,y%]) and the totals (`D.legacyTotal(id,n)`) on the floor panel; without it the old modal list. Prompts in docs/ART.md.
+  (`ALTAR.sockets` [x%,y%], `size` 13.2 — measured from the painted gold rings in 1.7.30; medals fill 86% of a ring, names are small
+  dark text engraved under each ring, no plate) and the totals (`D.legacyTotal(id,n)`) on the floor panel; without it the old modal list. Prompts in docs/ART.md.
 - 빛나는 ★3 (1.7.23): a ★3 clear while holding no legacy from a LATER chapter (`eraFor(i)`, decided at `startChapter`, never in developer
   mode) is stored in `SHINE_KEY` and shown with `.shine` (1.7.25: SVG crystal-blue faceted stars `SHINE_STAR` with gradient `#sgrad`, a turning light cross behind each,
   cyan glow + twinkles — no plate, owner found it messy; plain ★ stays gold) on the clear pages, chapter info, map stops and the map
