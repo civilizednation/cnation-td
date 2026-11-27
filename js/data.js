@@ -240,43 +240,43 @@ const BOSSES=[
 // set with the balance bot (node tools/bot.js calibrate).
 const POOLS=[[0,1,2,10,11,12],[1,3,4,10,11,15],[2,11,12,16,18,20],[0,8,13,19,20,22],[3,4,5,15,17,20,8],[11,15,16,18,20,21,24,26],[6,7,17,18,21,22,25,27],[5,15,17,20,21,22,28,29],[3,4,7,15,20,21,24,26,28],[6,7,9,17,21,22,25,27,29]];
 const CHAPTER_DEFS=[
- {id:'prologue',label:'PROLOGUE',name:'깨어난 빛',place:'국경 마을 에린',map:'prologue',battles:5,soldiers:3,bless:[2,4],diff:[.94,1,1.08],
+ {id:'prologue',label:'PROLOGUE',name:'깨어난 빛',place:'국경 마을 에린',map:'prologue',battles:5,soldiers:3,bless:[2,4],diff:[.6,2.4,1.08],
   names:['유적의 문','잠든 소녀','숲길의 소란','마을로 돌아가는 길'],
   intro:[['카일','이런 곳에 사람이… 괜찮아? 내 목소리 들려?'],['리아','리아… 내 이름은 리아. 그 외에는 아무것도 기억나지 않아.'],['카일','뒤에서 뭔가 움직여. 내 곁에 있어. 마을까지는 한 마리도 못 지나가게 하자.']],
   outro:[['리아','끝났어…? 저 수정이 무사해.'],['카일','응. 하지만 이건 시작일 뿐이야. 남문 쪽에서 연기가 올라오고 있어.']]},
- {id:'c1',label:'CHAPTER 01',name:'국경의 불꽃',place:'에린 남문',map:'fort',battles:6,soldiers:3,bless:[2,4],diff:[1.47,1,.43],
+ {id:'c1',label:'CHAPTER 01',name:'국경의 불꽃',place:'에린 남문',map:'fort',battles:6,soldiers:3,bless:[2,4],diff:[1.27,1.45,.43],
   names:['불타는 파수대','잿더미의 약속','남문의 방패','남문의 잔불','국경을 넘어서'],
   intro:[['브란','제국군이 마을을 포위했다. 퇴로는 내가 열겠다.'],['리아','저 병기들… 나를 찾고 있는 것 같아.'],['카일','누구에게도 넘기지 않아. 모두 살아서 나간다.']],
   outro:[['브란','집행관이 쓰러졌다. 지금이다, 국경을 넘어라!'],['카일','브란, 당신도 같이 가는 거야.']]},
- {id:'c2',label:'CHAPTER 02',name:'도망자',place:'회색 산맥',map:'river',battles:7,soldiers:2,bless:[3,5],diff:[1.86,1,.46],
+ {id:'c2',label:'CHAPTER 02',name:'도망자',place:'회색 산맥',map:'river',battles:7,soldiers:2,bless:[3,5],diff:[1.31,.68,.46],
   names:['산길의 매복','바람길 정찰','바람의 궁수','협곡의 피난민','흔들리는 다리','설산의 문턱'],
   intro:[['세라','그 길은 막혔어. 살아서 산을 넘고 싶다면 따라와.'],['카일','우릴 왜 도와주는 거지?'],['세라','제국이 태운 마을이 너희 마을뿐인 줄 알아?']],
   outro:[['세라','폭군이 무너졌어. 이제 숲까지는 내리막이야.'],['리아','숲에서… 누군가 부르는 소리가 들려.']]},
- {id:'c3',label:'CHAPTER 03',name:'고대의 숲',place:'엘렌 숲',map:'forest',battles:8,soldiers:2,bless:[3,6],diff:[1.3,1,1.06],
+ {id:'c3',label:'CHAPTER 03',name:'고대의 숲',place:'엘렌 숲',map:'forest',battles:8,soldiers:2,bless:[3,6],diff:[1.22,1.42,1.06],
   names:['정령의 속삭임','오염된 뿌리','오염된 샘','숲의 샘을 지켜라','가시 덩굴 길','늪의 사냥꾼','숲의 심장'],
   intro:[['루나','정령들이 울고 있어요. 에테르의 흐름이 뒤틀렸어요.'],['리아','이 숲의 노래… 어디선가 들었어.'],['루나','당신을 두려워하는 게 아니에요. 기다리고 있었던 거예요.']],
   outro:[['루나','수호목이 잠들었어요. 숲이 다시 숨을 쉬어요.'],['카일','다음은 왕도야. 답을 아는 사람이 거기 있어.']]},
- {id:'c4',label:'CHAPTER 04',name:'왕도의 그림자',place:'왕도 레온',map:'city',battles:10,soldiers:1,bless:[3,6,9],diff:[1.5,1,.43],
+ {id:'c4',label:'CHAPTER 04',name:'왕도의 그림자',place:'왕도 레온',map:'city',battles:10,soldiers:1,bless:[3,6,9],diff:[.72,2.6,.43],
   names:['지붕 위의 추적','그림자 문서','밤의 연락망','봉인된 기록','골목의 석궁','지하 서고','망령의 회랑','왕의 침묵','재상의 호위대'],
   intro:[['네로','왕궁 기록에 네 이름이 있더라. 백 년 전 문서에.'],['리아','내가… 백 년 전에?'],['네로','답을 원하면 지하 서고로 와. 경비병들은 알아서 피하고.']],
   outro:[['네로','재상은 그림자였어. 진짜는 북쪽에 있다.'],['브란','두 왕국이 움직이기 전에 평원으로 가야 한다.']]},
- {id:'c5',label:'CHAPTER 05',name:'두 왕국',place:'벨른 평원',map:'plain',battles:10,soldiers:1,bless:[3,6,9],diff:[1.99,1,.31],
+ {id:'c5',label:'CHAPTER 05',name:'두 왕국',place:'벨른 평원',map:'plain',battles:10,soldiers:1,bless:[3,6,9],diff:[1.68,1.42,.31],
   names:['갈라진 깃발','갈라진 전선','약탈자의 길','연합의 방어선','모래바람','황혼의 추적','포격 진지','강철의 행군','새벽의 진군'],
   intro:[['브란','두 왕국이 등을 돌린 사이 제국은 코어를 깨우고 있다.'],['세라','왕들이 못 정하면 우리가 길을 열면 돼.'],['카일','사람들을 지키자. 어느 깃발 아래에 있든.']],
   outro:[['세라','골렘이 멈췄어. 저 안에… 아르카의 문양이 있어.'],['리아','유적으로 가야 해. 내가 무엇이었는지 거기 있어.']]},
- {id:'c6',label:'CHAPTER 06',name:'아르카 유적',place:'아르카 외곽',map:'ruins',battles:10,soldiers:1,bless:[3,6,9],diff:[1.75,1,.09],
+ {id:'c6',label:'CHAPTER 06',name:'아르카 유적',place:'아르카 외곽',map:'ruins',battles:10,soldiers:1,bless:[3,6,9],diff:[.92,2.58,.09],
   names:['강철의 기억','무너진 수로','에테르 수로','불씨의 통로','물안개 회랑','잠든 골렘','파수꾼의 길','수정 정원','봉인의 문'],
   intro:[['리아','나는 병기가 아니야. 병기를 멈추기 위한 열쇠였어.'],['루나','그렇다면 이번에도 멈출 수 있어요.'],['카일','과거가 널 정하게 두지 마. 지금의 선택은 네 거야.']],
   outro:[['리아','감시자가 꺼졌어. 문이 열려.'],['네로','그리고 나쁜 소식. 우리 좌표가 새고 있었어.']]},
- {id:'c7',label:'CHAPTER 07',name:'배신자',place:'검은 첨탑',map:'tower',battles:10,soldiers:1,bless:[3,6,9],diff:[2.19,1,.16],
+ {id:'c7',label:'CHAPTER 07',name:'배신자',place:'검은 첨탑',map:'tower',battles:10,soldiers:1,bless:[3,6,9],diff:[1.9,1.35,.16],
   names:['부서진 맹세','배신자의 흔적','거짓된 명령','나선 계단','폭풍의 층','망령의 층','검은 숲의 그림자','첨탑의 진실','대공의 날개'],
   intro:[['네로','연합군의 좌표를 넘긴 건 왕의 고문이었어.'],['브란','우리를 미끼로 썼다는 건가.'],['리아','코어가 모든 전장의 에테르를 흡수하고 있어. 전쟁 자체가 함정이야.']],
   outro:[['카일','대공이 떨어졌다. 남은 건 수도뿐이야.'],['세라','성문이 보여. 이젠 물러설 곳이 없어.']]},
- {id:'c8',label:'CHAPTER 08',name:'제국 수도',place:'북부 제국 아스켈',map:'capital',battles:10,soldiers:1,bless:[3,6,9],diff:[1.75,1,.32],
+ {id:'c8',label:'CHAPTER 08',name:'제국 수도',place:'북부 제국 아스켈',map:'capital',battles:10,soldiers:1,bless:[3,6,9],diff:[1.55,1.27,.32],
   names:['제국의 성문','수도의 피난길','불타는 거리','황혼의 광장','근위 석궁대','화염 포격','강철 근위대','왕좌의 계단','왕좌 너머'],
   intro:[['세라','성문이 열렸어. 이젠 물러설 곳이 없어.'],['카일','우린 제국을 무너뜨리러 온 게 아니야. 전쟁을 끝내러 왔어.'],['리아','코어의 목소리가 가까워지고 있어. 서둘러야 해.']],
   outro:[['카일','황제는 이미 오래전에 코어의 그림자였어.'],['리아','아래로 내려가는 길이 열렸어. 마지막이야.']]},
- {id:'final',label:'FINAL',name:'마지막 아르카',place:'코어의 심층',map:'core',battles:10,soldiers:1,bless:[3,6,9],diff:[1.85,1,.09],
+ {id:'final',label:'FINAL',name:'마지막 아르카',place:'코어의 심층',map:'core',battles:10,soldiers:1,bless:[3,6,9],diff:[1.89,1,.09],
   names:['기억의 회랑','마지막 에테르','수정의 파도','불과 물의 방','바람의 방','골렘의 무덤','비룡의 둥지','여섯 개의 빛','심층의 문'],
   intro:[['리아','다시 나를 봉인하면 모든 걸 멈출 수 있어.'],['카일','그건 백 년 전의 답이야. 이번에는 혼자가 아니잖아.'],['리아','응. 이번에는… 모두 함께 돌아가자.']],
   outro:[['리아','코어가 잠들었어. 이번에는… 나도 여기 있어.'],['카일','돌아가자. 모두 함께.']]}
@@ -297,7 +297,8 @@ function buildChapter(def,index){
    // catch up within the first half of the road (~15 tiles) — groups of different elements stay visibly apart
    const catchUp=prevMove&&m.move>prevMove?Math.min(10,15/(prevMove*MOVE_SPEED)-15/(m.move*MOVE_SPEED)):0,start=Math.max(+(j*6.5+rand()*2).toFixed(1),j?+(prevEnd+GROUP_GAP+catchUp).toFixed(1):0);
    waves.push([kind,count,gap,start,null,j%paths]);prevEnd=start+(count-1)*gap;prevMove=m.move;}
-  if(!boss&&i>=2&&(i%2===0||frac>.6)){const kind=avail[Math.max(0,avail.length-1-Math.floor(rand()*2))];waves.push([kind,frac>.7?2:1,3,+(groups*4+rand()*3).toFixed(1),'elite',Math.floor(rand()*paths)]);}
+  // elites from the 4th battle on (1.7.32: a 3rd-battle elite ghost/flyer leaked before any 필살기 could be charged)
+  if(!boss&&i>=3&&(i%2===1||frac>.6)){const kind=avail[Math.max(0,avail.length-1-Math.floor(rand()*2))];waves.push([kind,frac>.7?2:1,3,+(groups*4+rand()*3).toFixed(1),'elite',Math.floor(rand()*paths)]);}
   if(boss)waves.push([0,1,0,10,'boss',0]);
   battles.push({name:boss?BOSSES[index].name:def.names[i]||`전투 ${i+1}`,boss,tune:[+(tuneHp(i)*def.diff[0]*2*(i===0?.6:i===1?.75:1)).toFixed(3),+(tuneAtk(i)*def.diff[1]*(1+.06*index)).toFixed(3)],waves});}
  const b=BOSSES[index];

@@ -2,6 +2,8 @@
 //   node tools/bot.js [chapter|all] [runs=4] [-v]            play
 //   node tools/bot.js calibrate [chapter|all] [runs=4]        search the chapter HP multiplier (diff[0]) for the target
 const {createSim}=require('../js/sim.js'),D=require('../js/data.js');
+// DIFF='[hp,atk,boss]' multiplies every chapter's monster HP / attack / boss HP for experiments (tools/tune.js)
+if(process.env.DIFF){const [h,a,b]=JSON.parse(process.env.DIFF);for(const C of D.CHAPTERS){C.bossScale*=b??1;for(const bt of C.battles){bt.tune[0]*=h??1;bt.tune[1]*=a??1;}}}
 const ORDER=['kyle','hunter','ria','bran','sera','luna','militia','nero','apprentice','shield','acolyte','hunter','militia','apprentice'];
 // Strategy knobs for experiments (tools/strategy.js): STRAT='{"meleeFrac":.45,"heroFrac":null,"soldierFrac":null,"ranged":"cover","ult":"smart","upgrade":"balanced","soldiers":true}'
 const ST=Object.assign({meleeFrac:.45,heroFrac:null,soldierFrac:null,ranged:'cover',ult:'smart',upgrade:'balanced',soldiers:true,vantage:true,element:'best',shard:'smart'},process.env.STRAT?JSON.parse(process.env.STRAT):{});
@@ -21,7 +23,7 @@ function bestTile(S,def){const d=D.UNITS[def],map=S.map,roads=map.tiles.filter(t
   if(!best||score>best.score)best={t,score};}
  return best&&best.t;}
 function play(chapter,seed,verbose,noBoss){
- const legacy=process.env.NO_LEGACY?{}:D.typicalLegacy(chapter,seed),S=createSim({chapter,seed,legacy}),plan=ORDER.filter(id=>S.chapter.roster.includes(id)&&(ST.soldiers||D.UNITS[id].kind==='hero')),log=[];let ults=0,last=-1,guard=0,think=0;
+ const legacy=process.env.NO_LEGACY?{}:D.typicalLegacy(chapter,seed);if(ST.extraLegacy)legacy[ST.extraLegacy]=(legacy[ST.extraLegacy]||0)+1;const S=createSim({chapter,seed,legacy}),plan=ORDER.filter(id=>S.chapter.roster.includes(id)&&(ST.soldiers||D.UNITS[id].kind==='hero')),log=[];let ults=0,last=-1,guard=0,think=0;
  const spend=()=>{
   for(const id in S.hero){const h=S.hero[id];if(!h.keep||h.cd>0||!h.home)continue;let t=S.canDeploy(id,h.home[0],h.home[1])?bestTile(S,id):{c:h.home[0],r:h.home[1]};if(t)S.deploy(id,t.c,t.r);}
   // Each time it can afford something it takes the better deal: one more character, or a rank for one already out.
@@ -37,7 +39,7 @@ function play(chapter,seed,verbose,noBoss){
  while(S.phase!=='won'&&S.phase!=='lost'&&guard++<6e6){
   if(noBoss&&S.battle===S.chapter.battles.length-1)return {won:true,battle:S.battle+1,life:S.life,max:S.maxLife};
   for(const u of S.units)if(S.hero[u.def])S.hero[u.def].home=[u.c,u.r];
-  if(S.phase==='bless'){S.chooseBlessing(S.offer[0]);continue;}
+  if(S.phase==='bless'){if(ST.bless){S.offer=[ST.bless];}S.chooseBlessing(S.offer[0]);continue;}   // STRAT bless:id forces that blessing (reward survey)
   if((think-=1)<=0){think=30;spend();}       // looks at the field about once a second
   if(S.phase==='prep'){spend();if(S.battle!==last){last=S.battle;log.push({b:S.battle+1,gold0:S.gold,life0:S.life,units:S.units.map(u=>u.def.slice(0,2)+u.rank).join(' ')});}S.startBattle();}
   if(S.phase==='battle'&&think===15&&ST.ult!=='never'){const bossOn=S.enemies.some(e=>e.boss);for(const u of S.units)if(u.ult&&u.ultCd<=0&&(ST.ult!=='boss'||bossOn||!S.chapter.battles[S.battle].boss&&false)){const s=D.SKILLS[u.ult];let go=false,x,y;
@@ -46,7 +48,7 @@ function play(chapter,seed,verbose,noBoss){
     else if(s.pick)go=S.enemies.some(e=>e.boss||e.elite)||S.enemies.length>6;else go=S.enemies.filter(e=>Math.hypot(e.x-u.x,e.y-u.y)<s.area).length>=3;
     // expert (1.7.32): aim the meteor at the densest cluster, hold damage 필살기 for a crowd, an elite/boss or a leak threat, and fire
     // several together to chain them (+15%/+30%)
-    if(ST.ult==='expert'&&S.enemies.length&&s.type!=='heal'&&s.type!=='fortress'){const W=e=>e.boss?4:e.elite?2:1,ready=S.units.filter(v=>v.ult&&v.ultCd<=0&&!['heal','fortress'].includes(D.SKILLS[v.ult].type)).length,
+    if(ST.ult==='expert'&&S.enemies.length&&s.type!=='heal'&&s.type!=='fortress'){const far=e=>{const p=S.map.paths[e.path];return p?e.dist/p.total:0;},W=e=>(e.boss?4:e.elite?2:1)+(e.elite&&far(e)>.55?4:0)+(far(e)>.8?2:0),ready=S.units.filter(v=>v.ult&&v.ultCd<=0&&!['heal','fortress'].includes(D.SKILLS[v.ult].type)).length,
       danger=S.enemies.some(e=>{const p=S.map.paths[e.path];return p&&e.dist>p.total*.82;}),chain=S.time-S.lastUlt<=2.6;let val=0;
      if(s.aim){let best=null;for(const c of S.enemies){const v=S.enemies.filter(e=>Math.hypot(e.x-c.x,e.y-c.y)<=s.area+.2).reduce((a,e)=>a+W(e),0);if(!best||v>best.v)best={v,c};}val=best.v;x=best.c.x;y=best.c.y;}
      else if(s.pick)val=S.enemies.some(e=>e.boss||e.elite)?5:S.enemies.length>=5?4:1;

@@ -37,8 +37,11 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   ★3/★2/★1/fail counts, same rule as the clear screen: no leak ★3, life ≥ 75% of base ★2, clear ★1) — `tools/bot.js` prints them per
   chapter (`└` line) and in total (합계); `tools/strategy.js` adds 별 평균.
 - `tools/survey.js [runs=30] [chapters]` (1.7.32): the expert bot (STRAT `ult:'expert'` — densest-cluster meteor, holds 필살기 for crowds /
-  elites / leak threats and chains them) and the novice bot (bad habits) × every chapter, 4 processes; prints wins, life and stars. Baseline in
-  docs/survey-1.7.31.txt. Owner's target: expert ★3 ≈ 50% (prologue/1장 easier warm-up, then slowly harder).
+  elites / leak threats and chains them) and the novice bot (bad habits) × every chapter, 4 processes; prints wins, life and stars. Owner's targets
+  (1.7.32): expert ★3 rate 프롤로그 80% · 1장 60% → falling evenly to FINAL 20%; novice win 95, 85, 70, 60, 50, 45, 40, 35, 30, 25%.
+  `tools/tune.js` fits `diff` (HP for the expert target, attack for the novice target, HP again; `DIFF` env multiplies diffs in bot.js).
+  Results are noisy (±10%p at 40 runs) and ★3 flips on single leaks — inspect leaks with `-v` (a structural leak = fix the cause, not HP).
+  Results: docs/survey-1.7.31.txt (before), docs/survey-1.7.32.txt (after). Elites appear from the 4th battle (1.7.32).
 - `tools/bot.js` — headless balance bot: `node tools/bot.js <chapter|all> <runs> [-v]`. Run it after any balance-relevant change;
   an ordinary build should clear every chapter, usually with 12–20 life left. `node tools/bot.js calibrate [chapter]` searches
   `diff` = [monster HP, monster attack, boss HP] for each chapter in `CHAPTER_DEFS` (js/data.js); copy the result in by hand.
