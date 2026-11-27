@@ -62,7 +62,8 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   rising motes and a diamond crest (`drawReady`), and a one-time `readyburst` beam when it fills. A ready card glows and casts on tap; more than one element opens `#elPick` (weak/resist counts); `#chainBar` + 「N 연계!」.
   A ranged hero's 필살기 ignores range (1.7.6: `range=99` in tryCast for ults of non-melee units).
   Call it 필살기 in all player-facing text.
-- 명당 (`S.vantage`, `pickVantage` at each prep, 1.7.4): one high tile from the top third by road cover, one road tile (path fraction .3–.62,
+- 명당 (`S.vantage`, `pickVantage` once at chapter start and kept for the whole chapter since 1.7.20 — moving a placed unit means selling
+  it, so a spot that moved every battle could not be followed; 1.7.4 rules: one high tile from the top third by road cover, one road tile (path fraction .3–.62,
   scored by crossings + pedestals within 2.9 + slow ground) from the top third; within those, the half farthest from characters already
   placed (`room`; melee spot: from melee only). The snapshot keeps `vantage`, so a resumed battle shows the same spots (1.7.9). +25% damage (`VANTAGE_DMG`), charge ×1.5, range +.5 / block +1. The bot (STRAT `vantage`,
   `vw`) gains little from chasing it because it never moves a placed unit; a player who re-plans each battle does.

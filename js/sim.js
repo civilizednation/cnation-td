@@ -222,7 +222,7 @@ function createSim(opts){
    const same=out.find(o=>!boss&&o.kind===kind&&o.elite===(flags==='elite'));if(same){same.count+=count;continue;}
    out.push({kind,name:boss?boss.name:(flags==='elite'?'정예 ':'')+m.name,count,element:(boss&&boss.element)||m.element||null,flying:boss?!!boss.fly:!!trait.flying,immunity:boss?boss.immunity||null:m.immunity||null,elite:flags==='elite',boss:!!boss,note:boss?boss.hint:trait.note||''});}return out;}
  function startBattle(){if(S.phase!=='prep')return;const bonus=S.battle>0?Math.floor(S.prep):0;if(bonus>0){S.gold+=bonus;S.stats.goldEarned+=bonus;emit({t:'bonus',gold:bonus,why:'조기 출발'});}S.phase='battle';loadBattle();emit({t:'battleStart',battle:S.battle});}
- function enterPrep(){S.pending=[];S.phase='prep';S.prep=PREP_TIME;S.shard=null;for(const u of S.units){u.hp=u.maxHp;u.st={};release(u);}pickVantage();emit({t:'prep',battle:S.battle});}
+ function enterPrep(){S.pending=[];S.phase='prep';S.prep=PREP_TIME;S.shard=null;for(const u of S.units){u.hp=u.maxHp;u.st={};release(u);}emit({t:'prep',battle:S.battle});}  // 명당 stays for the whole chapter (1.7.20)
  function finishBattle(){const n=S.battle+1,clean=S.leaks===0,bonus=Math.round((30+n*8)*(clean?1.5:1));S.gold+=bonus;S.stats.goldEarned+=bonus;S.leaksTotal+=S.leaks;emit({t:'cleared',battle:S.battle,gold:bonus,clean});
   if(n>=chapter.battles.length){S.phase='won';emit({t:'won'});return;}
   S.battle=n;
