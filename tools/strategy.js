@@ -14,9 +14,9 @@ const jobs=[];for(const [name,st] of V)for(const ch of chapters)jobs.push({name,
 const res={};let next=0,active=0;
 function run(){while(active<4&&next<jobs.length){const j=jobs[next++];active++;
  execFile('node',[path.join(__dirname,'bot.js'),String(j.ch),String(runs)],{env:{...process.env,STRAT:JSON.stringify(j.st)},maxBuffer:1e7},(err,out)=>{active--;
-  const line=(out||'').trim().split('\n').pop()||'',lives=[...line.matchAll(/승\(생명 (\d+)\)|패\(전투 (\d+)\)/g)].map(m=>m[1]!=null?{won:true,life:+m[1]}:{won:false,battle:+m[2]});
+  const line=(out||'').trim().split('\n').find(l=>/클리어 ·/.test(l))||'',lives=[...line.matchAll(/승\(생명 (\d+)·★(\d)\)|패\(전투 (\d+)\)/g)].map(m=>m[1]!=null?{won:true,life:+m[1],stars:+m[2]}:{won:false,battle:+m[3],stars:0});
   (res[j.name]=res[j.name]||[]).push(...lives);if(next>=jobs.length&&!active)report();else run();});}}
 function report(){const base=res[V[0][0]];const avg=a=>a.reduce((s,x)=>s+(x.won?x.life:0),0)/a.length;
- console.log('전략'.padEnd(40),'승률','평균 남은 생명(패배=0)','기준 대비');
- for(const [name] of V){const a=res[name];console.log(name.padEnd(40),`${a.filter(x=>x.won).length}/${a.length}`.padEnd(6),avg(a).toFixed(1).padStart(6),(avg(a)-avg(base)>=0?'+':'')+(avg(a)-avg(base)).toFixed(1));}}
+ console.log('전략'.padEnd(40),'승률','평균 남은 생명(패배=0)','기준 대비','별 평균');
+ for(const [name] of V){const a=res[name];console.log(name.padEnd(40),`${a.filter(x=>x.won).length}/${a.length}`.padEnd(6),avg(a).toFixed(1).padStart(6),(avg(a)-avg(base)>=0?'+':'')+(avg(a)-avg(base)).toFixed(1),(a.reduce((x,v)=>x+v.stars,0)/a.length).toFixed(2));}}
 run();

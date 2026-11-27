@@ -54,7 +54,8 @@ function play(chapter,seed,verbose,noBoss){
   for(const e of S.drain()){if(e.t==='leak')(log.leaks=log.leaks||[]).push(`${S.battle+1}:${e.name}`);if(e.t==='down')(log.downs=log.downs||[]).push(`${S.battle+1}:${e.def}`);if(e.t==='cleared'){const l=log[log.length-1];l.leaks=S.leaks;l.time=Math.round(S.battleTime);}}
  }
  if(verbose){console.log('  유산',JSON.stringify(legacy));for(const l of log)console.log(`  전투 ${String(l.b).padStart(2)}  골드 ${String(l.gold0).padStart(4)}  생명 ${String(l.life0).padStart(2)}  누수 ${l.leaks??'패배'}  ${l.time??'-'}초  [${l.units}]`);console.log('  누수',(log.leaks||[]).slice(-14).join(', '));console.log('  쓰러짐',(log.downs||[]).length,(log.downs||[]).slice(-12).join(', '));console.log('  피해량',JSON.stringify(S.stats.dealt),'회복',Math.round(S.stats.healed),'궁극기',ults);}
- return {won:S.phase==='won',battle:S.battle+1,life:S.life,max:S.maxLife};
+ const won=S.phase==='won',stars=!won?0:S.leaksTotal===0?3:S.life>=Math.ceil(S.chapter.life*.75)?2:1;   // same rule as the clear screen
+ return {won,battle:S.battle+1,life:S.life,max:S.maxLife,leaks:S.leaksTotal,stars};
 }
 function run(ch,runs,verbose,noBoss){const res=[];for(let i=0;i<runs;i++)res.push(play(ch,1000+i*37,verbose&&i===(+process.env.BOT_RUN||0),noBoss));return {wins:res.filter(r=>r.won).length,life:res.reduce((s,r)=>s+(r.won?r.life:0),0)/runs,res};}
 const args=process.argv.slice(2),verbose=args.includes('-v'),pos=args.filter(a=>a!=='-v');
@@ -66,4 +67,8 @@ if(pos[0]==='calibrate'){const list=pos[1]==null||pos[1]==='all'?D.CHAPTERS.map(
   C.bossScale=+(bl*.6).toFixed(2);const r=run(ch,runs);out.push([+k.toFixed(2),C.diff[1],C.bossScale]);console.log(`${C.label}: diff ${k.toFixed(2)}, boss ${C.bossScale} → ${r.wins}/${runs} 클리어, 평균 생명 ${r.life.toFixed(1)}`);}
  console.log('diff:',JSON.stringify(out));
 }else{const list=pos[0]==null||pos[0]==='all'?D.CHAPTERS.map((_,i)=>i):[+pos[0]],runs=+(pos[1]||4);
- for(const ch of list){const r=run(ch,runs,verbose);console.log(`${D.CHAPTERS[ch].label}: ${r.wins}/${runs} 클리어 · `+r.res.map(v=>v.won?`승(생명 ${v.life})`:`패(전투 ${v.battle})`).join(', '));}}
+ // Report (owner's standing request): wins, life left (mean / min–max over wins), stars (mean and ★3/★2/★1/fail counts) per chapter + total.
+ const all=[],stat=res=>{const w=res.filter(v=>v.won),lives=w.map(v=>v.life),avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0,cnt=k=>res.filter(v=>v.stars===k).length;
+  return `승 ${w.length}/${res.length} (${Math.round(w.length/res.length*100)}%) · 생명 평균 ${avg(lives).toFixed(1)}${lives.length?` (${Math.min(...lives)}~${Math.max(...lives)})`:''} · 별 평균 ${avg(res.map(v=>v.stars)).toFixed(2)} [★3 ${cnt(3)} · ★2 ${cnt(2)} · ★1 ${cnt(1)} · 패 ${cnt(0)}]`;};
+ for(const ch of list){const r=run(ch,runs,verbose);all.push(...r.res);console.log(`${D.CHAPTERS[ch].label}: ${r.wins}/${runs} 클리어 · `+r.res.map(v=>v.won?`승(생명 ${v.life}·★${v.stars})`:`패(전투 ${v.battle})`).join(', '));console.log(`  └ ${stat(r.res)}`);}
+ if(list.length>1)console.log(`합계: ${stat(all)}`);}

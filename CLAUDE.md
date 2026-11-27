@@ -32,6 +32,9 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
 - `js/game.js` — three.js battlefield (fixed tilted orthographic top view, so `proj`/`unproj` are plain formulas), 2D overlay canvas
   for bars/ranges/effects, dock, unit panel, modals, saves (`cnation-td-save-v1` = `sim.snapshot()` taken when a battle starts).
 - `js/models.js` — model code copied from TACTICS `game.js` (`bake` … `figure`, `makeWaterSurface`) with hooks `u.pal`, `u.hpal`, `u.scale`. Do not hand-edit the copied part.
+- Owner's standing request: whenever bot results are reported, give not only wins but life left (mean, min–max) and stars (mean and
+  ★3/★2/★1/fail counts, same rule as the clear screen: no leak ★3, life ≥ 75% of base ★2, clear ★1) — `tools/bot.js` prints them per
+  chapter (`└` line) and in total (합계); `tools/strategy.js` adds 별 평균.
 - `tools/bot.js` — headless balance bot: `node tools/bot.js <chapter|all> <runs> [-v]`. Run it after any balance-relevant change;
   an ordinary build should clear every chapter, usually with 12–20 life left. `node tools/bot.js calibrate [chapter]` searches
   `diff` = [monster HP, monster attack, boss HP] for each chapter in `CHAPTER_DEFS` (js/data.js); copy the result in by hand.
