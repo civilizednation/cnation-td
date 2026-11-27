@@ -13,8 +13,8 @@
 <meta name="apple-mobile-web-app-title" content="cnation TD">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <style>
-@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=44") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:118%}
-@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=44") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:104%}
+@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=45") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:118%}
+@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=45") format("woff2");font-weight:400;font-style:normal;font-display:swap;size-adjust:104%}
 :root{--font-display:"Stylish",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--font-body:"Gowun Dodum",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--bg:#16282d;--panel:#1f373d;--panel2:#284850;--line:#3c636b;--ink:#eef4ea;--dim:#a9c0bb;--gold:#f2cf72;--good:#8fe5b4;--bad:#f08f7c;--accent:#8be1bf}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--ink);font-family:var(--font-display);overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -61,6 +61,12 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
 /* 1.7.8: the boss bar lives in the strip under the battlefield (in place of the chips), so it never covers the monster gates */
 #bossBar{flex:1;min-width:0;display:flex;align-items:center;gap:7px;height:34px;padding:0 8px;border-radius:10px;background:rgba(18,12,14,.94);border:1px solid rgba(255,120,100,.5);pointer-events:none}
 #bossBar[hidden]{display:none}#strip.has-boss #chips{display:none}
+#cancelBar{flex:1;min-width:0;display:flex;align-items:center;gap:8px;height:36px;padding:0 10px 0 6px;border:1px solid #c8584a;border-radius:10px;background:#3a1916;color:#ffe6e0;font:inherit;text-align:left;animation:cancelIn .14s ease-out}
+#cancelBar[hidden]{display:none}#cancelBar b{flex:none;padding:5px 10px;border-radius:7px;background:#d2493a;color:#fff;font-weight:400;font-size:15px}
+#cancelBar span{flex:1;min-width:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#cancelBar i{flex:none;font-style:normal;font-size:11px;color:#ffc9a8}#cancelBar i[hidden]{display:none}
+#strip.selecting #chips,#strip.selecting #bossBar,#strip.selecting #potionBtn,#strip.selecting #startBtn{display:none!important}
+@keyframes cancelIn{from{transform:translateY(6px);opacity:0}}
+#aimHint{display:none!important}
 #bossBar .bb-el{flex:none;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:2px solid #f2cf72;background:rgba(12,22,26,.9);font-size:13px}
 #bossBar .bb-name{flex:none;max-width:38%;font-weight:400;font-size:14px;color:#ffe2d8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #bossBar .bb-bar{position:relative;flex:1;min-width:60px;height:18px;border-radius:6px;background:rgba(0,0,0,.6);overflow:hidden}
@@ -296,10 +302,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
  <div id="modal" hidden></div>
 </div>
 <script src="vendor/three-r170.js"></script>
-<script src="js/data.js?v=1.7.18"></script>
-<script src="js/sim.js?v=1.7.18"></script>
-<script src="js/models.js?v=1.7.18"></script>
-<script src="js/game.js?v=1.7.18"></script>
+<script src="js/data.js?v=1.7.19"></script>
+<script src="js/sim.js?v=1.7.19"></script>
+<script src="js/models.js?v=1.7.19"></script>
+<script src="js/game.js?v=1.7.19"></script>
 <script>if('serviceWorker' in navigator&&location.protocol!=='file:')window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 </body>
 </html>

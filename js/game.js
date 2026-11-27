@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.7.18',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.19',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -342,12 +342,15 @@ function tryDeploy(c,r){const id=selCard,err=S.deploy(id,c,r);if(err){toast(err)
 const localPoint=e=>{const r=viewport.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top,inside:e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom};};
 const tileAt=p=>{const w=unproj(p.x,p.y),c=Math.round(w.x),r=Math.round(w.y);return S.map.tile(c,r)?{c,r}:null;};
 let down=null;
-function cardDown(e,id){if(modalOpen||!S)return;e.preventDefault();sfx('ui_tap');if(shardPicking()){const u=S.units.find(v=>v.def===id&&v.ult);if(u){giveShardTo(u.id);return;}}
+function cardDown(e,id){if(modalOpen||!S)return;e.preventDefault();sfx('ui_tap');
+ // 1.7.19: tapping the card that started a selection again cancels it
+ {const u=S.units.find(v=>v.def===id);if(selCard===id||(u&&(selUnit===u.id||pickEl===u.id||aiming===u.id))){cancelSelection(true);return;}}if(shardPicking()){const u=S.units.find(v=>v.def===id&&v.ult);if(u){giveShardTo(u.id);return;}}
  if(potionPick){const u=S.units.find(v=>v.def===id);if(u){givePotion(u.id);return;}}selectCard(id);if(selCard!==id)return;down={x:e.clientX,y:e.clientY,card:true};dragging=false;}
 window.addEventListener('pointermove',e=>{if(!S||!selCard||!down||!down.card)return;if(!dragging&&Math.hypot(e.clientX-down.x,e.clientY-down.y)>10)dragging=true;if(dragging){const p=localPoint(e);hover=p.inside?tileAt({x:p.x,y:p.y-pxU*.6}):null;}});
 window.addEventListener('pointerup',e=>{if(!S||!down||!down.card)return;const wasDrag=dragging;down=null;if(wasDrag&&selCard){dragging=false;const p=localPoint(e),t=p.inside?tileAt({x:p.x,y:p.y-pxU*.6}):null;hover=null;if(t)tryDeploy(t.c,t.r);}});
-fxc.addEventListener('pointerdown',e=>{if(modalOpen||!S)return;const p=localPoint(e);if(shardPicking()){const u=heroAt(e.clientX,e.clientY);if(u){giveShardTo(u.id);return;}}
- if(potionPick){const u=allyAt(e.clientX,e.clientY);if(u)givePotion(u.id);else{potionPick=false;hudKey='';}return;}
+fxc.addEventListener('pointerdown',e=>{if(modalOpen||!S)return;const p=localPoint(e);if(shardPicking()){const u=heroAt(e.clientX,e.clientY);if(u)giveShardTo(u.id);else cancelSelection();return;}
+ if(pickEl!=null){cancelSelection();return;}
+ if(potionPick){const u=allyAt(e.clientX,e.clientY);if(u)givePotion(u.id);else cancelSelection();return;}
  if(aiming){const w=unproj(p.x,p.y),err=S.ult(aiming,w.x,w.y,aimEl);if(err){toast(err);sfx('ui_error');}aiming=null;$('#aimHint').style.display='none';closePanel();return;}
  if(selCard){const t=tileAt(p);if(t)tryDeploy(t.c,t.r);else clearCard();return;}
  // Tap a character: test the bodies first (they stand taller than their tile). Otherwise a monster, otherwise the tile.
@@ -896,6 +899,25 @@ $('#potionBtn').addEventListener('click',()=>{if(!S||modalOpen||S.phase!=='battl
 function givePotion(id){const err=S.usePotion(id);potionPick=false;hudKey='';if(err){toast(err);sfx('ui_error');}}
 function allyAt(cx,cy){const r=viewport.getBoundingClientRect(),x=cx-r.left,y=cy-r.top;let best=null;for(const u of S.units){const s=proj(u.x,u.y,groundY(u.x,u.y)+.5),d=Math.hypot(s.x-x,s.y-y);if(d<pxU*.8&&(!best||d<best.d))best={u,d};}return best&&best.u;}
 
+// ── Cancel bar (1.7.19): while something is being chosen, the strip under the battlefield becomes one big 「✕ 취소」 bar that says what
+// is being chosen (and that time runs slow). Tapping it, an empty spot, or the same card again cancels. cancelSelection() clears every state.
+const cancelEl=(()=>{const el=document.createElement('button');el.id='cancelBar';el.hidden=true;el.innerHTML='<b>✕ 취소</b><span></span><i>⏱ 느리게</i>';$('#strip').insertBefore(el,$('#chips'));
+ el.addEventListener('click',()=>cancelSelection());return el;})();
+function cancelSelection(silent){if(!silent)sfx('ui_tap');if(aiming){aiming=null;$('#aimHint').style.display='none';}closeElPick();potionPick=false;
+ if(typeof shardEl!=='undefined')shardEl.classList.remove('picking');clearCard();closePanel();hudKey='';}
+function selectionLabel(){const un=id=>S.units.find(v=>v.id===id);
+ if(aiming){const u=un(aiming);return `☄ ${u?D.SKILLS[u.ult].name:'필살기'} · 떨어뜨릴 곳 터치`;}
+ if(pickEl!=null)return '⚡ 필살기 속성 고르기';
+ if(potionPick)return '🧪 물약 · 줄 동료 터치';
+ if(typeof shardEl!=='undefined'&&shardEl.classList.contains('picking'))return '💎 수정 조각 · 줄 영웅 터치';
+ if(selCard)return `${D.UNITS[selCard].name} · 놓을 칸 터치`;
+ if(selUnit){const u=un(selUnit);return u?`${S.defOf(u).name} 선택 중`:null;}
+ return null;}
+let cancelKey='';
+function cancelTick(){const label=!demo.on&&S&&(S.phase==='battle'||S.phase==='prep')?selectionLabel():null,slow=label&&S.phase==='battle',key=label?label+slow:'';
+ if(key===cancelKey)return;cancelKey=key;cancelEl.hidden=!label;$('#strip').classList.toggle('selecting',!!label);
+ if(label){cancelEl.querySelector('span').textContent=label;cancelEl.querySelector('i').hidden=!slow;}}
+
 // ── 1.7.1: melee swings drawn as effects, and the 필살기-ready look ──
 const HERO_COLOR={kyle:'#ffd257',sera:'#7fe08a',ria:'#ff5a6e',nero:'#b07cff',bran:'#ff9a3c',luna:'#f4f6ff'};
 const heroColor=u=>HERO_COLOR[u.def]||'#ffd257';
@@ -1030,7 +1052,7 @@ let lastTime=0;
 function frame(now){requestAnimationFrame(frame);const real=Math.min(.05,(now-lastTime)/1000||0);lastTime=now;if(!S){bgm.setDuck(1);ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,fxc.width,fxc.height);renderer.render(scene,camera);return;}
  if(hitStop>0)hitStop=Math.max(0,hitStop-real);const busy=S.phase==='battle'&&(selCard||selUnit||aiming||pickEl!=null||(shardUi&&shardUi.phase!=='fly')||potionPick),scale=demo.on?(hitStop>0?.12:1):paused||modalOpen?0:speed*(busy?.25:1)*(hitStop>0?.12:1);if(demo.on)demo.tick(real);if(!S)return;
  bgm.setDuck(!demo.on&&(S.phase==='prep'||S.phase==='battle'||S.phase==='bless')&&(paused||modalOpen)?.4:1);
- if(scale>0)S.step(real*scale);handleEvents();if(!S)return;shardTick(real,paused||modalOpen);chainTick();if(potionPick&&S.phase!=='battle'){potionPick=false;hudKey='';}if(pickEl!=null&&!ultReady(S.units.find(v=>v.id===pickEl)))closeElPick();
+ if(scale>0)S.step(real*scale);handleEvents();if(!S)return;shardTick(real,paused||modalOpen);chainTick();cancelTick();if(potionPick&&S.phase!=='battle'){potionPick=false;hudKey='';}if(pickEl!=null&&!ultReady(S.units.find(v=>v.id===pickEl)))closeElPick();
  const t=now/1000;syncObjects(real*(scale>0?Math.max(1,scale):1),t);syncDecals(t);if(water)water.material.uniforms.uTime.value=t;for(const f of animated)f(t);
  if(shakeT>0){shakeT=Math.max(0,shakeT-real);const m=shakeT*14;viewport.style.transform=`translate(${(Math.random()-.5)*m}px,${(Math.random()-.5)*m}px)`;}else if(viewport.style.transform)viewport.style.transform='';
  renderer.render(scene,camera);drawOverlay(real*(scale>0?Math.max(.5,scale):.5),t,real);if(!demo.on)drawShardFall();pruneRings();updateHud();}

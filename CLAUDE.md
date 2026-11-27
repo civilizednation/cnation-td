@@ -81,6 +81,9 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
 - 수정 조각: `S.shardIn` (first 18 s, then 40 s of battle) → `S.shard` + event `shard`; `S.giveShard(id|null)` → `shardGiven`, `u.shardT`=20.
   The screen drops it in a light pillar, floats it above the dock (`#shard` in #app), drag onto a card/field hero or tap → tap; 0.25× speed while
   choosing, random after `SHARD_SECONDS` 5 real s. The sim gives it at random after 20 s by itself (bot/demo).
+- Cancel bar (1.7.19): while anything is being chosen (placing a card, a selected ally, 필살기 aim or element, potion or shard target) the
+  strip shows `#cancelBar` 「✕ 취소 · <what> · ⏱ 느리게」 in place of chips/boss bar/buttons (`selectionLabel`, `cancelTick`). One
+  `cancelSelection()` clears every state; tapping the bar, an empty spot of the field, or the same card again cancels. `#aimHint` is retired.
 - 체력 물약 (1.7.17): `POTIONS` 5 per chapter (`S.potions`, kept in the snapshot, not carried to the next chapter); `S.usePotion(id)` in
   battle only: +50% max HP, clears bad states, one ally every `POTION_CD` 10 s. Screen: `#potionBtn` 「🧪 N」 in the strip → tap an ally
   (field or card; quarter speed while choosing) or the ally panel's 물약 button; event `potion` → green bubbles + number. The bot uses one
