@@ -178,8 +178,9 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   place that shows a legacy (altar sockets, map badges, offer, clear pages, totals) uses the picture.
 - 수호자 카드 (1.7.27): all chapters ★3 → 「아르카의 수호자」, all 빛나는 ★3 → 「빛의 수호자」 (`guardianCheck` after each clear, stored in
   `GUARD_KEY` with date, stars, shine, total kills/time from records and the MVP hero from `HERO_DEALT_KEY` = hero damage summed over
-  clears). `art/card_guardian.webp` / `card_light.webp` (owner's art, 2:3); `CARDS[kind].plate` = the empty nameplate as fractions, where the
-  title, optional engraved name (`GUARD_KEY.name`, ≤10 chars, `askName`, asked once when first earned), date and stats are written.
+  clears). `art/card_guardian.webp` / `card_light.webp` (owner's art, 2:3); `CARDS[kind].plate` = the empty nameplate as fractions, where only two
+  centred lines are written (1.7.28, owner: less text): the title, and the engraved name (`GUARD_KEY.name`, ≤10 chars, `askName`, asked
+  once when first earned) or the date when there is no name. Stats stay stored in `GUARD_KEY` but are not printed.
   `#gcard` overlay: beam, falling motes, flip-in, shine sweep, tilt on drag; buttons other card / 이름 / 이미지로 저장 (`saveCard` draws
   the card + text on a canvas → share sheet or download) / 받기·닫기. Shown over the last clear page when earned; the title shows the
   honour (`.gtitle`, light wins) and tapping it reopens the card.

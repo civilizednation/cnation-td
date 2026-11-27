@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.7.27',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.28',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -941,8 +941,8 @@ function cancelTick(){const label=!demo.on&&S&&(S.phase==='battle'||S.phase==='p
 // ── 수호자 카드 (1.7.27): every chapter at ★3 → 「아르카의 수호자」, every chapter at 빛나는 ★3 → 「빛의 수호자」. The card flips in with a
 // beam of light when earned (over the last clear page), and the title shows the honour; tapping it brings the card back.
 const GUARD_KEY='cnation-td-guardian-v1',HERO_DEALT_KEY='cnation-td-herodealt-v1';
-const CARDS={guardian:{img:'art/card_guardian.webp',title:'아르카의 수호자',sub:'모든 장을 ★3으로 지켜낸 자',plate:[.1,.755,.9,.872]},
- light:{img:'art/card_light.webp',title:'빛의 수호자',sub:'모든 장을 빛나는 ★3으로 지켜낸 자',plate:[.12,.685,.88,.818]}};
+const CARDS={guardian:{img:'art/card_guardian.webp',title:'아르카의 수호자',sub:'모든 장을 ★3으로 지켜낸 자',plate:[.12,.755,.88,.861]},
+ light:{img:'art/card_light.webp',title:'빛의 수호자',sub:'모든 장을 빛나는 ★3으로 지켜낸 자',plate:[.14,.69,.86,.815]}};
 function guardianCheck(){const g=loadJSON(GUARD_KEY,{}),best=cleared(),sh=shined(),now=[];
  const snap=()=>{const recs=loadJSON(RECORD_KEY,{}),hd=loadJSON(HERO_DEALT_KEY,{}),mvp=Object.entries(hd).sort((a,b)=>b[1]-a[1])[0];
   return {date:Date.now(),stars:Object.values(best).reduce((a,b)=>a+b,0),shine:Object.keys(sh).length,time:Object.values(recs).reduce((a,r)=>a+(r.time||0),0),kills:Object.values(recs).reduce((a,r)=>a+(r.kills||0),0),mvp:mvp?mvp[0]:null};};
@@ -958,7 +958,7 @@ function showCard(kind,done,fresh){const C=CARDS[kind],G=loadJSON(GUARD_KEY,{});
  cardEl.className='gc-'+kind+(fresh?' fresh':'');const P=C.plate;
  cardEl.innerHTML=`<div class="gc-beam"></div><div class="gc-parts">${Array.from({length:28},()=>`<i style="--x:${(Math.random()*100).toFixed(1)}%;--d:${(Math.random()*3).toFixed(2)}s;--s:${(.6+Math.random()*.9).toFixed(2)};--t:${(2.4+Math.random()*2).toFixed(2)}s"></i>`).join('')}</div>
   ${fresh?`<p class="gc-get">${kind==='light'?'최고 명예 달성!':'명예 달성!'}</p>`:''}
-  <div class="gc-wrap"><div class="gc-card"><img src="${C.img}?v=${GAME_VERSION}" alt="${C.title} 카드"><div class="gc-plate" style="left:${P[0]*100}%;top:${P[1]*100}%;width:${(P[2]-P[0])*100}%;height:${(P[3]-P[1])*100}%"><b>${C.title}</b>${G.name?`<i class="gc-name">${esc(G.name)}</i><small>${L.stats} · ${L.date}<br>${L.more}</small>`:`<span>${C.sub} · ${L.date}</span><small>${L.stats}<br>${L.more}</small>`}</div><div class="gc-shine"></div></div></div>
+  <div class="gc-wrap"><div class="gc-card"><img src="${C.img}?v=${GAME_VERSION}" alt="${C.title} 카드"><div class="gc-plate" style="left:${P[0]*100}%;top:${P[1]*100}%;width:${(P[2]-P[0])*100}%;height:${(P[3]-P[1])*100}%"><b>${C.title}</b><span>${G.name?esc(G.name):L.date}</span></div><div class="gc-shine"></div></div></div>
   <div class="gc-btns">${other?`<button data-a="other">${CARDS[other].title} 카드</button>`:''}<button data-a="name">✎ ${G.name?'이름 바꾸기':'이름 새기기'}</button><button data-a="save">이미지로 저장</button><button class="primary" data-a="close">${fresh?'받기':'닫기'}</button></div>`;
  cardEl.hidden=false;modalOpen=true;if(fresh){sfx('legacy',{force:true});setTimeout(()=>sfx('wave_clear',{force:true}),450);}
  const wrap=cardEl.querySelector('.gc-wrap'),card=cardEl.querySelector('.gc-card');
@@ -981,8 +981,8 @@ function askName(kind,done,fresh){const G=loadJSON(GUARD_KEY,{}),box=document.cr
 function saveCard(kind){const C=CARDS[kind],L=cardLines(kind),img=new Image();img.onload=async()=>{const W=img.width,H=img.height,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');g.drawImage(img,0,0);
   const P=C.plate,x0=P[0]*W,y0=P[1]*H,w=(P[2]-P[0])*W,h=(P[3]-P[1])*H,fd=getComputedStyle(document.body).getPropertyValue('--font-display')||FONT,ink=kind==='light'?'#e9fdff':'#ffe9a8';
   g.textAlign='center';g.textBaseline='middle';g.shadowColor=kind==='light'?'#39d6ff':'#ffb020';
-  const line=(t,size,y,color)=>{g.font=`400 ${size}px ${fd}`;g.fillStyle=color;g.shadowBlur=size*.5;g.fillText(t,x0+w/2,y0+h*y,w*.94);};
-  const nm=loadJSON(GUARD_KEY,{}).name;if(nm){line(C.title,W*.05,.19,ink);g.shadowBlur=0;line(nm,W*.036,.44,'#ffffff');}else{line(C.title,W*.058,.2,ink);g.shadowBlur=0;line(C.sub+' · '+L.date,W*.026,.45,'#ffffff');}line(nm?L.stats+' · '+L.date:L.stats,W*.023,nm?.67:.65,ink);line(L.more,W*.021,nm?.85:.84,'#dfe9ee');
+  const line=(t,size,y,color)=>{g.font=`400 ${size}px ${fd}`;g.fillStyle=color;g.shadowBlur=size*.45;g.fillText(t,x0+w/2,y0+h*y,w*.92);};
+  const nm=loadJSON(GUARD_KEY,{}).name;line(C.title,W*.062,.4,ink);g.shadowBlur=0;line(nm||L.date,W*.04,.74,'#ffffff');
   c.toBlob(async b=>{const name=(kind==='light'?'빛의_수호자':'아르카의_수호자')+'.png';try{const f=new File([b],name,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:C.title});return;}}catch(e){}
    const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);toast('카드 이미지를 저장했습니다');},'image/png');};
  img.src=C.img+'?v='+GAME_VERSION;}

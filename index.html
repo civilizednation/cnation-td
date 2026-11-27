@@ -200,16 +200,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:#0d1a1e;color:var(--in
 #gcard:not(.fresh) .gc-card{animation-duration:.7s}
 @keyframes gcIn{0%{transform:perspective(1000px) rotateY(-200deg) scale(.25);opacity:0;filter:brightness(3)}55%{opacity:1}80%{filter:brightness(1.6)}100%{transform:perspective(1000px) rotateY(0) scale(1);filter:brightness(1)}}
 .gc-card img{display:block;width:100%;height:100%;object-fit:cover}
-.gc-plate{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 3cqw;color:#ffe9a8}
-.gc-plate b{font-family:var(--font-display);font-weight:400;font-size:6.2cqw;line-height:1.1;text-shadow:0 0 1.5cqw #ffb020,0 .3cqw 0 #000}
-.gc-plate span{font-size:2.9cqw;color:#fff;opacity:.92;margin-top:.6cqw}.gc-plate small{font-size:2.8cqw;line-height:1.35;color:#ffe9a8;margin-top:.5cqw}.gc-plate em{font-style:normal;font-size:2.3cqw;color:#dfe9ee;opacity:.8;margin-top:.3cqw}
-.gc-plate i.gc-name{font-style:normal;font-family:var(--font-display);font-size:4.6cqw;line-height:1.15;color:#fff;text-shadow:0 0 1.2cqw rgba(255,255,255,.6),0 .25cqw 0 #000}
-.gc-plate:has(.gc-name) b{font-size:5.2cqw}.gc-plate:has(.gc-name) small{font-size:2.45cqw;line-height:1.3;margin-top:.3cqw}.gc-plate i.gc-name{font-size:4cqw}
-.gc-ask{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;background:rgba(3,6,14,.72);animation:gcFade .2s ease-out}
-.gc-ask>div{width:min(86vw,340px);padding:16px;border-radius:14px;background:var(--panel);border:1px solid var(--line);text-align:center}.gc-ask b{font-family:var(--font-display);font-weight:400;font-size:18px;color:var(--gold)}
-.gc-ask p{margin:6px 0 10px;font-size:13px;color:var(--dim)}.gc-ask input{width:100%;box-sizing:border-box;height:42px;padding:0 12px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:17px;text-align:center}
-.gc-ab{display:flex;gap:8px;margin-top:12px}.gc-ab button{flex:1;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font:inherit;font-size:15px}.gc-ab button.primary{background:var(--gold);color:#2b2410;border:0}
-.gc-light .gc-plate{color:#e9fdff}.gc-light .gc-plate b{text-shadow:0 0 1.8cqw #39d6ff,0 .3cqw 0 #000}.gc-light .gc-plate small{color:#d8fbff}
+.gc-plate{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.2cqw;text-align:center;color:#ffe9a8}
+.gc-plate b{font-family:var(--font-display);font-weight:400;font-size:6.4cqw;line-height:1;text-shadow:0 0 1.5cqw #ffb020,0 .3cqw 0 #000}
+.gc-plate span{font-family:var(--font-display);font-size:4.2cqw;line-height:1;color:#fff;text-shadow:0 .25cqw 0 #000}
+.gc-light .gc-plate{color:#e9fdff}.gc-light .gc-plate b{text-shadow:0 0 1.8cqw #39d6ff,0 .3cqw 0 #000}
 .gc-shine{position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.38) 45%,rgba(255,255,255,.08) 52%,transparent 60%);background-size:260% 100%;mix-blend-mode:screen;animation:gcSweep 3.6s ease-in-out 1.3s infinite}
 .gc-light .gc-shine{background:linear-gradient(115deg,transparent 28%,rgba(160,255,255,.35) 40%,rgba(255,160,255,.28) 48%,rgba(255,255,170,.25) 55%,transparent 64%);background-size:260% 100%}
 @keyframes gcSweep{0%{background-position:130% 0}55%,100%{background-position:-60% 0}}
@@ -355,10 +349,10 @@ img.licon{display:inline-block;width:1.45em;height:1.45em;vertical-align:-.42em;
  <div id="modal" hidden></div>
 </div>
 <script src="vendor/three-r170.js"></script>
-<script src="js/data.js?v=1.7.27"></script>
-<script src="js/sim.js?v=1.7.27"></script>
-<script src="js/models.js?v=1.7.27"></script>
-<script src="js/game.js?v=1.7.27"></script>
+<script src="js/data.js?v=1.7.28"></script>
+<script src="js/sim.js?v=1.7.28"></script>
+<script src="js/models.js?v=1.7.28"></script>
+<script src="js/game.js?v=1.7.28"></script>
 <script>if('serviceWorker' in navigator&&location.protocol!=='file:')window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 </body>
 </html>
