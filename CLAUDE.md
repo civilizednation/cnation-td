@@ -36,14 +36,16 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
 - Owner's standing request: whenever bot results are reported, give not only wins but life left (mean, min–max) and stars (mean and
   ★3/★2/★1/fail counts, same rule as the clear screen: no leak ★3, life ≥ 75% of base ★2, clear ★1) — `tools/bot.js` prints them per
   chapter (`└` line) and in total (합계); `tools/strategy.js` adds 별 평균.
-- `tools/survey.js [runs=30] [chapters]` (1.7.32): the expert bot (STRAT `ult:'expert'` — densest-cluster meteor, holds 필살기 for crowds /
-  elites / leak threats and chains them) and the novice bot (bad habits) × every chapter, 4 processes; prints wins, life and stars. Owner's targets
-  (1.7.32): expert ★3 rate 프롤로그 80% · 1장 60% → falling evenly to FINAL 20%; novice win 95, 85, 70, 60, 50, 45, 40, 35, 30, 25%.
-  `tools/tune.js` fits `diff` (HP for the expert target, attack for the novice target, HP again; `DIFF` env multiplies diffs in bot.js).
-  Results are noisy (±10%p at 40 runs) and ★3 flips on single leaks — inspect leaks with `-v` (a structural leak = fix the cause, not HP).
-  Results: docs/survey-1.7.31.txt (before), docs/survey-1.7.32.txt (after). Elites appear from the 4th battle (1.7.32).
+- `tools/survey.js [runs=30] [chapters]` (1.7.32; `BOTS=고수,중수` picks bots): 고수 (STRAT `ult:'expert'` — densest-cluster meteor, holds 필살기 for
+  crowds / elites / leak threats and chains them), 중수 (sound placement but 필살기 at once, first element, ignores 명당/수정 조각) and 초보 (bad
+  habits) × every chapter, 4 processes; prints wins, life and stars. Owner's targets (1.7.33, life 10): expert ★3 rate 프롤로그 80% · 1장 60% →
+  falling evenly to FINAL 20%; middle bot wins ~80% with about half its life left; novice is reported only.
+  `tools/tune.js` fits `diff` (HP for the expert target, attack for the middle-bot target, HP again; `DIFF` env multiplies diffs in bot.js).
+  Results are noisy (±10–15%p per chapter at 30 runs; the tuner's 20-run fits did not hold up, so finish by hand from full surveys) and
+  ★3 flips on single leaks — inspect leaks with `-v` (a structural leak = fix the cause, not HP). Results: docs/survey-1.7.31.txt,
+  docs/survey-1.7.32.txt (life 20), docs/survey-1.7.33.txt (life 10). Elites appear from the 4th battle (1.7.32).
 - `tools/bot.js` — headless balance bot: `node tools/bot.js <chapter|all> <runs> [-v]`. Run it after any balance-relevant change;
-  an ordinary build should clear every chapter, usually with 12–20 life left. `node tools/bot.js calibrate [chapter]` searches
+  an ordinary build should clear every chapter (life is 10 since 1.7.33; 수정 강화 legacy +2, 수정의 가호 blessing +3). `node tools/bot.js calibrate [chapter]` searches
   `diff` = [monster HP, monster attack, boss HP] for each chapter in `CHAPTER_DEFS` (js/data.js); copy the result in by hand.
 - Chapters are generated from `CHAPTER_DEFS` by `buildChapter` (waves from `POOLS`, roster from `JOIN_AT`). Maps in `MAPS` are grown
   around the road by `sim.buildMap` from each map's seed, so the same map always comes out the same.

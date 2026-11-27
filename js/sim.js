@@ -48,7 +48,7 @@ const TERRAIN_NAME={grass:'평지',road:'길',high:'고지대',forest:'수풀',w
 function createSim(opts){
  const chapter=D.CHAPTERS[opts.chapter||0],map=buildMap(chapter.map),snap=opts.snapshot||null;
  // Arca legacies: permanent bonuses earned by clearing chapters ({id: times taken}).
- const legacy=opts.legacy||{},L=k=>legacy[k]||0,freshLife=chapter.life+3*L('life');
+ const legacy=opts.legacy||{},L=k=>legacy[k]||0,freshLife=chapter.life+2*L('life');
  const S={chapter,chapterIndex:opts.chapter||0,map,time:0,phase:'prep',prep:0,battle:snap?snap.battle:0,gold:snap?snap.gold:chapter.startGold+60*L('startGold'),life:snap?snap.life:freshLife,maxLife:snap?snap.maxLife:freshLife,legacy,soldierCap:chapter.soldiers+L('command'),
   units:[],enemies:[],queue:[],events:[],mods:{burn:0,soldierCost:0,heroBlock:0,bounty:0,haste:0,range:0,cdr:0,rankCost:0,armor:0,grip:0},blessings:snap?snap.blessings.slice():[],offer:null,fortress:0,
   hero:{},nextId:1,leaks:0,leaksTotal:snap?snap.leaksTotal:0,kills:snap?snap.kills||0:0,rand:seeded((opts.seed??20261117)+(snap?snap.battle*7919:0)),acc:0,pending:[],potions:snap&&snap.potions!=null?snap.potions:POTIONS,lastUlt:-99,chain:0,vantage:[],shard:null,shardIn:SHARD_FIRST,stats:snap&&snap.stats?JSON.parse(JSON.stringify(snap.stats)):{dealt:{},healed:0,healedBy:{},ults:0,goldEarned:0,goldSpent:0,time:0}};

@@ -2,7 +2,7 @@
 // life (mean, min–max) and stars (mean, ★3/★2/★1/fail).  node tools/survey.js [runs=30] [chapters=all]
 const {execFile}=require('child_process'),path=require('path'),D=require('../js/data.js');
 const runs=+(process.argv[2]||30),chapters=process.argv[3]?process.argv[3].split(',').map(Number):D.CHAPTERS.map((_,i)=>i);
-const BOTS={'고수':{ult:'expert'},'초보':{ranged:'random',meleeFrac:.15,ult:'asap',element:'first',shard:'none',vantage:false,potion:'none'}};
+const ALLBOTS={'고수':{ult:'expert'},'중수':{ult:'asap',element:'first',vantage:false,shard:'none'},'초보':{ranged:'random',meleeFrac:.15,ult:'asap',element:'first',shard:'none',vantage:false,potion:'none'}},BOTS=Object.fromEntries(Object.entries(ALLBOTS).filter(([k])=>!process.env.BOTS||process.env.BOTS.split(',').includes(k)));
 const jobs=[];for(const b in BOTS)for(const ch of chapters)for(let k=0;k<runs;k+=10)jobs.push({b,ch,n:Math.min(10,runs-k),seed:k});
 const res={};let next=0,active=0;
 function go(){while(active<4&&next<jobs.length){const j=jobs[next++];active++;

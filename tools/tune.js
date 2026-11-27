@@ -1,8 +1,8 @@
 // Fits each chapter to the owner's targets (1.7.32): monster HP so the expert bot gets ★3 in TARGET3[ch] of runs, then monster attack so
 // the novice bot wins in TARGETW[ch] of runs. Prints multipliers for diff[0] and diff[1].  node tools/tune.js [runs=16] [chapters]
 const {execFile}=require('child_process'),path=require('path'),D=require('../js/data.js');
-const TARGET3=[.80,.60,.55,.50,.45,.40,.35,.30,.25,.20],TARGETW=[.95,.85,.70,.60,.50,.45,.40,.35,.30,.25];
-const EXPERT={ult:'expert'},NOVICE={ranged:'random',meleeFrac:.15,ult:'asap',element:'first',shard:'none',vantage:false,potion:'none'};
+const TARGET3=[.80,.60,.55,.50,.45,.40,.35,.30,.25,.20],TARGETW=[.8,.8,.8,.8,.8,.8,.8,.8,.8,.8];   // 1.7.33: life 10, the middle bot should win 80%
+const EXPERT={ult:'expert'},NOVICE={ult:'asap',element:'first',vantage:false,shard:'none'};   // second target is the middle bot: sound placement, but 필살기 at once, no element choice, ignores 명당/수정 조각
 const runs=+(process.argv[2]||16),chapters=process.argv[3]?process.argv[3].split(',').map(Number):D.CHAPTERS.map((_,i)=>i);
 const play=(ch,strat,diff,seed)=>new Promise(r=>execFile('node',[path.join(__dirname,'bot.js'),String(ch),String(runs)],{env:{...process.env,STRAT:JSON.stringify(strat),DIFF:JSON.stringify(diff),SEED0:String(seed)},maxBuffer:1e7},(e,out)=>{
  const line=(out||'').split('\n').find(l=>/클리어 ·/.test(l))||'';r([...line.matchAll(/승\(생명 (\d+)·★(\d)\)|패\(전투 (\d+)\)/g)].map(m=>m[1]!=null?{won:1,st:+m[2]}:{won:0,st:0}));}));
