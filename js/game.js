@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.7.39',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.40',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -732,7 +732,7 @@ function handleEvents(){deaths=[];for(const e of S.drain()){if(demo.on&&DEMO_SKI
  else if(e.t==='bossSummon')addFx({k:'label',x:e.x,y:e.y,h:2.2,text:'소환!',color:'#ffb3a3',dur:.9,size:14});
  else if(e.t==='bossPhase'){banner('BOSS',e.name);sfx('boss_appear');addFx({k:'ring',x:e.x,y:e.y,dur:.8,color:'#fff3b0',r:3,fill:false});}
  else if(e.t==='bossFly'){addFx({k:'label',x:e.x,y:e.y,h:2.4,text:e.flying?'날아오른다':'내려앉았다!',color:'#c7a3ff',dur:1.1,size:15});}
- else if(e.t==='beamWarn'){warns.set(e.unit,{t:e.delay,boss:e.id,full:e.delay});const tu=S.units.find(v=>v.id===e.unit),nm=tu?S.defOf(tu).name:'동료';toast(`⚠ ${e.name} → ${nm} · ${e.delay}초 뒤 · 철수 또는 물약!`);sfx('boss_attack');addFx({k:'flash',dur:.3});}
+ else if(e.t==='beamWarn'){warns.set(e.unit,{t:e.delay,boss:e.id,full:e.delay});const tu=S.units.find(v=>v.id===e.unit),nm=tu?S.defOf(tu).name:'동료';toast(`⚠ ${e.name} → ${nm} · ${e.delay}초 뒤 일격! 쓰러져도 ${tu&&S.defOf(tu).cooldown?15:D.DOWN_CD}초 뒤 ★ 그대로 무료 재배치`);sfx('boss_attack');addFx({k:'flash',dur:.3});}
  else if(e.t==='beam'){warns.delete(e.unit);if(e.to)addFx({k:'beam',from:e.from,to:e.to,dur:.35});}
  else if(e.t==='bonus')toast(`${e.why} 보너스 +${e.gold}💰`);
  else if(e.t==='battleStart'){saveGame();const b=S.chapter.battles[e.battle];if(S.chapter.battles[e.battle+1]?.boss)bgm.preload(7);if(b.boss)bgm.preload(D.CHAPTERS[S.chapterIndex+1]?10:12);banner(`전투 ${e.battle+1}`,b.name);clearCard();bgm.play(battleTrack());sfx(b.boss?'boss_appear':'battle_start');if(b.boss)setTimeout(()=>{if(S)toast(`👑 ${S.chapter.boss.name} · ${S.chapter.boss.hint||''}`);},1800);}
