@@ -87,6 +87,7 @@ function createSim(opts){
   if(S.units.some(u=>u.c===c&&u.r===r))return '이미 다른 동료가 있습니다';
   if(!d.melee&&t.terrain!=='high')return '원거리 캐릭터는 올라온 발판(고지대)에만 설 수 있습니다';
   if(t.terrain==='high'&&d.melee)return '고지대에는 원거리 캐릭터만 설 수 있습니다';
+  if(d.melee&&!t.road)return '근접 캐릭터는 길 위에만 설 수 있습니다';   // 1.7.38: off the road a melee unit held nothing and dodged the spacing rules
   // No melee on the road right by a monster gate, so monsters are not held the moment they appear.
   if(d.melee&&t.road&&map.gates.some(g=>Math.hypot(g.x-c,g.y-r)<D.GATE_GAP))return `적 출현 문 ${D.GATE_GAP}칸 안에는 근접 캐릭터를 세울 수 없습니다`;
   // Melee characters on the road must keep their distance, so monsters cannot be held in one spot by a crowd.

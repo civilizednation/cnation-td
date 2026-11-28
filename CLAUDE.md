@@ -103,11 +103,13 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   on a hero under 30% HP.
 - Battle chips show 「다음 전투」 (`nextChip`, `S.preview(S.battle+1)`). Waves mix elements; each group one kind, consecutive groups prefer another element.
 - Economy (1.7.0): soldiers −35% cost, soldier rank-up ×0.92 more (−40% total), start gold 150+15×chapter, battles 1/2 at 60%/75% HP.
+- Owner's own playtest (fresh start, 1.7.37, life 10): 프롤로그 · 1장 · 2장 ★3 with no leak on the first try; 3장 lost three times, then ★3
+  with no leak on the fourth. Weigh this with the bot survey in later balance passes (the owner plays like the expert bot or better).
 - `tools/strategy.js` compares habits (placement, 필살기 timing, element/vantage/shard use); target: ordinary play ≥90% clears, bad habits ≤50%.
 - Maps have their own size (`MAPS[id].w/h`): early chapters are smaller (9×9 … 9×12), 9×14 from chapter 4.
 - Basic attacks: ranged `RANGED_INTERVAL` 1.2 / `RANGED_POWER` 0.3, melee `MELEE_INTERVAL` 0.7 / `MELEE_POWER` 0.7 of the base numbers;
   skills, 필살기 and heals are not affected. No melee on the road within `GATE_GAP` (2 since 1.7.2) tiles of a monster gate (`map.gates`).
-- Placement: melee on road/grass/forest/bridge; ranged (heroes and soldiers) only on high ground — the pedestals in `MAPS[id].highAt`
+- Placement: melee on road tiles only (road, bridge, swamp/sand road; 1.7.38 — on grass/forest they held nothing and dodged MELEE_GAP/GATE_GAP); ranged (heroes and soldiers) only on high ground — the pedestals in `MAPS[id].highAt`
   (4–7 per map; `high` only seeds the grown map).
 - Slots: every joined hero may be on the field at once (one of each); soldiers only up to `S.soldierCap` = `CHAPTER_DEFS[].soldiers`
   (3,3,2,2,1…1) + legacy 「지휘관의 위엄」 (`command`, +1 each, max 2). `S.slotFree(def)` / `S.soldierCount()`; HUD shows 👑 heroes and 🪖 soldiers. When the soldier slots are full the
