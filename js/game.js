@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.7.38',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.39',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -732,7 +732,7 @@ function handleEvents(){deaths=[];for(const e of S.drain()){if(demo.on&&DEMO_SKI
  else if(e.t==='bossSummon')addFx({k:'label',x:e.x,y:e.y,h:2.2,text:'소환!',color:'#ffb3a3',dur:.9,size:14});
  else if(e.t==='bossPhase'){banner('BOSS',e.name);sfx('boss_appear');addFx({k:'ring',x:e.x,y:e.y,dur:.8,color:'#fff3b0',r:3,fill:false});}
  else if(e.t==='bossFly'){addFx({k:'label',x:e.x,y:e.y,h:2.4,text:e.flying?'날아오른다':'내려앉았다!',color:'#c7a3ff',dur:1.1,size:15});}
- else if(e.t==='beamWarn'){warns.set(e.unit,{t:e.delay,boss:e.id});toast(`${e.name}: 조준당한 동료를 지키거나 철수하세요`);sfx('boss_attack');}
+ else if(e.t==='beamWarn'){warns.set(e.unit,{t:e.delay,boss:e.id,full:e.delay});const tu=S.units.find(v=>v.id===e.unit),nm=tu?S.defOf(tu).name:'동료';toast(`⚠ ${e.name} → ${nm} · ${e.delay}초 뒤 · 철수 또는 물약!`);sfx('boss_attack');addFx({k:'flash',dur:.3});}
  else if(e.t==='beam'){warns.delete(e.unit);if(e.to)addFx({k:'beam',from:e.from,to:e.to,dur:.35});}
  else if(e.t==='bonus')toast(`${e.why} 보너스 +${e.gold}💰`);
  else if(e.t==='battleStart'){saveGame();const b=S.chapter.battles[e.battle];if(S.chapter.battles[e.battle+1]?.boss)bgm.preload(7);if(b.boss)bgm.preload(D.CHAPTERS[S.chapterIndex+1]?10:12);banner(`전투 ${e.battle+1}`,b.name);clearCard();bgm.play(battleTrack());sfx(b.boss?'boss_appear':'battle_start');if(b.boss)setTimeout(()=>{if(S)toast(`👑 ${S.chapter.boss.name} · ${S.chapter.boss.hint||''}`);},1800);}
@@ -803,7 +803,14 @@ function drawOverlay(dt,time,realDt=dt){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.cl
   if(S.fortress>0)groundRing('fort'+u.id,u.x,u.y,.55,0xfff3b0,0);
   let i=0;for(const k in u.st){ctx.fillStyle=ST_COLOR[k]||'#fff';ctx.beginPath();ctx.arc(p.x-w/2+4+i*8,p.y+11,3.5,0,7);ctx.fill();i++;}
   if(u.buff>1||u.defBuff>1||u.hasteBuff>1){const g=proj(u.x,u.y,gy+1.78);ctx.font=`400 11px ${FONT}`;ctx.fillStyle='#f2cf72';ctx.fillText((u.buff>1?'⚔':'')+(u.defBuff>1?'🛡':'')+(u.hasteBuff>1?'»':''),g.x,g.y);}
-  const wn=warns.get(u.id);if(wn){wn.t-=dt;const g=proj(u.x,u.y,gy+.3),boss=S.enemies.find(en=>en.id===wn.boss);groundRing('warn'+u.id,u.x,u.y,.6,0xff503c,.12+.12*Math.sin(time*16));ctx.strokeStyle=`rgba(255,80,60,${.5+.5*Math.sin(time*16)})`;ctx.lineWidth=3;if(boss){const b=proj(boss.x,boss.y,1.2);ctx.setLineDash([5,6]);ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(g.x,g.y);ctx.stroke();ctx.setLineDash([]);}if(wn.t<-1)warns.delete(u.id);}}
+  const wn=warns.get(u.id);if(wn){wn.t-=dt;const g=proj(u.x,u.y,gy+.3),boss=S.enemies.find(en=>en.id===wn.boss);groundRing('warn'+u.id,u.x,u.y,.6,0xff503c,.12+.12*Math.sin(time*16));ctx.strokeStyle=`rgba(255,80,60,${.5+.5*Math.sin(time*16)})`;ctx.lineWidth=3;if(boss){const b=proj(boss.x,boss.y,1.2);ctx.setLineDash([5,6]);ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(g.x,g.y);ctx.stroke();ctx.setLineDash([]);}// 1.7.39: big aim mark over the target's head with a countdown, so the one-shot beam can be seen coming
+   if(wn.t>0){const h=proj(u.x,u.y,gy+2.15),R=15+3*Math.sin(time*12),k=Math.max(0,Math.min(1,wn.t/(wn.full||2.5)));ctx.save();ctx.translate(h.x,h.y);
+    ctx.strokeStyle='rgba(20,0,0,.85)';ctx.lineWidth=6;ctx.beginPath();ctx.arc(0,0,R,0,7);ctx.stroke();
+    ctx.strokeStyle='#ff3b2f';ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,R,-Math.PI/2,-Math.PI/2+Math.PI*2*k);ctx.stroke();
+    ctx.rotate(time*2);ctx.lineWidth=3;for(let j=0;j<4;j++){ctx.rotate(Math.PI/2);ctx.beginPath();ctx.moveTo(R-5,0);ctx.lineTo(R+7,0);ctx.stroke();}ctx.rotate(-time*2);
+    ctx.font=`700 14px ${FONT}`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=4;ctx.strokeStyle='rgba(20,0,0,.9)';const tx=wn.t.toFixed(1);ctx.strokeText(tx,0,1);ctx.fillStyle='#fff';ctx.fillText(tx,0,1);
+    ctx.font=`400 11px ${FONT}`;ctx.strokeText('조준됨',0,-R-9);ctx.fillStyle='#ff9d8a';ctx.fillText('조준됨',0,-R-9);ctx.restore();}
+   if(wn.t<-1)warns.delete(u.id);}}
  if(aiming){const s=D.SKILLS[S.units.find(u=>u.id===aiming)?.ult];if(s&&hover&&hover.x!=null)groundRing('aim',hover.x,hover.y,s.area,0xff8a3d,.12);}
  // Effects
  for(let i=fx.length-1;i>=0;i--){const f=fx[i];f.t+=f.real?realDt:dt;const k=Math.min(1,f.t/f.dur);if(f.t>=(f.life||f.dur)){fx.splice(i,1);continue;}
