@@ -50,8 +50,8 @@ function createSim(opts){
  // Arca legacies: permanent bonuses earned by clearing chapters ({id: times taken}).
  const legacy=opts.legacy||{},L=k=>legacy[k]||0,freshLife=chapter.life+2*L('life');
  const S={chapter,chapterIndex:opts.chapter||0,map,time:0,phase:'prep',prep:0,battle:snap?snap.battle:0,gold:snap?snap.gold:chapter.startGold+60*L('startGold'),life:snap?snap.life:freshLife,maxLife:snap?snap.maxLife:freshLife,legacy,soldierCap:chapter.soldiers+L('command'),
-  units:[],enemies:[],queue:[],events:[],mods:{burn:0,soldierCost:0,heroBlock:0,bounty:0,haste:0,range:0,cdr:0,rankCost:0,armor:0,grip:0},blessings:snap?snap.blessings.slice():[],offer:null,fortress:0,
-  hero:{},nextId:1,leaks:0,leaksTotal:snap?snap.leaksTotal:0,kills:snap?snap.kills||0:0,rand:seeded((opts.seed??20261117)+(snap?snap.battle*7919:0)),acc:0,pending:[],potions:snap&&snap.potions!=null?snap.potions:POTIONS,lastUlt:-99,chain:0,vantage:[],shard:null,shardIn:SHARD_FIRST,stats:snap&&snap.stats?JSON.parse(JSON.stringify(snap.stats)):{dealt:{},healed:0,healedBy:{},ults:0,goldEarned:0,goldSpent:0,time:0}};
+  units:[],enemies:[],queue:[],events:[],mods:{burn:0,soldierCost:.1*L('command'),heroBlock:0,bounty:0,haste:0,range:0,cdr:0,rankCost:0,armor:0,grip:0},blessings:snap?snap.blessings.slice():[],offer:null,fortress:0,
+  hero:{},nextId:1,leaks:0,leaksTotal:snap?snap.leaksTotal:0,kills:snap?snap.kills||0:0,rand:seeded((opts.seed??20261117)+(snap?snap.battle*7919:0)),acc:0,pending:[],potions:snap&&snap.potions!=null?snap.potions:POTIONS+L('life'),starterUsed:!!(snap&&snap.starterUsed),lastUlt:-99,chain:0,vantage:[],shard:null,shardIn:SHARD_FIRST,stats:snap&&snap.stats?JSON.parse(JSON.stringify(snap.stats)):{dealt:{},healed:0,healedBy:{},ults:0,goldEarned:0,goldSpent:0,time:0}};
  // Chapter record for the clear summary (kept in the snapshot so a resumed chapter keeps it).
  for(const [k,v] of Object.entries({dealt:{},healed:0,healedBy:{},ults:0,goldEarned:0,goldSpent:0,time:0}))if(S.stats[k]==null)S.stats[k]=v;
  S.mods.rankCost+=.08*L('rankDisc');S.mods.bounty+=.1*L('bounty');
@@ -103,7 +103,7 @@ function createSim(opts){
  function ultTime(u){return u.ult?D.SKILLS[u.ult].cd*(1-.15*L('ultCdr'))*(u.ultBoost?.85:1):0;}
  // Elements a hero can give its 필살기: its own skills', its basic attack's and the 필살기's own.
  function ultElements(u){if(!u.ult)return [];const s=D.SKILLS[u.ult];if(s.type==='heal'||s.type==='fortress')return [];const set=[];const add=e=>{if(e&&!set.includes(e))set.push(e);};add(s.element);add(defOf(u).element);for(const k of u.skills)add(D.SKILLS[k.id].element);return set.length?set:[null];}
- function deploy(def,c,r){const err=canDeploy(def,c,r);if(err)return err;const keep=S.hero[def]?.keep,cost=deployCost(def);S.gold-=cost;S.stats.goldSpent+=cost;const u=makeUnit(def,c,r,keep,cost);if(!keep&&S.hero[def]&&L('starter')&&u.rank<2){u.rank=2;refresh(u);u.hp=u.maxHp;}if(S.hero[def])S.hero[def].keep=null;emit({t:'deploy',id:u.id});return null;}
+ function deploy(def,c,r){const err=canDeploy(def,c,r);if(err)return err;const keep=S.hero[def]?.keep,cost=deployCost(def);S.gold-=cost;S.stats.goldSpent+=cost;const u=makeUnit(def,c,r,keep,cost);if(!keep&&S.hero[def]&&L('starter')&&!S.starterUsed&&u.rank<2){u.rank=2;refresh(u);u.hp=u.maxHp;S.starterUsed=true;}if(S.hero[def])S.hero[def].keep=null;emit({t:'deploy',id:u.id});return null;}
  const needsChoice=u=>{const k=defOf(u).ranks[u.rank];return !!(k&&k.choice);};
  function rankUp(id,choice){const u=S.units.find(v=>v.id===id);if(!u)return '없는 캐릭터입니다';const cost=rankCost(u);if(cost==null)return '최대 랭크입니다';if(S.gold<cost)return '골드가 부족합니다';
   if(needsChoice(u)){if(!defOf(u).ranks[u.rank].choice[choice])return '각인을 선택하세요';u.choice=choice;}
@@ -122,7 +122,7 @@ function createSim(opts){
  // ── Monsters ──
  function spawn(o){const b=chapter.battles[S.battle],[hpT,atkT]=b.tune,cfg=o.flags==='boss'?chapter.boss:null,clone=o.flags==='clone',kind=cfg?cfg.base:clone?o.parent.kind:o.kind,base=D.MONSTERS[kind],elite=o.flags==='elite',trait=D.MODEL_TRAITS[base.model]||{},parent=o.parent||null;
   let hp=base.hp*hpT*(elite?4:1),gold=Math.max(2,Math.round(base.hp*.2))*(elite?4:1),speed=base.move*D.MOVE_SPEED,gen=0,lifeCost=elite?2:1,name=(elite?'정예 ':'')+base.name,scale=elite?1.3:null,canSplit=!!trait.split;
-  if(cfg){hp=(900+240*chapter.index)*cfg.hp*chapter.bossScale*hpT/2;speed=cfg.move*D.MOVE_SPEED;gold=60+chapter.index*15;name=cfg.name;scale=cfg.scale;lifeCost=99;canSplit=!!cfg.split;}
+  if(cfg){hp=(900+240*chapter.index)*cfg.hp*chapter.bossScale*hpT/2;speed=cfg.move*D.MOVE_SPEED;gold=60+chapter.index*15;name=cfg.name;scale=cfg.scale;lifeCost=5;canSplit=!!cfg.split;}
   if(clone){hp=parent.maxHp*parent.cfg.clones.hp;speed=parent.speed*1.1;gold=25;name=parent.name+'의 분신';scale=parent.scale*.75;lifeCost=5;canSplit=false;}
   else if(parent&&o.split){gen=parent.gen+1;hp=parent.maxHp*(parent.bossKin?.3:.35);gold=parent.bossKin?Math.max(2,Math.round(parent.gold*.2)):1;speed=base.move*D.MOVE_SPEED*(parent.bossKin&&gen<3?.9:1.15);
    if(parent.bossKin){scale=gen===1?1.5:gen===2?1:.72;lifeCost=gen===1?3:1;name=gen===1?'큰 '+base.name:gen===2?base.name:'꼬마 '+base.name;canSplit=gen<3;}else{scale=.72;name='꼬마 '+base.name;canSplit=false;}}
@@ -152,7 +152,7 @@ function createSim(opts){
  function hit(src,e,o){if(e.dead)return 0;const magic=o.type==='magic',sd=defOf(src);
   if(!magic&&!o.skill&&e.eva&&S.rand()<e.eva){emit({t:'dmg',id:e.id,x:e.x,y:e.y,v:0,tag:'miss'});return 0;}
   const A=(magic?src.mag:src.atk)*(src.buff||1),Dv=(magic?e.res:e.def)*(1-(o.ignore||0)),raw=A*(o.power||1);let dmg=Math.max(raw-Dv*.5,raw*.2),tag=null;
-  const aff=affinity(o.element,e.element),affM=aff>1?aff+.1*L('affinity'):aff;dmg*=affM;if(aff>1)tag='weak';else if(aff<1)tag='resist';if(src.vantage)dmg*=VANTAGE_DMG;
+  const aff=affinity(o.element,e.element),affM=aff>1?aff+.15*L('affinity'):aff;dmg*=affM;if(aff>1)tag='weak';else if(aff<1)tag='resist';if(src.vantage)dmg*=VANTAGE_DMG;
   if(e.immunity==='physical'&&!magic){dmg*=o.element?.6:.35;tag='resist';}else if(e.immunity==='magic'&&magic){dmg*=e.boss?.5:.35;tag='resist';}
   if(e.st.defdown&&!magic)dmg*=1.25;if(e.shielded)dmg*=1-e.shielded;
   if(sd.highDmg&&src.onHigh)dmg*=1+sd.highDmg;
@@ -298,7 +298,7 @@ function createSim(opts){
   if(!S.queue.length&&!S.enemies.length&&!S.pending.length&&S.phase==='battle')finishBattle();}
  function step(dt){S.acc+=dt;let n=0;while(S.acc>=STEP&&n<12){tick(STEP);S.acc-=STEP;n++;}if(n>=12)S.acc=0;}
 
- function snapshot(){return {v:2,potions:S.potions,vantage:(S.vantage||[]).map(v=>({...v})),chapter:S.chapterIndex,battle:S.battle,gold:S.gold,life:S.life,maxLife:S.maxLife,blessings:S.blessings.slice(),leaksTotal:S.leaksTotal,kills:S.kills,stats:JSON.parse(JSON.stringify(S.stats)),
+ function snapshot(){return {v:2,potions:S.potions,starterUsed:S.starterUsed,vantage:(S.vantage||[]).map(v=>({...v})),chapter:S.chapterIndex,battle:S.battle,gold:S.gold,life:S.life,maxLife:S.maxLife,blessings:S.blessings.slice(),leaksTotal:S.leaksTotal,kills:S.kills,stats:JSON.parse(JSON.stringify(S.stats)),
   units:S.units.map(u=>({def:u.def,c:u.c,r:u.r,rank:u.rank,choice:u.choice,invested:u.invested,ultCd:u.ultCd})),hero:Object.fromEntries(Object.entries(S.hero).map(([k,v])=>[k,{keep:v.keep}]))};}
  if(snap){for(const s of snap.units)if(D.UNITS[s.def]&&map.tile(s.c,s.r))makeUnit(s.def,s.c,s.r,{rank:s.rank,choice:s.choice,invested:s.invested,ultCd:s.ultCd},0);
   for(const k in snap.hero||{})if(S.hero[k])S.hero[k].keep=snap.hero[k].keep;}

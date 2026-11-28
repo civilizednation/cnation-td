@@ -8,8 +8,8 @@
 <style>
 :root{color-scheme:dark;--bg:#0d1a1e;--card:#1f373d;--line:#ffffff1c;--ink:#e6eee6;--muted:#94aaa7;--gold:#f2cf72;--mint:#8fe5b4}
 *{box-sizing:border-box}
-@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=55") format("woff2");font-display:swap;size-adjust:118%}
-@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=55") format("woff2");font-display:swap;size-adjust:104%}
+@font-face{font-family:"Stylish";src:url("fonts/stylish.woff2?v=56") format("woff2");font-display:swap;size-adjust:118%}
+@font-face{font-family:"Gowun Dodum";src:url("fonts/gowun-dodum.woff2?v=56") format("woff2");font-display:swap;size-adjust:104%}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 "Gowun Dodum",-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif;padding:calc(16px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom))}
 main{max-width:680px;margin:0 auto}
 a{color:var(--gold)}
@@ -36,8 +36,13 @@ details.rev summary{cursor:pointer}
 <h1>Revision History</h1>
 <p class="lead">큰 변화는 두 번째 자리(1.1.0), 작은 수정은 세 번째 자리(1.0.1)를 올립니다.</p>
 
+<section class="rev" id="v1.7.45">
+<h2>ver.1.7.45 <span class="date">2026-11-28</span> <span class="tag">현재</span></h2>
+<h3>밸런스</h3><ul><li>전체 난이도를 올렸습니다 — 숙련자도 첫 시도에 ★3을 따기 어렵게, 5·6장을 기준으로 뒤로 갈수록 조금씩 더 어려워집니다</li><li>몬스터 공격력이 장마다 꾸준히 세집니다 — 뒤쪽 장에서도 체력 물약과 탱커 배치가 중요합니다</li><li>보스가 전투 마지막에 호위 몬스터 뒤로 나오고, 「BOSS」 표시와 함께 등장합니다. 보스 체력을 크게 올렸고, 보스가 수정에 닿으면 바로 패배하는 대신 생명 −5가 됩니다</li><li>보스의 일반 공격은 영웅을 한 방에 쓰러뜨리지 않도록 낮췄습니다(6장 「감시 광선」의 일격은 그대로)</li><li>아르카의 유산: 「준비된 영웅」은 장마다 처음 배치하는 영웅 1명만 ★2, 「수정 강화」는 체력 물약 +1 추가, 「지휘관의 위엄」은 병사 비용 −10% 추가, 「원소 숙련」은 상성 피해 ×1.4</li></ul>
+</section>
+
 <section class="rev" id="v1.7.44">
-<h2>ver.1.7.44 <span class="date">2026-11-28</span> <span class="tag">현재</span></h2>
+<h2>ver.1.7.44 <span class="date">2026-11-28</span></h2>
 <h3>변경</h3><ul><li>전투 중 아래 안내 줄에 남은 적을 속성별로 보여 줍니다 — 예: 「👾 12 = 🔥5 💧4 ⚪3」(⚪는 속성 없음, 전장에 나온 적과 앞으로 나올 적을 합친 수)</li><li>「✨ 축복」 칸은 빼고, 이번 장에 고른 에테르 축복은 ☰ 메뉴 맨 위에 보입니다</li></ul>
 </section>
 

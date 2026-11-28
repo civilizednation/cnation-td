@@ -38,8 +38,13 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   chapter (`└` line) and in total (합계); `tools/strategy.js` adds 별 평균.
 - `tools/survey.js [runs=30] [chapters]` (1.7.32; `BOTS=고수,중수` picks bots): 고수 (STRAT `ult:'expert'` — densest-cluster meteor, holds 필살기 for
   crowds / elites / leak threats and chains them), 중수 (sound placement but 필살기 at once, first element, ignores 명당/수정 조각) and 초보 (bad
-  habits) × every chapter, 4 processes; prints wins, life and stars. Owner's targets (1.7.33, life 10): expert ★3 rate 프롤로그 80% · 1장 60% →
-  falling evenly to FINAL 20%; middle bot wins ~80% with about half its life left; novice is reported only.
+  habits) × every chapter, 4 processes; prints wins, life and stars. Owner's targets (1.7.45, after the owner's full playthrough found it too
+  easy): expert ★3 rate 65, 45, 40, 36, 32, 28, 24, 20, 15, 10% (5·6장 = the "barely made it" reference, later chapters a little harder each);
+  middle bot ~70% wins (not reached late: 7–8장/FINAL 7–50%). Monster attack is fixed first so one ordinary hit on kyle ★3 rises ≈30% → ~50%
+  (late chapters ×.9 of the 55% plan to keep wins), then HP (`diff[0]`) is fitted with `tools/tune-hp.js` (MODE=hp: boss HP held; MODE=boss:
+  boss HP for the expert win rate WIN). Bosses (1.7.45): come last after the escort with a BOSS banner, cost 5 life on reaching the crystal (was
+  instant defeat), basic hit ≈50% (1장) → 75% (FINAL) of kyle ★3 HP via `BOSSES[].atk` (beam power raised to 5.95 to keep 6장's one-shot),
+  boss HP ≈ 6–16× an escort monster (the expert bot cannot carry more late). Results: docs/survey-1.7.45.txt.
   `tools/tune.js` fits `diff` (HP for the expert target, attack for the middle-bot target, HP again; `DIFF` env multiplies diffs in bot.js).
   Results are noisy (±10–15%p per chapter at 30 runs; the tuner's 20-run fits did not hold up, so finish by hand from full surveys) and
   ★3 flips on single leaks — inspect leaks with `-v` (a structural leak = fix the cause, not HP). Results: docs/survey-1.7.31.txt,
