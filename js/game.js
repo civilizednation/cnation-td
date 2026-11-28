@@ -2,7 +2,7 @@
 // All rules live in sim.js; this file only sends commands to it and draws what it reports.
 (function(){
 const THREE=CNATION3D,D=TDData,M=TDModels,{createSim,TERRAIN_NAME}=TDSim;
-const GAME_VERSION='1.7.42',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
+const GAME_VERSION='1.7.43',SAVE_KEY='cnation-td-save-v2',LEGACY_KEY='cnation-td-legacy-v1',SLOT_KEY='cnation-td-slots-v1',CLEAR_KEY='cnation-td-clear-v1',SET_KEY='cnation-td-settings-v1',SLOTS=3;
 const $=s=>document.querySelector(s),app=$('#app'),viewport=$('#viewport'),glc=$('#gl'),fxc=$('#fx'),ctx=fxc.getContext('2d');
 const ELEV=54*Math.PI/180,SIN=Math.sin(ELEV),COS=Math.cos(ELEV);
 const EL_COLOR={fire:'#ff8a3d',water:'#6fd0ff',ice:'#a9ecff',wind:'#a6f2c6',thunder:'#ffe66b',light:'#fff3b0',dark:'#c7a3ff'};
@@ -247,16 +247,18 @@ function updateHud(){const key=[S.potions,potionPick,S.units.map(u=>u.ult?Math.c
  const b=S.chapter.battles[S.battle];$('#hudBattle').innerHTML=`<b>전투 ${S.battle+1}/${S.chapter.battles.length}</b><small>${b?b.name:''}</small>`;
  $('#speedBtn').textContent='×'+speed;$('#pauseBtn').textContent=paused?'▶':'⏸';
  const start=$('#startBtn');if(S.phase==='prep'){start.hidden=false;const bonus=S.battle>0?Math.floor(S.prep):0;start.textContent=bonus>0?`전투 시작 +${bonus}💰`:'전투 시작';}else start.hidden=true;
- if(S.phase==='battle'){const left=S.enemies.length+S.queue.length;$('#chips').innerHTML=`<span class="chip">⚔ 전투 중 · 남은 적 <b>${left}</b></span>`+(S.blessings.length?`<span class="chip bless">✨ 축복 ${S.blessings.length} · 이번 장</span>`:'')+nextChip();}
+ if(S.phase==='battle'){const left=S.enemies.length+S.queue.length;$('#chips').innerHTML=`<span class="chip">👾 남은 적 <b>${left}</b></span>`+(S.blessings.length?`<span class="chip bless" data-a="bless">✨ 축복 <b>${S.blessings.length}</b></span>`:'')+nextChip();}
  const pb=$('#potionBtn');pb.hidden=S.phase!=='battle';pb.innerHTML=POTION_SVG+S.potions;pb.classList.toggle('on',!!potionPick);pb.classList.toggle('empty',S.potions<=0);
  refreshDock();if(selUnit)refreshPanel();}
 // During a battle: what the next battle brings (elements, elites, or the boss), so the player can prepare the matching elements.
 function nextChip(){const nx=S.preview(S.battle+1);if(!nx.length)return '';const boss=nx.find(p=>p.boss);
- if(boss)return `<span class="chip next boss">다음 전투: 👑 ${boss.name}${boss.element?' '+D.ELEMENT_ICON[boss.element]+EL_NAME[boss.element]:''}</span>`;
+ if(boss)return `<span class="chip next boss"><small>다음</small> 👑 ${boss.name}${boss.element?' '+D.ELEMENT_ICON[boss.element]+EL_NAME[boss.element]:''}</span>`;
  const els=[...new Set(nx.map(p=>p.element).filter(Boolean))],el=nx.filter(p=>p.elite).reduce((a,p)=>a+p.count,0);
- return `<span class="chip next">다음 전투: ${els.map(k=>D.ELEMENT_ICON[k]+EL_NAME[k]).join(' · ')||'무속성'}${el?` · 정예 ${el}`:''}</span>`;}
+ return `<span class="chip next"><small>다음</small> ${els.map(k=>D.ELEMENT_ICON[k]+EL_NAME[k]).join(' · ')||'무속성'}${el?` · 정예 ${el}`:''}</span>`;}
 const chipText=p=>`${p.boss?'👑 ':''}${p.name} ×${p.count}${p.element?' '+D.ELEMENT_ICON[p.element]:''}${p.flying?' <i>비행</i>':''}${p.immunity==='physical'?' <i>물리↓</i>':p.immunity==='magic'?' <i>마법↓</i>':''}`;
 function showPreview(){const chips=$('#chips');chips.innerHTML=`<span class="chip info">ⓘ 적 정보</span>`+S.preview().map(p=>`<span class="chip${p.elite?' elite':''}${p.boss?' boss':''}">${chipText(p)}</span>`).join('');chips.scrollLeft=0;}
+// 1.7.43: the ✨ chip lists this chapter's 에테르 축복 (in battle the strip is otherwise not tappable)
+$('#chips').addEventListener('click',ev=>{if(S&&!modalOpen&&ev.target.closest('[data-a=bless]')){sfx('ui_tap');toast('✨ 이번 장 에테르 축복 · '+S.blessings.map(id=>{const b=D.BLESSINGS.find(v=>v.id===id);return b?`${b.name}(${b.desc})`:id;}).join(' · '));return;}});
 $('#chips').addEventListener('click',()=>{if(!S||modalOpen||S.phase!=='prep')return;sfx('ui_tap');const m=modal(`<p class="sub">전투 ${S.battle+1} · ${S.chapter.battles[S.battle].name}</p><h2>이번에 오는 적</h2><ul class="foes">`+S.preview().map(p=>`<li><b>${chipText(p)}</b><br>${p.note}</li>`).join('')+`</ul><button class="primary">닫기</button>`);m.querySelector('button').onclick=closeModal;});
 function buildDock(){const dock=$('#dock');dock.innerHTML='';const rows=[D.HERO_ORDER,D.SOLDIER_ORDER].map(order=>order.filter(id=>S.chapter.roster.includes(id)));
  for(const ids of rows){const row=document.createElement('div');row.className='row';for(const id of ids){const d=D.UNITS[id],el=document.createElement('div');el.className='card';el.dataset.id=id;
