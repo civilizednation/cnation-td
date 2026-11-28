@@ -211,7 +211,7 @@ function createSim(opts){
  // its 필살기 ×2 for SHARD_TIME s. The screen gives a hero at random after 5 s; the sim does so itself after SHARD_WAIT s (bot, safety).
  // 체력 물약 (1.7.17): POTIONS per chapter, in battle only; heals half of max HP and clears bad states; one ally at most every POTION_CD s.
  function usePotion(id){if(S.phase!=='battle')return '전투 중에만 쓸 수 있습니다';if(S.potions<=0)return '물약이 없습니다';const u=S.units.find(v=>v.id===id);if(!u)return '없는 동료입니다';
-  if(u.potionAt!=null&&S.time-u.potionAt<POTION_CD)return `${Math.ceil(POTION_CD-(S.time-u.potionAt))}초 뒤에 다시 쓸 수 있습니다`;if(u.hp>=u.maxHp-.5&&!Object.keys(u.st).length)return '체력이 가득합니다';
+  if(u.potionAt!=null&&S.time-u.potionAt<POTION_CD)return `${defOf(u).name}: 같은 동료는 물약을 ${POTION_CD}초에 한 번만 마실 수 있습니다 · ${Math.ceil(POTION_CD-(S.time-u.potionAt))}초 남음`;if(u.hp>=u.maxHp-.5&&!Object.keys(u.st).length)return `${defOf(u).name}의 체력이 가득해 마실 필요가 없습니다`;
   const before=u.hp;u.hp=Math.min(u.maxHp,u.hp+u.maxHp*POTION_HEAL);u.st={};u.potionAt=S.time;S.potions--;emit({t:'potion',unit:u.id,x:u.x,y:u.y,v:Math.round(u.hp-before),left:S.potions});return null;}
  function giveShard(id){if(!S.shard)return '수정 조각이 없습니다';let u=id!=null?S.units.find(v=>v.id===id&&v.ult):null;
   if(!u){const list=S.units.filter(v=>v.ult);if(!list.length){S.shard=null;return null;}u=list[Math.floor(S.rand()*list.length)];}
