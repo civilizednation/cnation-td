@@ -4,7 +4,7 @@
 const D=(typeof module!=='undefined'&&module.exports)?require('./data.js'):root.TDData;
 const STEP=1/30,PREP_TIME=30,ZONE_BACK=.8,ZONE_FRONT=.5;
 // 1.7.0 필살기 카드: chain window, shard timing, vantage bonuses, element side effects of a 필살기.
-const POTIONS=5,POTION_HEAL=.5,POTION_CD=10,FLIGHT={meteor:.5,bolt:.12,blast:.14,shot:.14},SHOT_FLIGHT=.17,CHAIN_WINDOW=3,SHARD_EVERY=40,SHARD_FIRST=18,SHARD_TIME=20,SHARD_RATE=2,SHARD_WAIT=20,VANTAGE_DMG=1.25,VANTAGE_RATE=1.5;
+const POTIONS=5,POTION_HEAL=.7,POTION_CD=0,FLIGHT={meteor:.5,bolt:.12,blast:.14,shot:.14},SHOT_FLIGHT=.17,CHAIN_WINDOW=3,SHARD_EVERY=40,SHARD_FIRST=18,SHARD_TIME=20,SHARD_RATE=2,SHARD_WAIT=20,VANTAGE_DMG=1.25,VANTAGE_RATE=1.5;
 const ULT_STATUS={fire:'burn',ice:'freeze',water:'freeze',wind:'slow',thunder:'stun',dark:'poison'};
 const seeded=D.seeded;
 const elementFamily=e=>e==='ice'?'water':e;
@@ -209,9 +209,9 @@ function createSim(opts){
   S.vantage=[high,melee].filter(Boolean).map(t=>({c:t.c,r:t.r,kind:t.terrain==='high'?'ranged':'melee'}));for(const u of S.units)refresh(u);emit({t:'vantage',spots:S.vantage});}
  // ── 수정 조각 (crystal shard): every SHARD_EVERY s of battle a shard falls; the player gives it to a hero (giveShard), who then charges
  // its 필살기 ×2 for SHARD_TIME s. The screen gives a hero at random after 5 s; the sim does so itself after SHARD_WAIT s (bot, safety).
- // 체력 물약 (1.7.17): POTIONS per chapter, in battle only; heals half of max HP and clears bad states; one ally at most every POTION_CD s.
+ // 체력 물약 (1.7.17): POTIONS per chapter, in battle only; heals 70% of max HP and clears bad states (1.7.42: no per-ally wait).
  function usePotion(id){if(S.phase!=='battle')return '전투 중에만 쓸 수 있습니다';if(S.potions<=0)return '물약이 없습니다';const u=S.units.find(v=>v.id===id);if(!u)return '없는 동료입니다';
-  if(u.potionAt!=null&&S.time-u.potionAt<POTION_CD)return `${defOf(u).name}: 같은 동료는 물약을 ${POTION_CD}초에 한 번만 마실 수 있습니다 · ${Math.ceil(POTION_CD-(S.time-u.potionAt))}초 남음`;if(u.hp>=u.maxHp-.5&&!Object.keys(u.st).length)return `${defOf(u).name}의 체력이 가득해 마실 필요가 없습니다`;
+  if(u.hp>=u.maxHp-.5&&!Object.keys(u.st).length)return `${defOf(u).name}의 체력이 가득해 마실 필요가 없습니다`;
   const before=u.hp;u.hp=Math.min(u.maxHp,u.hp+u.maxHp*POTION_HEAL);u.st={};u.potionAt=S.time;S.potions--;emit({t:'potion',unit:u.id,x:u.x,y:u.y,v:Math.round(u.hp-before),left:S.potions});return null;}
  function giveShard(id){if(!S.shard)return '수정 조각이 없습니다';let u=id!=null?S.units.find(v=>v.id===id&&v.ult):null;
   if(!u){const list=S.units.filter(v=>v.ult);if(!list.length){S.shard=null;return null;}u=list[Math.floor(S.rand()*list.length)];}

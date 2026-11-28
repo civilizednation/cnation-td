@@ -98,9 +98,9 @@ Unless the owner says otherwise, every finished change is committed, pushed to t
   strip shows `#cancelBar` 「✕ 취소 · <what> · ⏱ 느리게」 in place of chips/boss bar/buttons (`selectionLabel`, `cancelTick`). One
   `cancelSelection()` clears every state; tapping the bar, an empty spot of the field, or the same card again cancels. `#aimHint` is retired.
 - 체력 물약 (1.7.17): `POTIONS` 5 per chapter (`S.potions`, kept in the snapshot, not carried to the next chapter); `S.usePotion(id)` in
-  battle only: +50% max HP, clears bad states, one ally every `POTION_CD` 10 s. Screen: `#potionBtn` (heart-shaped red bottle `POTION_SVG` + count, red button since 1.7.21) in the strip → tap an ally
+  battle only: +70% max HP (1.7.42; was 50%), clears bad states, no per-ally wait (1.7.42, owner: the 5-per-chapter count is limit enough; `POTION_CD` 0). Screen: `#potionBtn` (heart-shaped red bottle `POTION_SVG` + count, red button since 1.7.21) in the strip → tap an ally
   (field or card; quarter speed while choosing) or the ally panel's 물약 button; event `potion` → green bubbles + number. The bot uses one
-  on a hero under 30% HP. 1.7.41: the per-ally wait is visible (`potionWait(u)`: red countdown ring right of the ally's bar, panel button 「물약 N초 뒤」, error toasts say why).
+  on a hero under 30% HP.
 - Battle chips show 「다음 전투」 (`nextChip`, `S.preview(S.battle+1)`). Waves mix elements; each group one kind, consecutive groups prefer another element.
 - Economy (1.7.0): soldiers −35% cost, soldier rank-up ×0.92 more (−40% total), start gold 150+15×chapter, battles 1/2 at 60%/75% HP.
 - Owner's own playtest (fresh start, 1.7.37, life 10): 프롤로그 · 1장 · 2장 ★3 with no leak on the first try; 3장 lost three times, then ★3
